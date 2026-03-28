@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Offline | Toyota Sale Tool</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Sarabun', sans-serif; background: #F5F7F5; display: flex; align-items: center; justify-content: center; min-height: 100vh; text-align: center; padding: 24px; }
+    .container { max-width: 320px; }
+    .icon { width: 80px; height: 80px; background: #EBF7EF; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px; }
+    .icon svg { width: 40px; height: 40px; color: #1B7A3F; }
+    h1 { font-size: 20px; font-weight: 700; color: #111827; margin-bottom: 8px; }
+    p { font-size: 14px; color: #6B7280; margin-bottom: 24px; }
+    button { background: #1B7A3F; color: white; border: none; padding: 12px 32px; border-radius: 100px; font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit; }
+    button:hover { background: #145E30; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 1l22 22M16.72 11.06A10.94 10.94 0 0119 12.55M5 12.55a10.94 10.94 0 015.17-2.39M10.71 5.05A16 16 0 0122.56 9M1.42 9a15.91 15.91 0 014.7-2.88M8.53 16.11a6 6 0 016.95 0M12 20h.01"/></svg>
+    </div>
+    <h1>ออฟไลน์ / Offline</h1>
+    <p>ไม่มีการเชื่อมต่ออินเทอร์เน็ต กรุณาตรวจสอบการเชื่อมต่อแล้วลองใหม่</p>
+    <button onclick="location.reload()">รีเฟรช / Refresh</button>
+  </div>
+</body>
+</html>
