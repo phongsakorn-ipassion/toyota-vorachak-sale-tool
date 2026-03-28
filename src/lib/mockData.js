@@ -272,6 +272,25 @@ export const BRANCH_TARGETS = [
   { name: 'สาขาบางนา', units: 66, target: 100 },
 ]
 
+export const BRANCHES = [
+  { id: 'lp', name: 'สาขาลาดพร้าว', code: 'LP', location: 'ลาดพร้าว' },
+  { id: 'on', name: 'สาขาอ่อนนุช', code: 'ON', location: 'อ่อนนุช' },
+  { id: 'bn', name: 'สาขาบางนา', code: 'BN', location: 'บางนา' },
+]
+
+export const DASHBOARD_KPIS = {
+  totalUnits: { value: 245, target: 350, label: 'ยอดขายรวม', unit: 'คัน' },
+  revenue: { value: 218500000, label: 'รายได้รวม', unit: '฿' },
+  activeLeads: { value: 42, label: 'ลีดที่เปิดอยู่', unit: 'ราย' },
+  conversion: { value: 32, target: 35, label: 'อัตราการแปลง', unit: '%' },
+}
+
+export const AI_INSIGHTS = [
+  { id: 'ai1', title: 'แนะนำติดตาม ดวงใจ ทองดี', body: 'Hot lead ยังไม่ได้ติดตาม 2 วัน — ควรโทรติดตามวันนี้', type: 'urgent' },
+  { id: 'ai2', title: 'Yaris Cross ขายดีสุดสัปดาห์นี้', body: '38 คัน สูงกว่าเป้า 15% — แนะนำเพิ่มสต็อค', type: 'insight' },
+  { id: 'ai3', title: 'อัตราปิดการขายดีขึ้น', body: 'เพิ่มขึ้น 5% จากสัปดาห์ที่แล้ว — ทีมทำได้ดี!', type: 'positive' },
+]
+
 export const DEMO_USERS = {
   sales: { id: 'demo-sales', email: 'malee.sales', name: 'มาลี', role: 'sales', init: 'ม' },
   mgr: { id: 'demo-mgr', email: 'manager', name: 'วิชัย', role: 'mgr', init: 'ว' },

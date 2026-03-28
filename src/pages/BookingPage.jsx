@@ -1,6 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Icon from '../components/icons/Icon';
+import { CARS } from '../lib/mockData';
+import { useBookingStore } from '../stores/bookingStore';
+import { useLeadStore } from '../stores/leadStore';
+import { useUiStore } from '../stores/uiStore';
 
 export default function BookingPage() {
   const navigate = useNavigate();
@@ -9,9 +13,45 @@ export default function BookingPage() {
   const [timer, setTimer] = useState(899); // 14:59
   const timerRef = useRef(null);
 
+  const carId = useBookingStore((s) => s.carId);
+  const leadId = useBookingStore((s) => s.leadId);
+  const downPaymentPct = useBookingStore((s) => s.downPaymentPct);
+  const loanTerm = useBookingStore((s) => s.loanTerm);
+  const savedBooking = useBookingStore((s) => s.savedBooking);
+  const saveBooking = useBookingStore((s) => s.saveBooking);
+  const setCustomerInfo = useBookingStore((s) => s.setCustomerInfo);
+  const reset = useBookingStore((s) => s.reset);
+  const getMonthlyPayment = useBookingStore((s) => s.getMonthlyPayment);
+  const getDownPayment = useBookingStore((s) => s.getDownPayment);
+
+  const getLeadById = useLeadStore((s) => s.getLeadById);
+  const addNotification = useUiStore((s) => s.addNotification);
+
+  const car = carId ? CARS[carId] : CARS.corolla;
+  const lead = leadId ? getLeadById(leadId) : null;
+
+  // Pre-fill customer info from lead
+  useEffect(() => {
+    if (lead) {
+      setCustomerInfo({ name: lead.name, phone: lead.phone, email: lead.email || '' });
+    }
+  }, [leadId]);
+
   useEffect(() => {
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, []);
+
+  const fmt = (n) => n.toLocaleString('th-TH');
+
+  // Compute values from store or fallback
+  const monthlyPay = carId ? getMonthlyPayment() : (() => {
+    const p = car.price;
+    const down = p * downPaymentPct / 100;
+    const financed = p - down;
+    const r = 2.79 / 100 / 12;
+    return Math.round(financed * r * Math.pow(1 + r, loanTerm) / (Math.pow(1 + r, loanTerm) - 1));
+  })();
+  const downPay = carId ? getDownPayment() : Math.round(car.price * downPaymentPct / 100);
 
   const goStep2 = () => {
     setStep(2);
@@ -25,10 +65,20 @@ export default function BookingPage() {
 
   const goStep3 = () => {
     if (timerRef.current) clearInterval(timerRef.current);
+    // Save the booking — this also updates lead to 'won'
+    const booking = saveBooking();
+    addNotification({ title: 'จองสำเร็จ!', body: car.name + ' จองเรียบร้อย', type: 'booking' });
     setStep(3);
   };
 
+  const handleGoHome = () => {
+    reset();
+    navigate('/sales-dash');
+  };
+
   const fmtTimer = (s) => `${Math.floor(s / 60).toString().padStart(2, '0')}:${(s % 60).toString().padStart(2, '0')}`;
+
+  const bookingRef = savedBooking ? savedBooking.ref : '#WRJ-2026-0384';
 
   const steps = [
     { n: 1, label: 'ยืนยัน' },
@@ -65,11 +115,11 @@ export default function BookingPage() {
             <div className="card-base">
               <div className="card-hd"><span className="card-title">รายละเอียดการจอง</span></div>
               {[
-                ['รุ่น', 'Corolla Altis 2026'],
+                ['รุ่น', car.name],
                 ['สี', 'Pearl White'],
-                ['ราคา', '฿909,000'],
-                ['เงินดาวน์', '฿181,800 (20%)'],
-                ['ผ่อน/เดือน', '฿12,450 × 60 เดือน'],
+                ['ราคา', car.priceLabel],
+                ['เงินดาวน์', `฿${fmt(downPay)} (${downPaymentPct}%)`],
+                ['ผ่อน/เดือน', `฿${fmt(monthlyPay)} × ${loanTerm} เดือน`],
                 ['กำหนดส่งมอบ', '14-21 วัน'],
               ].map(([lbl, val]) => (
                 <div key={lbl} className="flex justify-between py-[9px] border-b border-border last:border-b-0 text-[12px]">
@@ -105,7 +155,7 @@ export default function BookingPage() {
               <p className="text-[14px] font-bold text-t1 mt-3">สแกน QR เพื่อชำระ / Scan to Pay</p>
               <p className="text-[11px] text-t3 mt-[3px] text-center">PromptPay — วรจักร์ยนต์ Co., Ltd.</p>
               <p className="text-[24px] font-extrabold text-primary mt-2">฿5,000</p>
-              <p className="text-[11px] text-t3 mt-1">Booking #WRJ-2026-0384</p>
+              <p className="text-[11px] text-t3 mt-1">Booking {bookingRef}</p>
               <div className="flex items-center gap-[5px] text-[11px] text-warm font-semibold mt-[6px]">
                 <Icon name="calendar" size={12} /> หมดอายุใน {fmtTimer(timer)}
               </div>
@@ -136,7 +186,7 @@ export default function BookingPage() {
               <div className="w-16 h-16 rounded-full bg-primary-light flex items-center justify-center mx-auto mb-4 text-primary"><Icon name="check" size={32} /></div>
               <h2 className="text-[20px] font-extrabold text-t1 mb-1">จองเรียบร้อย!</h2>
               <p className="text-[13px] text-t2">Booking confirmed & synced to DMS</p>
-              <span className="inline-block mt-2 px-[14px] py-[6px] bg-primary-light text-primary text-[13px] font-extrabold rounded-pill">#WRJ-2026-0384</span>
+              <span className="inline-block mt-2 px-[14px] py-[6px] bg-primary-light text-primary text-[13px] font-extrabold rounded-pill">{bookingRef}</span>
             </div>
 
             <div className="card-base mt-4">
@@ -156,7 +206,7 @@ export default function BookingPage() {
 
             <div className="flex gap-[10px] mt-4">
               <button onClick={() => alert('แชร์ Booking ทาง LINE ✓')} className="btn-o flex-1 cursor-pointer"><Icon name="share" size={16} /> แชร์ Booking</button>
-              <button onClick={() => navigate('/sales-dash')} className="btn-p flex-1 cursor-pointer">กลับหน้าหลัก</button>
+              <button onClick={handleGoHome} className="btn-p flex-1 cursor-pointer">กลับหน้าหลัก</button>
             </div>
           </>
         )}

@@ -5,17 +5,15 @@ import Icon from '../components/icons/Icon'
 import { useAuthStore } from '../stores/authStore'
 import { useLeadStore } from '../stores/leadStore'
 import { useBookingStore } from '../stores/bookingStore'
-import { BRANCHES } from '../lib/mockData'
 
 export default function ProfilePage() {
   const navigate = useNavigate()
-  const { user, role, logout, updateProfile } = useAuthStore()
+  const { user, role, logout, updateProfile, login } = useAuthStore()
   const { leads } = useLeadStore()
   const { bookings } = useBookingStore()
 
   const [editing, setEditing] = useState(false)
   const [editName, setEditName] = useState(user?.name || '')
-  const [editPhone, setEditPhone] = useState(user?.phone || '081-000-0000')
   const [notificationsEnabled, setNotificationsEnabled] = useState(true)
 
   if (!user) {
@@ -30,27 +28,27 @@ export default function ProfilePage() {
   const totalLeads = leads.length
   const wonDeals = leads.filter((l) => l.level === 'won').length
   const conversionRate = totalLeads > 0 ? Math.round((wonDeals / totalLeads) * 100) : 0
-  const thisMonthBookings = bookings.filter((b) => {
-    if (!b.createdAt) return false
-    const d = new Date(b.createdAt)
-    const now = new Date()
-    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
-  }).length
+  const totalBookings = bookings.length
 
-  const branch = BRANCHES.find((b) => b.id === user.branch)
   const roleLabel = role === 'mgr' ? 'ผู้จัดการ' : 'พนักงานขาย'
   const roleBadgeColor = role === 'mgr' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'
-  const initial = user.name?.charAt(0) || 'U'
+  const initial = user.init || user.name?.charAt(0) || 'U'
+  const branchName = 'วรจักร์ยนต์ สาขาลาดพร้าว'
 
   function handleSave() {
-    updateProfile({ name: editName, phone: editPhone })
+    updateProfile({ name: editName })
     setEditing(false)
   }
 
   function handleCancel() {
     setEditName(user.name || '')
-    setEditPhone(user.phone || '081-000-0000')
     setEditing(false)
+  }
+
+  function handleSwitchRole(newRole) {
+    if (newRole === role) return
+    login(newRole)
+    navigate(newRole === 'mgr' ? '/mgr-dash' : '/sales-dash')
   }
 
   async function handleLogout() {
@@ -62,129 +60,114 @@ export default function ProfilePage() {
     <div className="screen-enter">
       <PageHeader title="โปรไฟล์" showBack />
       <div className="p-4 pb-24 space-y-4">
-        {/* Avatar section */}
+        {/* Avatar + user info */}
         <div className="flex flex-col items-center py-4">
           <div className="w-20 h-20 rounded-full bg-primary flex items-center justify-center text-white text-3xl font-extrabold shadow-lg mb-3">
             {initial}
           </div>
-          <h2 className="text-lg font-extrabold text-t1">{user.name}</h2>
+          {editing ? (
+            <input
+              type="text"
+              value={editName}
+              onChange={(e) => setEditName(e.target.value)}
+              className="text-lg font-extrabold text-t1 text-center bg-gray-50 border border-border rounded-lg px-3 py-1 w-48 mb-1"
+            />
+          ) : (
+            <h2 className="text-lg font-extrabold text-t1">{user.name}</h2>
+          )}
           <span className={`mt-1 px-3 py-0.5 rounded-full text-[11px] font-bold ${roleBadgeColor}`}>
             {roleLabel}
           </span>
-          <p className="text-xs text-t3 mt-1">{user.email}</p>
+          <p className="text-xs text-t3 mt-1">{branchName}</p>
+          {!editing ? (
+            <button
+              onClick={() => setEditing(true)}
+              className="mt-2 text-xs text-primary font-bold flex items-center gap-1"
+            >
+              <Icon name="edit" size={13} />
+              แก้ไขชื่อ
+            </button>
+          ) : (
+            <div className="flex gap-3 mt-2">
+              <button onClick={handleCancel} className="text-xs text-t3 font-bold">
+                ยกเลิก
+              </button>
+              <button onClick={handleSave} className="text-xs text-primary font-bold">
+                บันทึก
+              </button>
+            </div>
+          )}
         </div>
 
-        {/* Info card */}
-        <div className="bg-card rounded-xl border border-border p-4">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-bold text-t1">ข้อมูลส่วนตัว</h3>
-            {!editing ? (
-              <button
-                onClick={() => setEditing(true)}
-                className="text-xs text-primary font-bold flex items-center gap-1"
-              >
-                <Icon name="edit" size={13} />
-                แก้ไข
-              </button>
-            ) : (
-              <div className="flex gap-2">
-                <button
-                  onClick={handleCancel}
-                  className="text-xs text-t3 font-bold"
-                >
-                  ยกเลิก
-                </button>
-                <button
-                  onClick={handleSave}
-                  className="text-xs text-primary font-bold"
-                >
-                  บันทึก
-                </button>
+        {/* Role switching */}
+        <div className="card-base">
+          <h3 className="text-sm font-bold text-t1 mb-3 flex items-center gap-1.5">
+            <Icon name="rotate" size={14} className="text-primary" />
+            สลับบทบาท
+          </h3>
+          <div className="grid grid-cols-2 gap-3">
+            {/* Sales card */}
+            <button
+              onClick={() => handleSwitchRole('sales')}
+              className={`rounded-xl p-3.5 text-center transition-all cursor-pointer border-2 ${
+                role === 'sales'
+                  ? 'border-primary bg-primary/5'
+                  : 'border-border bg-white hover:bg-gray-50'
+              }`}
+            >
+              <div className={`w-10 h-10 rounded-full mx-auto mb-2 flex items-center justify-center ${
+                role === 'sales' ? 'bg-primary text-white' : 'bg-gray-100 text-t3'
+              }`}>
+                <Icon name="user" size={20} />
               </div>
-            )}
-          </div>
-
-          <div className="space-y-3">
-            {/* Name */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center">
-                  <Icon name="profile" size={14} className="text-blue-500" />
+              <div className={`text-sm font-bold ${role === 'sales' ? 'text-primary' : 'text-t2'}`}>
+                พนักงานขาย
+              </div>
+              <div className="text-[10px] text-t3 mt-0.5">Sales</div>
+              {role === 'sales' && (
+                <div className="mt-1.5">
+                  <span className="text-[9px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+                    ใช้งานอยู่
+                  </span>
                 </div>
-                <span className="text-xs text-t3">ชื่อ</span>
-              </div>
-              {editing ? (
-                <input
-                  type="text"
-                  value={editName}
-                  onChange={(e) => setEditName(e.target.value)}
-                  className="text-sm font-bold text-t1 text-right bg-gray-50 border border-border rounded-lg px-2 py-1 w-40"
-                />
-              ) : (
-                <span className="text-sm font-bold text-t1">{user.name}</span>
               )}
-            </div>
+            </button>
 
-            {/* Email */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-full bg-emerald-50 flex items-center justify-center">
-                  <Icon name="mail" size={14} className="text-emerald-500" />
-                </div>
-                <span className="text-xs text-t3">อีเมล</span>
+            {/* Manager card */}
+            <button
+              onClick={() => handleSwitchRole('mgr')}
+              className={`rounded-xl p-3.5 text-center transition-all cursor-pointer border-2 ${
+                role === 'mgr'
+                  ? 'border-primary bg-primary/5'
+                  : 'border-border bg-white hover:bg-gray-50'
+              }`}
+            >
+              <div className={`w-10 h-10 rounded-full mx-auto mb-2 flex items-center justify-center ${
+                role === 'mgr' ? 'bg-primary text-white' : 'bg-gray-100 text-t3'
+              }`}>
+                <Icon name="chart" size={20} />
               </div>
-              <span className="text-sm text-t2">{user.email}</span>
-            </div>
-
-            {/* Phone */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-full bg-amber-50 flex items-center justify-center">
-                  <Icon name="phone" size={14} className="text-amber-500" />
-                </div>
-                <span className="text-xs text-t3">เบอร์โทร</span>
+              <div className={`text-sm font-bold ${role === 'mgr' ? 'text-primary' : 'text-t2'}`}>
+                ผู้จัดการ
               </div>
-              {editing ? (
-                <input
-                  type="tel"
-                  value={editPhone}
-                  onChange={(e) => setEditPhone(e.target.value)}
-                  className="text-sm font-bold text-t1 text-right bg-gray-50 border border-border rounded-lg px-2 py-1 w-40"
-                />
-              ) : (
-                <span className="text-sm font-bold text-t1">{user.phone || '081-000-0000'}</span>
+              <div className="text-[10px] text-t3 mt-0.5">Manager</div>
+              {role === 'mgr' && (
+                <div className="mt-1.5">
+                  <span className="text-[9px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+                    ใช้งานอยู่
+                  </span>
+                </div>
               )}
-            </div>
-
-            {/* Branch */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-full bg-purple-50 flex items-center justify-center">
-                  <Icon name="home" size={14} className="text-purple-500" />
-                </div>
-                <span className="text-xs text-t3">สาขา</span>
-              </div>
-              <span className="text-sm text-t2">{branch ? branch.name : user.branch}</span>
-            </div>
-
-            {/* Role */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center">
-                  <Icon name="shield" size={14} className="text-gray-500" />
-                </div>
-                <span className="text-xs text-t3">บทบาท</span>
-              </div>
-              <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold ${roleBadgeColor}`}>
-                {roleLabel}
-              </span>
-            </div>
+            </button>
           </div>
         </div>
 
         {/* Stats card */}
-        <div className="bg-card rounded-xl border border-border p-4">
-          <h3 className="text-sm font-bold text-t1 mb-3">สถิติการขาย</h3>
+        <div className="card-base">
+          <h3 className="text-sm font-bold text-t1 mb-3 flex items-center gap-1.5">
+            <Icon name="chart" size={14} className="text-primary" />
+            สถิติของฉัน
+          </h3>
           <div className="grid grid-cols-2 gap-3">
             <div className="bg-blue-50 rounded-lg p-3 text-center">
               <div className="text-xl font-extrabold text-blue-700">{totalLeads}</div>
@@ -194,20 +177,23 @@ export default function ProfilePage() {
               <div className="text-xl font-extrabold text-emerald-700">{wonDeals}</div>
               <div className="text-[10px] text-emerald-600 font-bold">ปิดการขายได้</div>
             </div>
+            <div className="bg-purple-50 rounded-lg p-3 text-center">
+              <div className="text-xl font-extrabold text-purple-700">{totalBookings}</div>
+              <div className="text-[10px] text-purple-600 font-bold">การจอง</div>
+            </div>
             <div className="bg-amber-50 rounded-lg p-3 text-center">
               <div className="text-xl font-extrabold text-amber-700">{conversionRate}%</div>
               <div className="text-[10px] text-amber-600 font-bold">อัตราการแปลง</div>
             </div>
-            <div className="bg-purple-50 rounded-lg p-3 text-center">
-              <div className="text-xl font-extrabold text-purple-700">{thisMonthBookings}</div>
-              <div className="text-[10px] text-purple-600 font-bold">จองเดือนนี้</div>
-            </div>
           </div>
         </div>
 
-        {/* Settings */}
-        <div className="bg-card rounded-xl border border-border p-4">
-          <h3 className="text-sm font-bold text-t1 mb-3">ตั้งค่า</h3>
+        {/* Quick Settings */}
+        <div className="card-base">
+          <h3 className="text-sm font-bold text-t1 mb-3 flex items-center gap-1.5">
+            <Icon name="gear" size={14} className="text-primary" />
+            ตั้งค่า
+          </h3>
           <div className="space-y-3">
             {/* Notifications toggle */}
             <div className="flex items-center justify-between">
@@ -229,19 +215,6 @@ export default function ProfilePage() {
                   }`}
                 />
               </button>
-            </div>
-
-            {/* Theme */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-full bg-amber-50 flex items-center justify-center">
-                  <Icon name="sun" size={14} className="text-amber-500" />
-                </div>
-                <span className="text-sm text-t1">ธีม</span>
-              </div>
-              <span className="text-xs text-t3 font-bold bg-gray-100 px-2.5 py-1 rounded-lg">
-                สว่าง (Light)
-              </span>
             </div>
 
             {/* Language */}

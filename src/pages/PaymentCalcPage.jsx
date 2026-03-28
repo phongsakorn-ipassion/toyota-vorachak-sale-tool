@@ -3,10 +3,17 @@ import { useNavigate } from 'react-router-dom';
 import Icon from '../components/icons/Icon';
 import { CARS } from '../lib/mockData';
 import { LOAN_TERMS, DEFAULT_INTEREST_RATE } from '../lib/constants';
+import { useBookingStore } from '../stores/bookingStore';
 
 export default function PaymentCalcPage() {
   const navigate = useNavigate();
-  const car = CARS.corolla;
+
+  const bkCarId = useBookingStore((s) => s.carId);
+  const setCarIdStore = useBookingStore((s) => s.setCarId);
+  const setDownPaymentStore = useBookingStore((s) => s.setDownPayment);
+  const setLoanTermStore = useBookingStore((s) => s.setLoanTerm);
+
+  const car = bkCarId ? CARS[bkCarId] : CARS.corolla;
   const [downPct, setDownPct] = useState(20);
   const [term, setTerm] = useState(60);
 
@@ -20,6 +27,21 @@ export default function PaymentCalcPage() {
   }, [downPct, term, car.price]);
 
   const fmt = (n) => n.toLocaleString('th-TH');
+
+  const handleDownPctChange = (val) => {
+    setDownPct(val);
+    setDownPaymentStore(val);
+  };
+
+  const handleTermChange = (t) => {
+    setTerm(t);
+    setLoanTermStore(t);
+  };
+
+  const handleBookNow = () => {
+    if (!bkCarId) setCarIdStore(car.id);
+    navigate('/booking');
+  };
 
   return (
     <div className="screen-enter flex flex-col h-full">
@@ -55,7 +77,7 @@ export default function PaymentCalcPage() {
             <span className="card-title">เงินดาวน์ / Down Payment</span>
             <span className="text-[13px] font-extrabold text-primary">฿{fmt(calc.down)} ({downPct}%)</span>
           </div>
-          <input type="range" min={10} max={50} step={5} value={downPct} onChange={e => setDownPct(Number(e.target.value))} className="w-full accent-primary" />
+          <input type="range" min={10} max={50} step={5} value={downPct} onChange={e => handleDownPctChange(Number(e.target.value))} className="w-full accent-primary" />
           <div className="flex justify-between mt-1">
             <span className="text-[10px] text-t3">10%</span>
             <span className="text-[10px] text-t3">50%</span>
@@ -67,7 +89,7 @@ export default function PaymentCalcPage() {
           <div className="card-hd"><span className="card-title">ระยะเวลาผ่อน / Loan Term</span></div>
           <div className="flex gap-2">
             {LOAN_TERMS.map(t => (
-              <button key={t} onClick={() => setTerm(t)} className={`flex-1 p-3 rounded-md text-center font-extrabold text-[14px] border-[1.5px] transition-all cursor-pointer ${term === t ? 'bg-primary-light border-primary text-primary' : 'bg-bg border-border text-t2'}`} style={{ fontFamily: "'Sarabun', sans-serif" }}>
+              <button key={t} onClick={() => handleTermChange(t)} className={`flex-1 p-3 rounded-md text-center font-extrabold text-[14px] border-[1.5px] transition-all cursor-pointer ${term === t ? 'bg-primary-light border-primary text-primary' : 'bg-bg border-border text-t2'}`} style={{ fontFamily: "'Sarabun', sans-serif" }}>
                 {t}
                 <span className="block text-[10px] font-semibold">เดือน</span>
               </button>
@@ -93,7 +115,7 @@ export default function PaymentCalcPage() {
 
         {/* Actions */}
         <button onClick={() => alert('ส่ง LINE สำเร็จ ✓')} className="btn-o cursor-pointer mb-[10px]"><Icon name="chat" size={16} /> ส่งทาง LINE / Share via LINE</button>
-        <button onClick={() => navigate('/booking')} className="btn-p cursor-pointer mb-4"><Icon name="book" size={16} /> Book Now</button>
+        <button onClick={handleBookNow} className="btn-p cursor-pointer mb-4"><Icon name="book" size={16} /> Book Now</button>
       </div>
     </div>
   );

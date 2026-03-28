@@ -1,7 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useMemo, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
-import { TEAM_MEMBERS } from '../lib/mockData';
+import { useDashboardStore } from '../stores/dashboardStore';
+import { useLeadStore } from '../stores/leadStore';
+import { useBookingStore } from '../stores/bookingStore';
+import { useUiStore } from '../stores/uiStore';
 import Icon from '../components/icons/Icon';
 import { Chart, BarElement, CategoryScale, LinearScale, BarController } from 'chart.js';
 
@@ -10,20 +13,81 @@ Chart.register(BarElement, CategoryScale, LinearScale, BarController);
 export default function ManagerDashboard() {
   const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
-  const [branch, setBranch] = useState('lp');
+  const selectedBranch = useDashboardStore((s) => s.selectedBranch);
+  const setSelectedBranch = useDashboardStore((s) => s.setSelectedBranch);
+  const teamMembers = useDashboardStore((s) => s.teamMembers);
+  const leads = useLeadStore((s) => s.leads);
+  const getLeadStats = useLeadStore((s) => s.getLeadStats);
+  const bookings = useBookingStore((s) => s.bookings);
+  const getUnreadCount = useUiStore((s) => s.getUnreadCount);
   const chartRef = useRef(null);
   const chartInst = useRef(null);
 
+  const unreadCount = getUnreadCount();
+  const stats = getLeadStats();
+
+  // Filter leads by branch
+  const filteredLeads = useMemo(() => {
+    if (selectedBranch === 'all') return leads;
+    return leads.filter((l) => {
+      const src = (l.source || '').toLowerCase();
+      if (selectedBranch === 'lp') return src.includes('ลาดพร้าว');
+      if (selectedBranch === 'on') return src.includes('อ่อนนุช');
+      if (selectedBranch === 'bn') return src.includes('บางนา');
+      return true;
+    });
+  }, [leads, selectedBranch]);
+
+  // Computed KPIs
+  const kpis = useMemo(() => {
+    const wonCount = filteredLeads.filter((l) => l.level === 'won').length;
+    const teamTotal = teamMembers.reduce((s, m) => s + m.units, 0) + wonCount;
+    const teamTarget = teamMembers.reduce((s, m) => s + m.target, 0);
+    const pct = teamTarget > 0 ? Math.round((teamTotal / teamTarget) * 100) : 0;
+    const remainingUnits = Math.max(0, teamTarget - teamTotal);
+    const newLeads = filteredLeads.filter((l) => l.stage === 'new').length;
+    const hotLeads = filteredLeads.filter((l) => l.level === 'hot').length;
+    return { teamTotal, teamTarget, pct, remainingUnits, newLeads, hotLeads };
+  }, [filteredLeads, teamMembers]);
+
+  // Sorted leaderboard
+  const sortedTeam = useMemo(() => [...teamMembers].sort((a, b) => b.units - a.units), [teamMembers]);
+
+  // Dynamic insights
+  const insights = useMemo(() => {
+    const result = [];
+    // Underperformer alert
+    const worst = [...teamMembers].sort((a, b) => (a.units / a.target) - (b.units / b.target))[0];
+    if (worst) {
+      const worstPct = Math.round((worst.units / worst.target) * 100);
+      if (worstPct < 60) {
+        result.push({ type: 'alert', bg: '#FEF2F2', color: '#991B1B', border: '#FECACA', icon: '🚨', text: `${worst.name} ยังต่ำกว่าเป้า ${100 - worstPct}% — ควรนัดพูดคุยเพื่อสนับสนุน` });
+      }
+    }
+    // Hot leads aging
+    const hotCount = filteredLeads.filter((l) => l.level === 'hot').length;
+    if (hotCount > 0) {
+      result.push({ type: 'warn', bg: '#FFFBEB', color: '#92400E', border: '#FDE68A', icon: '⚠️', text: `Hot Lead ${hotCount} รายการ รอการติดตามนานกว่า 24 ชั่วโมง` });
+    }
+    // Best seller
+    const best = sortedTeam[0];
+    if (best) {
+      result.push({ type: 'info', bg: '#EBF7EF', color: '#1B7A3F', border: '#C4E3CE', icon: '💡', text: `${best.name} ขายดีที่สุดเดือนนี้ — ${best.units} คัน` });
+    }
+    return result;
+  }, [teamMembers, filteredLeads, sortedTeam]);
+
+  // Chart
   useEffect(() => {
     if (!chartRef.current) return;
     if (chartInst.current) chartInst.current.destroy();
     chartInst.current = new Chart(chartRef.current, {
       type: 'bar',
       data: {
-        labels: TEAM_MEMBERS.map(m => m.name.split(' ')[0]),
+        labels: sortedTeam.map(m => m.name.split(' ')[0]),
         datasets: [{
-          data: TEAM_MEMBERS.map(m => m.units),
-          backgroundColor: TEAM_MEMBERS.map(m => {
+          data: sortedTeam.map(m => m.units),
+          backgroundColor: sortedTeam.map(m => {
             const pct = m.units / m.target * 100;
             return pct >= 70 ? '#1B7A3F' : pct >= 50 ? '#D97706' : '#DC2626';
           }),
@@ -37,7 +101,7 @@ export default function ManagerDashboard() {
       },
     });
     return () => { if (chartInst.current) chartInst.current.destroy(); };
-  }, []);
+  }, [sortedTeam]);
 
   const rankColors = ['#FEF3C7', '#F1F5F9', '#FEF2EE'];
   const rankTextColors = ['#B45309', '#475569', '#C2410C'];
@@ -52,7 +116,9 @@ export default function ManagerDashboard() {
         </div>
         <button onClick={() => navigate('/notifications')} className="relative text-t2 cursor-pointer">
           <Icon name="bell" size={22} />
-          <span className="absolute top-0 right-0 w-[7px] h-[7px] rounded-full bg-hot" style={{ border: '1.5px solid white' }} />
+          {unreadCount > 0 && (
+            <span className="absolute top-0 right-0 w-[7px] h-[7px] rounded-full bg-hot" style={{ border: '1.5px solid white' }} />
+          )}
         </button>
       </div>
 
@@ -60,17 +126,17 @@ export default function ManagerDashboard() {
         {/* Branch Filter */}
         <div className="flex gap-2 overflow-x-auto pb-2 mb-3" style={{ WebkitOverflowScrolling: 'touch' }}>
           {[{ id: 'lp', label: 'ลาดพร้าว' }, { id: 'on', label: 'อ่อนนุช' }, { id: 'bn', label: 'บางนา' }, { id: 'all', label: 'ทุกสาขา' }].map(b => (
-            <button key={b.id} onClick={() => setBranch(b.id)} className={`pill-filter ${branch === b.id ? 'on' : ''}`}>{b.label}</button>
+            <button key={b.id} onClick={() => setSelectedBranch(b.id)} className={`pill-filter ${selectedBranch === b.id ? 'on' : ''}`}>{b.label}</button>
           ))}
         </div>
 
         {/* KPI Grid */}
         <div className="grid grid-cols-2 gap-[10px] mb-3">
           {[
-            { num: '245', label: 'ยอดขายเดือนนี้', sub: 'เป้า 350 units' },
-            { num: '70%', label: 'ความคืบหน้า', sub: 'เหลือ 105 units', green: true },
-            { num: '18', label: 'Lead ใหม่วันนี้', sub: '+3 vs เมื่อวาน', green: true },
-            { num: '7', label: 'Hot Lead', sub: 'รอการติดตาม', warm: true },
+            { num: String(kpis.teamTotal), label: 'ยอดขายเดือนนี้', sub: `เป้า ${kpis.teamTarget} units` },
+            { num: `${kpis.pct}%`, label: 'ความคืบหน้า', sub: `เหลือ ${kpis.remainingUnits} units`, green: true },
+            { num: String(kpis.newLeads), label: 'Lead ใหม่วันนี้', sub: 'ลีดที่เปิดอยู่', green: true },
+            { num: String(kpis.hotLeads), label: 'Hot Lead', sub: 'รอการติดตาม', warm: true },
           ].map(k => (
             <div key={k.label} className="bg-white rounded-lg border border-border p-[14px]">
               <p className={`text-[26px] font-extrabold leading-none ${k.green ? 'text-primary' : k.warm ? 'text-warm' : 'text-t1'}`}>{k.num}</p>
@@ -92,7 +158,7 @@ export default function ManagerDashboard() {
             <span className="card-title"><Icon name="trophy" size={16} className="text-warm" /> Leaderboard</span>
             <button onClick={() => navigate('/pipeline')} className="text-[12px] font-bold text-primary cursor-pointer">Pipeline →</button>
           </div>
-          {TEAM_MEMBERS.map((m, i) => {
+          {sortedTeam.map((m, i) => {
             const pct = Math.round(m.units / m.target * 100);
             const barColor = pct >= 70 ? '#1B7A3F' : pct >= 50 ? '#D97706' : '#DC2626';
             return (
@@ -113,11 +179,7 @@ export default function ManagerDashboard() {
 
         {/* Insights */}
         <div className="sec-lbl">Insights & Alerts</div>
-        {[
-          { type: 'alert', bg: '#FEF2F2', color: '#991B1B', border: '#FECACA', icon: '🚨', text: 'นภา สุขสม ยังต่ำกว่าเป้า 41% — ควรนัดพูดคุยเพื่อสนับสนุน' },
-          { type: 'warn', bg: '#FFFBEB', color: '#92400E', border: '#FDE68A', icon: '⚠️', text: 'Hot Lead 7 รายการ รอการติดตามนานกว่า 24 ชั่วโมง' },
-          { type: 'info', bg: '#EBF7EF', color: '#1B7A3F', border: '#C4E3CE', icon: '💡', text: 'Yaris Cross ขายดีที่สุดเดือนนี้ — 38 คัน' },
-        ].map((ins, i) => (
+        {insights.map((ins, i) => (
           <div key={i} className="rounded-md p-[11px] text-[12px] font-semibold mb-2 leading-relaxed flex items-start gap-2" style={{ background: ins.bg, color: ins.color, border: `1px solid ${ins.border}` }}>
             <span>{ins.icon}</span>{ins.text}
           </div>

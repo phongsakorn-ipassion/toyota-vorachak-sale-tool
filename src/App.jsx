@@ -5,6 +5,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import LoginPage from './pages/LoginPage';
 import CatalogPage from './pages/CatalogPage';
 import CarDetailPage from './pages/CarDetailPage';
+import LeadListPage from './pages/LeadListPage';
 import LeadDetailPage from './pages/LeadDetailPage';
 import ACardPage from './pages/ACardPage';
 import PaymentCalcPage from './pages/PaymentCalcPage';
@@ -15,6 +16,7 @@ import PipelinePage from './pages/PipelinePage';
 import TargetsPage from './pages/TargetsPage';
 import ReportsPage from './pages/ReportsPage';
 import NotificationsPage from './pages/NotificationsPage';
+import ProfilePage from './pages/ProfilePage';
 
 export default function App() {
   return (
@@ -30,15 +32,16 @@ export default function App() {
             <Route path="/catalog" element={<CatalogPage />} />
             <Route path="/car/:id" element={<CarDetailPage />} />
             <Route path="/calc" element={<PaymentCalcPage />} />
-            <Route path="/leads" element={<ACardPage />} />
+            <Route path="/leads" element={<LeadListPage />} />
             <Route path="/lead/:id" element={<LeadDetailPage />} />
+            <Route path="/acard" element={<ACardPage />} />
             <Route path="/notifications" element={<NotificationsPage />} />
             <Route path="/reports" element={<ReportsPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
           </Route>
 
           {/* Sales only */}
           <Route element={<ProtectedRoute allowedRoles={['sales']} />}>
-            <Route path="/acard" element={<ACardPage />} />
             <Route path="/booking" element={<BookingPage />} />
           </Route>
 

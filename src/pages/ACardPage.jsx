@@ -1,15 +1,94 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import Icon from '../components/icons/Icon';
 import { CARS_LIST, LEAD_SOURCES } from '../lib/mockData';
+import { useLeadStore } from '../stores/leadStore';
+import { useUiStore } from '../stores/uiStore';
 
 export default function ACardPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const editId = searchParams.get('edit');
+
+  const addLead = useLeadStore((s) => s.addLead);
+  const updateLead = useLeadStore((s) => s.updateLead);
+  const getLeadById = useLeadStore((s) => s.getLeadById);
+  const addNotification = useUiStore((s) => s.addNotification);
+
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
+  const [lineId, setLineId] = useState('');
   const [source, setSource] = useState('Walk-in');
   const [interest, setInterest] = useState('hot');
+  const [model, setModel] = useState('');
+  const [budget, setBudget] = useState('ต่ำกว่า 500K');
+  const [notes, setNotes] = useState('');
+  const [errors, setErrors] = useState({});
+
+  // Load lead data for edit mode
+  useEffect(() => {
+    if (editId) {
+      const lead = getLeadById(editId);
+      if (lead) {
+        setName(lead.name || '');
+        setPhone(lead.phone || '');
+        setEmail(lead.email || '');
+        setLineId(lead.lineId || '');
+        setSource(lead.source || 'Walk-in');
+        setInterest(lead.level || 'hot');
+        setModel(lead.car || '');
+        setBudget(lead.budget || 'ต่ำกว่า 500K');
+        setNotes(lead.notes || '');
+      }
+    }
+  }, [editId]);
+
+  const validate = () => {
+    const errs = {};
+    if (!name.trim()) errs.name = 'กรุณากรอกชื่อลูกค้า';
+    if (!phone.trim()) errs.phone = 'กรุณากรอกเบอร์โทร';
+    setErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
+
+  const fields = [
+    { key: 'name', label: 'ชื่อ-นามสกุล / Full Name *', icon: 'user', type: 'text', ph: 'กรอกชื่อลูกค้า', value: name, setter: setName },
+    { key: 'phone', label: 'เบอร์โทร / Phone *', icon: 'phone', type: 'tel', ph: '08X-XXX-XXXX', value: phone, setter: setPhone },
+    { key: 'email', label: 'อีเมล / Email', icon: 'mail', type: 'email', ph: 'example@email.com', value: email, setter: setEmail },
+    { key: 'lineId', label: 'LINE ID', icon: 'chat', type: 'text', ph: '@lineid', value: lineId, setter: setLineId },
+  ];
 
   const saveACard = () => {
-    alert('บันทึกสำเร็จ! ✓\nA-Card synced to Toyota NextGen');
+    if (!validate()) return;
+
+    const initChar = name.trim().charAt(0);
+    const colors = ['#DC2626', '#8B5CF6', '#F59E0B', '#10B981', '#2563EB', '#EC4899'];
+    const color = colors[Math.floor(Math.random() * colors.length)];
+
+    const leadData = {
+      name: name.trim(),
+      phone: phone.trim(),
+      email: email.trim(),
+      lineId: lineId.trim(),
+      source,
+      level: interest,
+      car: model || undefined,
+      budget,
+      notes: notes.trim(),
+      init: initChar,
+      color,
+    };
+
+    if (editId) {
+      updateLead(editId, leadData);
+      addNotification({ title: 'แก้ไข Lead สำเร็จ', body: name.trim() + ' อัปเดตข้อมูลเรียบร้อย', type: 'success' });
+      navigate(`/lead/${editId}`);
+    } else {
+      addLead(leadData);
+      addNotification({ title: 'Lead ใหม่!', body: name.trim() + ' เพิ่มลงระบบเรียบร้อย', type: 'success' });
+      navigate('/sales-dash');
+    }
   };
 
   return (
@@ -17,7 +96,7 @@ export default function ACardPage() {
       {/* Header */}
       <div className="bg-white px-4 py-[13px] flex items-center gap-[11px] border-b border-border flex-shrink-0">
         <button onClick={() => navigate(-1)} className="w-9 h-9 rounded-full flex items-center justify-center bg-bg border border-border text-t1 cursor-pointer"><Icon name="back" size={18} /></button>
-        <div className="flex-1"><h2 className="text-[15px] font-extrabold text-t1">ลงทะเบียนลูกค้า</h2><p className="text-[11px] text-t2 mt-[1px]">New Lead — A-Card Digital</p></div>
+        <div className="flex-1"><h2 className="text-[15px] font-extrabold text-t1">{editId ? 'แก้ไขข้อมูลลูกค้า' : 'ลงทะเบียนลูกค้า'}</h2><p className="text-[11px] text-t2 mt-[1px]">{editId ? 'Edit Lead — A-Card Digital' : 'New Lead — A-Card Digital'}</p></div>
         <span className="text-t2"><Icon name="clip" size={20} /></span>
       </div>
 
@@ -25,18 +104,14 @@ export default function ACardPage() {
         {/* Customer Info */}
         <div className="card-base">
           <div className="card-hd"><span className="card-title">ข้อมูลลูกค้า | Customer Info</span></div>
-          {[
-            { label: 'ชื่อ-นามสกุล / Full Name *', icon: 'user', type: 'text', ph: 'กรอกชื่อลูกค้า' },
-            { label: 'เบอร์โทร / Phone *', icon: 'phone', type: 'tel', ph: '08X-XXX-XXXX' },
-            { label: 'อีเมล / Email', icon: 'mail', type: 'email', ph: 'example@email.com' },
-            { label: 'LINE ID', icon: 'chat', type: 'text', ph: '@lineid' },
-          ].map((f) => (
+          {fields.map((f) => (
             <div key={f.label} className="mb-3">
               <label className="block text-[10px] font-extrabold text-t2 tracking-wider uppercase mb-[5px]">{f.label}</label>
               <div className="relative">
                 <span className="absolute left-[13px] top-1/2 -translate-y-1/2 text-t3"><Icon name={f.icon} size={15} /></span>
-                <input type={f.type} placeholder={f.ph} className="w-full py-3 pl-[38px] pr-3 bg-white border border-border rounded-md text-[13px] text-t1 outline-none focus:border-primary" style={{ fontFamily: "'Sarabun', sans-serif" }} />
+                <input type={f.type} placeholder={f.ph} value={f.value} onChange={(e) => f.setter(e.target.value)} className="w-full py-3 pl-[38px] pr-3 bg-white border border-border rounded-md text-[13px] text-t1 outline-none focus:border-primary" style={{ fontFamily: "'Sarabun', sans-serif" }} />
               </div>
+              {errors[f.key] && <p className="text-[10px] text-red-500 mt-1">{errors[f.key]}</p>}
             </div>
           ))}
         </div>
@@ -74,14 +149,14 @@ export default function ACardPage() {
           <div className="card-hd"><span className="card-title">รุ่นรถที่สนใจ | Model of Interest</span></div>
           <div className="mb-3">
             <label className="block text-[10px] font-extrabold text-t2 tracking-wider uppercase mb-[5px]">Model</label>
-            <select className="w-full py-3 px-3 bg-white border border-border rounded-md text-[13px] text-t1 outline-none focus:border-primary appearance-none cursor-pointer" style={{ fontFamily: "'Sarabun', sans-serif" }}>
-              <option>เลือกรุ่นรถ</option>
+            <select value={model} onChange={(e) => setModel(e.target.value)} className="w-full py-3 px-3 bg-white border border-border rounded-md text-[13px] text-t1 outline-none focus:border-primary appearance-none cursor-pointer" style={{ fontFamily: "'Sarabun', sans-serif" }}>
+              <option value="">เลือกรุ่นรถ</option>
               {CARS_LIST.map(c => <option key={c.id} value={c.id}>{c.name} — {c.priceLabel}</option>)}
             </select>
           </div>
           <div>
             <label className="block text-[10px] font-extrabold text-t2 tracking-wider uppercase mb-[5px]">Budget</label>
-            <select className="w-full py-3 px-3 bg-white border border-border rounded-md text-[13px] text-t1 outline-none focus:border-primary appearance-none cursor-pointer" style={{ fontFamily: "'Sarabun', sans-serif" }}>
+            <select value={budget} onChange={(e) => setBudget(e.target.value)} className="w-full py-3 px-3 bg-white border border-border rounded-md text-[13px] text-t1 outline-none focus:border-primary appearance-none cursor-pointer" style={{ fontFamily: "'Sarabun', sans-serif" }}>
               <option>ต่ำกว่า 500K</option>
               <option>500K-1M</option>
               <option>1M-2M</option>
@@ -93,11 +168,11 @@ export default function ACardPage() {
         {/* Notes */}
         <div className="card-base">
           <div className="card-hd"><span className="card-title">หมายเหตุ / Notes</span></div>
-          <textarea placeholder="บันทึกรายละเอียดเพิ่มเติม..." rows={3} className="w-full py-3 px-3 bg-white border border-border rounded-md text-[13px] text-t1 outline-none focus:border-primary resize-none" style={{ fontFamily: "'Sarabun', sans-serif" }} />
+          <textarea placeholder="บันทึกรายละเอียดเพิ่มเติม..." rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} className="w-full py-3 px-3 bg-white border border-border rounded-md text-[13px] text-t1 outline-none focus:border-primary resize-none" style={{ fontFamily: "'Sarabun', sans-serif" }} />
         </div>
 
         <button onClick={saveACard} className="btn-p cursor-pointer mb-4">
-          <Icon name="check" size={16} /> บันทึก Lead / Save A-Card
+          <Icon name="check" size={16} /> {editId ? 'บันทึกการแก้ไข / Update A-Card' : 'บันทึก Lead / Save A-Card'}
         </button>
       </div>
     </div>

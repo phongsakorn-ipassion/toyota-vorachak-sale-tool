@@ -51,7 +51,7 @@ export default function LoginPage() {
         </div>
 
         <button onClick={doLogin} className="btn-p cursor-pointer">เข้าสู่ระบบ / Login</button>
-        <p className="text-[10px] text-t3 text-center pt-4">Connected: DDMS . SAP . Toyota NextGen</p>
+        <p className="text-[10px] text-t3 text-center pt-4">Toyota NextGen</p>
       </div>
     </div>
   );

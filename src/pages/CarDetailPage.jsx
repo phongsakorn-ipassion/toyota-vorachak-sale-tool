@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Icon from '../components/icons/Icon';
 import { CARS, GALLERY_VIEWS, COLOR_OPTIONS } from '../lib/mockData';
+import { useBookingStore } from '../stores/bookingStore';
+import { useCarStore } from '../stores/carStore';
 
 export default function CarDetailPage() {
   const { id } = useParams();
@@ -11,11 +13,28 @@ export default function CarDetailPage() {
   const [color, setColor] = useState('Pearl White');
   const [openSpec, setOpenSpec] = useState('engine');
 
+  const setCarId = useBookingStore((s) => s.setCarId);
+  const selectCar = useCarStore((s) => s.selectCar);
+
+  useEffect(() => {
+    if (id) selectCar(id);
+  }, [id]);
+
   if (!car) return <div className="p-4 text-t2">Car not found</div>;
 
   const views = GALLERY_VIEWS;
   const currentView = views[galleryIdx];
   const isVideo = currentView.id === 'vid';
+
+  const handleBook = () => {
+    setCarId(id);
+    navigate('/booking');
+  };
+
+  const handleCalc = () => {
+    setCarId(id);
+    navigate('/calc');
+  };
 
   return (
     <div className="screen-enter flex flex-col h-full">
@@ -158,8 +177,8 @@ export default function CarDetailPage() {
 
           {/* CTA */}
           <div className="flex gap-[10px] mt-1 mb-4">
-            <button onClick={() => navigate('/calc')} className="btn-g flex-1 cursor-pointer flex items-center justify-center gap-2"><Icon name="calc" size={16} /> คำนวณผ่อน</button>
-            <button onClick={() => navigate('/booking')} className="btn-p flex-1 cursor-pointer"><Icon name="book" size={16} /> Book Now</button>
+            <button onClick={handleCalc} className="btn-g flex-1 cursor-pointer flex items-center justify-center gap-2"><Icon name="calc" size={16} /> คำนวณผ่อน</button>
+            <button onClick={handleBook} className="btn-p flex-1 cursor-pointer"><Icon name="book" size={16} /> Book Now</button>
           </div>
         </div>
       </div>

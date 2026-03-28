@@ -66,6 +66,17 @@ export const useAuthStore = create((set, get) => ({
       user: state.user ? { ...state.user, ...updates } : state.user,
     })),
 
+  switchRole: (newRole) => {
+    const current = get()
+    if (!current.isLoggedIn) return
+    const user = DEMO_USERS[newRole]
+    if (!user) return
+    set({
+      user: { ...current.user, ...user },
+      role: newRole,
+    })
+  },
+
   checkSession: async () => {
     if (!supabase) return
     try {

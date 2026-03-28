@@ -1,69 +1,165 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import PageHeader from '../components/layout/PageHeader';
-import FilterPill from '../components/ui/FilterPill';
-import LeadListItem from '../components/lead/LeadListItem';
 import Icon from '../components/icons/Icon';
 import { useLeadStore } from '../stores/leadStore';
+import { CARS } from '../lib/mockData';
 
 const FILTER_OPTIONS = [
   { key: 'all', label: 'ทั้งหมด' },
-  { key: 'hot', label: 'Hot 🔥' },
-  { key: 'warm', label: 'Warm 🌡️' },
-  { key: 'cool', label: 'Cool ❄️' },
-  { key: 'won', label: 'Won ✓' },
+  { key: 'hot', label: 'Hot' },
+  { key: 'warm', label: 'Warm' },
+  { key: 'cool', label: 'Cool' },
+  { key: 'won', label: 'Won' },
 ];
+
+const LEVEL_STYLES = {
+  hot: { bg: 'bg-red-50', text: 'text-hot', label: 'Hot' },
+  warm: { bg: 'bg-amber-50', text: 'text-warm', label: 'Warm' },
+  cool: { bg: 'bg-blue-50', text: 'text-cool', label: 'Cool' },
+  won: { bg: 'bg-emerald-50', text: 'text-won', label: 'Won' },
+  lost: { bg: 'bg-gray-100', text: 'text-t3', label: 'Lost' },
+};
+
+const AVATAR_COLORS = ['#DC2626', '#8B5CF6', '#F59E0B', '#10B981', '#3B82F6', '#EC4899'];
+
+function getAvatarColor(name) {
+  if (!name) return AVATAR_COLORS[0];
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
+}
 
 export default function LeadListPage() {
   const navigate = useNavigate();
   const filterLevel = useLeadStore((s) => s.filterLevel);
   const setFilterLevel = useLeadStore((s) => s.setFilterLevel);
+  const searchTerm = useLeadStore((s) => s.searchTerm);
+  const setSearch = useLeadStore((s) => s.setSearch);
   const getFilteredLeads = useLeadStore((s) => s.getFilteredLeads);
 
   const leads = getFilteredLeads();
 
   return (
-    <div className="flex flex-col h-full bg-surface">
+    <div className="screen-enter flex flex-col h-full">
       <PageHeader
-        title="Leads"
+        title="Lead ทั้งหมด"
         rightAction={
           <button
             onClick={() => navigate('/acard')}
-            className="p-1 cursor-pointer"
+            className="w-8 h-8 rounded-full bg-primary flex items-center justify-center cursor-pointer"
           >
-            <Icon name="plus" size={22} className="text-t1" />
+            <Icon name="plus" size={16} className="text-white" />
           </button>
         }
       />
 
-      {/* Filter pills */}
-      <div className="flex gap-2 px-4 py-3 overflow-x-auto no-scrollbar">
-        {FILTER_OPTIONS.map((opt) => (
-          <FilterPill
-            key={opt.key}
-            label={opt.label}
-            active={filterLevel === opt.key}
-            onClick={() => setFilterLevel(opt.key)}
+      {/* Search bar */}
+      <div className="px-4 pt-3 pb-1">
+        <div className="relative">
+          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-t3">
+            <Icon name="search" size={16} />
+          </div>
+          <input
+            type="text"
+            placeholder="ค้นหาชื่อ, เบอร์โทร, อีเมล..."
+            value={searchTerm}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full pl-9 pr-3 py-2.5 bg-bg border border-border rounded-xl text-sm text-t1 placeholder:text-t3 focus:outline-none focus:border-primary"
+            style={{ fontFamily: "'Sarabun', sans-serif" }}
           />
+          {searchTerm && (
+            <button
+              onClick={() => setSearch('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-t3"
+            >
+              <Icon name="close" size={14} />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Filter pills */}
+      <div className="flex gap-2 px-4 py-2.5 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+        {FILTER_OPTIONS.map((opt) => (
+          <button
+            key={opt.key}
+            onClick={() => setFilterLevel(opt.key)}
+            className={`pill-filter whitespace-nowrap ${filterLevel === opt.key ? 'on' : ''}`}
+          >
+            {opt.label}
+          </button>
         ))}
       </div>
 
       {/* Lead list */}
-      <div className="flex-1 overflow-y-auto px-4 pb-4">
+      <div className="flex-1 overflow-y-auto px-4 pb-24">
         {leads.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
-            <Icon name="users" size={40} className="text-t3 mb-3" />
-            <p className="text-sm text-t2">ไม่พบลูกค้าที่ตรงกับตัวกรอง</p>
+            <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center mb-3">
+              <Icon name="users" size={28} className="text-t3" />
+            </div>
+            <p className="text-sm font-bold text-t2">ไม่พบลีด</p>
+            <p className="text-xs text-t3 mt-1">ลองเปลี่ยนตัวกรองหรือค้นหาใหม่</p>
           </div>
         ) : (
-          <div className="flex flex-col gap-3">
-            {leads.map((lead) => (
-              <LeadListItem
-                key={lead.id}
-                lead={lead}
-                onClick={() => navigate(`/lead/${lead.id}`)}
-              />
-            ))}
+          <div className="flex flex-col gap-2">
+            {leads.map((lead) => {
+              const style = LEVEL_STYLES[lead.level] || LEVEL_STYLES.cool;
+              const color = lead.color || getAvatarColor(lead.name);
+              const initial = lead.init || lead.name?.charAt(0) || '?';
+              const carName = lead.car ? (CARS[lead.car]?.name || lead.car) : '';
+
+              return (
+                <button
+                  key={lead.id}
+                  onClick={() => navigate(`/lead/${lead.id}`)}
+                  className="card-base flex items-center gap-3 cursor-pointer hover:shadow-sm transition-shadow text-left"
+                  style={{ marginBottom: 0 }}
+                >
+                  {/* Avatar */}
+                  <div
+                    className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0"
+                    style={{ backgroundColor: color }}
+                  >
+                    {initial}
+                  </div>
+
+                  {/* Info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-sm font-bold text-t1 truncate">{lead.name}</span>
+                      <span className={`shrink-0 px-2 py-0.5 rounded-full text-[10px] font-bold ${style.bg} ${style.text}`}>
+                        {style.label}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between mt-0.5">
+                      <span className="text-xs text-t3 truncate">
+                        {carName && (
+                          <>
+                            <Icon name="car" size={11} className="inline mr-0.5 -mt-px" />
+                            {carName}
+                          </>
+                        )}
+                        {!carName && lead.source && lead.source}
+                      </span>
+                      {lead.createdAt && (
+                        <span className="text-[10px] text-t3 shrink-0 ml-2">
+                          {new Date(lead.createdAt).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' })}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Chevron */}
+                  <div className="shrink-0 text-t3">
+                    <Icon name="chevronRight" size={16} />
+                  </div>
+                </button>
+              );
+            })}
           </div>
         )}
       </div>

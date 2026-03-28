@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../../stores/authStore';
+import { useUiStore } from '../../stores/uiStore';
 import Icon from '../icons/Icon';
 
 // Prototype: Sales has 4 tabs: หน้าหลัก / Leads / รุ่นรถ / ผ่อน
@@ -23,6 +24,7 @@ export default function BottomNav() {
   const navigate = useNavigate();
   const location = useLocation();
   const role = useAuthStore((s) => s.role);
+  const unreadCount = useUiStore((s) => s.getUnreadCount());
   const tabs = role === 'mgr' ? MGR_TABS : SALES_TABS;
   const currentPath = location.pathname;
 
@@ -39,7 +41,7 @@ export default function BottomNav() {
           >
             <div className="w-6 h-6 flex items-center justify-center relative">
               <Icon name={tab.icon} size={22} />
-              {tab.badge && (
+              {tab.badge && unreadCount > 0 && (
                 <span className="absolute top-0 right-[-4px] w-[7px] h-[7px] rounded-full bg-hot" style={{ border: '1.5px solid white' }} />
               )}
             </div>
