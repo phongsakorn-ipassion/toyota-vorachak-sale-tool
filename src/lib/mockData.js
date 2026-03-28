@@ -1,40 +1,15 @@
 // ============================================================================
-// Complete mock data extracted from Toyota-SaleTool-Prototype-v5.html
+// Mock data matching Toyota-SaleTool-Prototype-v5.html exactly
 // ============================================================================
-
-export const PIPELINE_STAGES = [
-  { id: 'new', label: 'ใหม่', color: '#3B82F6' },
-  { id: 'test_drive', label: 'ทดสอบรถ', color: '#F59E0B' },
-  { id: 'negotiation', label: 'เจรจา', color: '#8B5CF6' },
-  { id: 'won', label: 'ชนะ', color: '#10B981' },
-  { id: 'lost', label: 'แพ้', color: '#6B7280' },
-]
-
-export const LEAD_SOURCES = [
-  'Walk-in',
-  'LINE OA',
-  'Facebook Lead',
-  'Referral',
-  'Website',
-  'Phone Inquiry',
-  'Event / Exhibition',
-]
-
-export const INTEREST_LEVELS = [
-  { id: 'hot', label: 'ร้อน', color: '#DC2626' },
-  { id: 'warm', label: 'อุ่น', color: '#F59E0B' },
-  { id: 'cool', label: 'เย็น', color: '#3B82F6' },
-  { id: 'won', label: 'ชนะ', color: '#10B981' },
-  { id: 'lost', label: 'แพ้', color: '#6B7280' },
-]
 
 export const CARS = {
   corolla: {
     id: 'corolla', name: 'Corolla Altis 2026', type: 'Sedan', cat: 'sedan',
     price: 909000, priceLabel: '฿909,000',
-    fuel: 'Hybrid', seats: '5', gearbox: 'CVT Auto', power: '140 hp',
+    fuel: '1.8L Hybrid', seats: '5', gearbox: 'CVT Auto', power: '140 hp',
     avail: 'In Stock', stock: '3 units — สาขาลาดพร้าว',
     warranty: '3 ปี / 100,000 กม.', eco: '23.3 km/L', bg: '#EEF2FF',
+    shape: 'sedan',
     img: 'https://tmna.aemassets.toyota.com/is/image/toyota/toyota_2025_camry_702_exterior_1?wid=640&hei=480&fmt=webp',
     imgs: {
       ext: 'https://tmna.aemassets.toyota.com/is/image/toyota/toyota_2025_camry_702_exterior_1?wid=640&hei=480&fmt=webp',
@@ -53,9 +28,10 @@ export const CARS = {
   yaris: {
     id: 'yaris', name: 'Yaris Cross 2026', type: 'Crossover', cat: 'crossover',
     price: 799000, priceLabel: '฿799,000',
-    fuel: 'Hybrid', seats: '5', gearbox: 'CVT Auto', power: '116 hp',
+    fuel: '1.5L Hybrid', seats: '5', gearbox: 'CVT Auto', power: '116 hp',
     avail: 'In Transit', stock: 'คาดว่าถึง 2 สัปดาห์',
     warranty: '3 ปี / 100,000 กม.', eco: '30.2 km/L', bg: '#FEF3C7',
+    shape: 'cross',
     img: 'https://tmna.aemassets.toyota.com/is/image/toyota/toyota_2025_corollacross_702_exterior_1?wid=640&hei=480&fmt=webp',
     imgs: {
       ext: 'https://tmna.aemassets.toyota.com/is/image/toyota/toyota_2025_corollacross_702_exterior_1?wid=640&hei=480&fmt=webp',
@@ -74,9 +50,10 @@ export const CARS = {
   lc: {
     id: 'lc', name: 'Land Cruiser FJ', type: 'SUV', cat: 'suv',
     price: 1269000, priceLabel: '฿1,269,000',
-    fuel: 'Diesel', seats: '7', gearbox: '6AT', power: '204 hp',
+    fuel: '2.8L Diesel', seats: '7', gearbox: '6AT', power: '204 hp',
     avail: 'In Stock', stock: '1 unit — สาขาบางนา',
     warranty: '5 ปี / 150,000 กม.', eco: '12.5 km/L', bg: '#FEE2E2',
+    shape: 'suv',
     img: 'https://tmna.aemassets.toyota.com/is/image/toyota/toyota_2024_landcruiser_702_exterior_1?wid=640&hei=480&fmt=webp',
     imgs: {
       ext: 'https://tmna.aemassets.toyota.com/is/image/toyota/toyota_2024_landcruiser_702_exterior_1?wid=640&hei=480&fmt=webp',
@@ -98,6 +75,7 @@ export const CARS = {
     fuel: 'Electric', seats: '5', gearbox: 'Single Speed', power: '218 hp',
     avail: 'In Stock', stock: '2 units — สาขาลาดพร้าว',
     warranty: '5 ปี / 150,000 กม.', eco: '6.2 km/kWh', bg: '#DBEAFE',
+    shape: 'ev',
     img: 'https://tmna.aemassets.toyota.com/is/image/toyota/toyota_2024_bz4x_702_exterior_1?wid=640&hei=480&fmt=webp',
     imgs: {
       ext: 'https://tmna.aemassets.toyota.com/is/image/toyota/toyota_2024_bz4x_702_exterior_1?wid=640&hei=480&fmt=webp',
@@ -116,9 +94,10 @@ export const CARS = {
   hilux: {
     id: 'hilux', name: 'Hilux Revo 2026', type: 'Pickup', cat: 'pickup',
     price: 649000, priceLabel: '฿649,000',
-    fuel: 'Diesel', seats: '5', gearbox: '6MT / 6AT', power: '204 hp',
+    fuel: '2.8L Diesel', seats: '5', gearbox: '6MT / 6AT', power: '204 hp',
     avail: 'In Stock', stock: '5 units — หลายสาขา',
     warranty: '3 ปี / 100,000 กม.', eco: '11.6 km/L', bg: '#F0FDF4',
+    shape: 'pickup',
     img: 'https://tmna.aemassets.toyota.com/is/image/toyota/toyota_2024_tacoma_702_exterior_1?wid=640&hei=480&fmt=webp',
     imgs: {
       ext: 'https://tmna.aemassets.toyota.com/is/image/toyota/toyota_2024_tacoma_702_exterior_1?wid=640&hei=480&fmt=webp',
@@ -137,9 +116,10 @@ export const CARS = {
   gr86: {
     id: 'gr86', name: 'GR 86 2026', type: 'Sport', cat: 'sport',
     price: 1899000, priceLabel: '฿1,899,000',
-    fuel: 'Petrol', seats: '4', gearbox: '6MT / 6AT', power: '235 hp',
+    fuel: '2.4L Petrol', seats: '4', gearbox: '6MT / 6AT', power: '235 hp',
     avail: 'In Stock', stock: '1 unit — Limited Edition',
     warranty: '3 ปี / 100,000 กม.', eco: '12.0 km/L', bg: '#FDF2F8',
+    shape: 'sport',
     img: 'https://tmna.aemassets.toyota.com/is/image/toyota/toyota_2024_gr86_702_exterior_1?wid=640&hei=480&fmt=webp',
     imgs: {
       ext: 'https://tmna.aemassets.toyota.com/is/image/toyota/toyota_2024_gr86_702_exterior_1?wid=640&hei=480&fmt=webp',
@@ -159,168 +139,140 @@ export const CARS = {
 
 export const CARS_LIST = Object.values(CARS)
 
+// Model filter options (associated with car types for 3-level filtering)
+export const MODEL_FILTERS = [
+  { id: 'all', label: 'ทั้งหมด', cat: null },
+  { id: 'corolla', label: 'Corolla Altis', cat: 'sedan' },
+  { id: 'yaris', label: 'Yaris Cross', cat: 'crossover' },
+  { id: 'lc', label: 'Land Cruiser FJ', cat: 'suv' },
+  { id: 'bz4x', label: 'bZ4X', cat: 'ev' },
+  { id: 'hilux', label: 'Hilux Revo', cat: 'pickup' },
+  { id: 'gr86', label: 'GR 86', cat: 'sport' },
+]
+
+// Leads matching prototype exactly
 export const LEADS = {
   duangjai: {
     id: 'duangjai', name: 'ดวงใจ ทองดี', init: 'ด', color: '#DC2626',
-    level: 'hot', stage: 'negotiation', source: 'Walk-in · สาขาลาดพร้าว', car: 'yaris',
+    level: 'hot', source: 'Walk-in · สาขาลาดพร้าว', car: 'yaris',
     phone: '081-234-5678', email: 'duangjai@email.com',
-    assignedTo: 'malee', branch: 'lp',
-    createdAt: '2026-03-25T10:00:00',
-    activities: [
-      { id: 'a1', type: 'call', title: 'โทรติดตามลูกค้า', content: 'ลูกค้าสนใจ Yaris Cross สี Burgundy — นัดทดสอบ วันเสาร์', time: '2026-03-27T14:30:00', createdBy: 'malee' },
-      { id: 'a2', type: 'note', title: 'บันทึกข้อมูล', content: 'ลูกค้ามีรถเก่าต้องการเทิร์น — ประเมินราคา ฿180,000', time: '2026-03-26T11:00:00', createdBy: 'malee' },
-      { id: 'a3', type: 'meeting', title: 'Walk-in สาขาลาดพร้าว', content: 'ลูกค้าเข้าชมโชว์รูม สนใจ Yaris Cross และ Corolla Altis', time: '2026-03-25T10:00:00', createdBy: 'malee' },
-    ],
   },
   prawit: {
-    id: 'prawit', name: 'ประวิทย์ จันทร์แจ่ม', init: 'ป', color: '#8B5CF6',
-    level: 'warm', stage: 'test_drive', source: 'LINE OA', car: 'lc',
+    id: 'prawit', name: 'ประวิทย์ จันทร์', init: 'ป', color: '#8B5CF6',
+    level: 'warm', source: 'LINE OA', car: 'lc',
     phone: '089-876-5432', email: 'prawit@email.com',
-    assignedTo: 'suda', branch: 'bn',
-    createdAt: '2026-03-20T09:00:00',
-    activities: [
-      { id: 'a4', type: 'call', title: 'โทรแจ้งราคาพิเศษ', content: 'เสนอแพ็กเกจดาวน์ 10% สำหรับ Land Cruiser', time: '2026-03-26T16:00:00', createdBy: 'suda' },
-      { id: 'a5', type: 'note', title: 'ข้อมูลเพิ่มเติม', content: 'ลูกค้าเป็นเจ้าของธุรกิจ ต้องการรถ SUV สำหรับครอบครัว', time: '2026-03-22T10:30:00', createdBy: 'suda' },
-      { id: 'a10', type: 'status_change', title: 'เปลี่ยนสถานะเป็น ทดสอบรถ', content: 'ลูกค้านัดทดลองขับ Land Cruiser วันเสาร์', time: '2026-03-24T09:00:00', createdBy: 'suda' },
-    ],
   },
   oranee: {
     id: 'oranee', name: 'อรณี สุขสม', init: 'อ', color: '#F59E0B',
-    level: 'warm', stage: 'new', source: 'Facebook Lead', car: 'corolla',
+    level: 'warm', source: 'Facebook Lead', car: 'bz4x',
     phone: '062-345-6789', email: 'oranee@email.com',
-    assignedTo: 'somchai', branch: 'lp',
-    createdAt: '2026-03-22T14:00:00',
-    activities: [
-      { id: 'a6', type: 'meeting', title: 'นัดหมายที่โชว์รูม', content: 'นัดทดสอบ Corolla Altis วันอาทิตย์ เวลา 13:00', time: '2026-03-24T09:00:00', createdBy: 'somchai' },
-      { id: 'a11', type: 'note', title: 'รับลีดจาก Facebook', content: 'ลูกค้ากรอกฟอร์มสนใจ Corolla Altis Hybrid', time: '2026-03-22T14:00:00', createdBy: 'somchai' },
-    ],
   },
   jirawat: {
     id: 'jirawat', name: 'จิรวัฒน์ ศรีรัตน์', init: 'จ', color: '#10B981',
-    level: 'won', stage: 'won', source: 'Referral', car: 'hilux',
+    level: 'won', source: 'Referral', car: 'corolla',
     phone: '095-678-1234', email: 'jirawat@email.com',
-    assignedTo: 'malee', branch: 'lp',
-    createdAt: '2026-03-15T11:00:00',
-    activities: [
-      { id: 'a7', type: 'booking', title: 'จองรถสำเร็จ', content: 'ชำระเงินจอง ฿5,000 — Hilux Revo Double Cab', time: '2026-03-26T15:00:00', createdBy: 'malee' },
-      { id: 'a8', type: 'meeting', title: 'ทดสอบรถ', content: 'ทดสอบ Hilux Revo บนเส้นทางจริง', time: '2026-03-20T10:00:00', createdBy: 'malee' },
-      { id: 'a9', type: 'call', title: 'โทรนัดหมาย', content: 'นัดทดสอบรถ Hilux Revo', time: '2026-03-18T14:00:00', createdBy: 'malee' },
-    ],
-  },
-  somsak: {
-    id: 'somsak', name: 'สมศักดิ์ เพชรดี', init: 'ส', color: '#3B82F6',
-    level: 'hot', stage: 'negotiation', source: 'Walk-in · สาขาบางนา', car: 'bz4x',
-    phone: '083-111-2233', email: 'somsak.p@email.com',
-    assignedTo: 'suda', branch: 'bn',
-    createdAt: '2026-03-23T11:00:00',
-    activities: [
-      { id: 'a12', type: 'meeting', title: 'นัดคุยเรื่องไฟแนนซ์', content: 'ลูกค้าสนใจ bZ4X เจรจาเรื่องดาวน์และผ่อน', time: '2026-03-27T10:00:00', createdBy: 'suda' },
-      { id: 'a13', type: 'call', title: 'โทรแจ้งโปรโมชั่น EV', content: 'แจ้งส่วนลดภาษี EV และโปรชาร์จฟรี 1 ปี', time: '2026-03-25T14:00:00', createdBy: 'suda' },
-      { id: 'a14', type: 'note', title: 'Walk-in สาขาบางนา', content: 'ลูกค้าสนใจรถ EV เพื่อประหยัดค่าน้ำมัน', time: '2026-03-23T11:00:00', createdBy: 'suda' },
-    ],
-  },
-  kannika: {
-    id: 'kannika', name: 'กรรณิการ์ วงศ์ดี', init: 'ก', color: '#EC4899',
-    level: 'cool', stage: 'new', source: 'Website', car: 'yaris',
-    phone: '091-222-3344', email: 'kannika.w@email.com',
-    assignedTo: 'somchai', branch: 'lp',
-    createdAt: '2026-03-26T09:30:00',
-    activities: [
-      { id: 'a15', type: 'note', title: 'ลงทะเบียนจากเว็บไซต์', content: 'ลูกค้ากรอกฟอร์มขอใบเสนอราคา Yaris Cross', time: '2026-03-26T09:30:00', createdBy: 'somchai' },
-      { id: 'a16', type: 'call', title: 'โทรติดต่อครั้งแรก', content: 'ลูกค้ารับสาย สนใจแต่ยังไม่พร้อมซื้อ — ติดตามอีก 2 สัปดาห์', time: '2026-03-27T11:00:00', createdBy: 'somchai' },
-    ],
-  },
-  wichai: {
-    id: 'wichai', name: 'วิชัย มั่นคง', init: 'ว', color: '#6366F1',
-    level: 'warm', stage: 'test_drive', source: 'Referral', car: 'gr86',
-    phone: '086-333-4455', email: 'wichai.m@email.com',
-    assignedTo: 'prayut', branch: 'bn',
-    createdAt: '2026-03-18T15:00:00',
-    activities: [
-      { id: 'a17', type: 'meeting', title: 'ทดสอบรถ GR 86', content: 'ลูกค้าทดสอบ GR 86 ที่สนามซ้อม — ประทับใจสมรรถนะ', time: '2026-03-25T10:00:00', createdBy: 'prayut' },
-      { id: 'a18', type: 'call', title: 'โทรนัดทดสอบ', content: 'เพื่อนแนะนำมา สนใจรถสปอร์ต', time: '2026-03-20T16:00:00', createdBy: 'prayut' },
-      { id: 'a19', type: 'note', title: 'ข้อมูลลูกค้า', content: 'ลูกค้าอายุ 28 ปี มีรถ Civic อยู่ ต้องการเปลี่ยนเป็นรถสปอร์ต', time: '2026-03-18T15:00:00', createdBy: 'prayut' },
-    ],
-  },
-  nattaya: {
-    id: 'nattaya', name: 'ณัฐยา ใจดี', init: 'ณ', color: '#14B8A6',
-    level: 'hot', stage: 'test_drive', source: 'LINE OA', car: 'corolla',
-    phone: '064-444-5566', email: 'nattaya.j@email.com',
-    assignedTo: 'napa', branch: 'on',
-    createdAt: '2026-03-21T13:00:00',
-    activities: [
-      { id: 'a20', type: 'meeting', title: 'ทดสอบ Corolla Altis', content: 'ลูกค้าทดลองขับ Corolla Altis Hybrid — ชอบความนุ่มนวล', time: '2026-03-26T14:00:00', createdBy: 'napa' },
-      { id: 'a21', type: 'call', title: 'ส่งข้อมูลทาง LINE', content: 'ส่งโบรชัวร์และราคา Corolla Altis ทาง LINE', time: '2026-03-23T10:00:00', createdBy: 'napa' },
-      { id: 'a22', type: 'note', title: 'รับลีดจาก LINE OA', content: 'ลูกค้าทักมาสอบถาม Corolla Altis Hybrid ราคาและโปรโมชั่น', time: '2026-03-21T13:00:00', createdBy: 'napa' },
-    ],
-  },
-  parichat: {
-    id: 'parichat', name: 'ปาริชาติ แสงจันทร์', init: 'ป', color: '#A855F7',
-    level: 'lost', stage: 'lost', source: 'Facebook Lead', car: 'yaris',
-    phone: '097-555-6677', email: 'parichat.s@email.com',
-    assignedTo: 'somchai', branch: 'lp',
-    createdAt: '2026-03-10T10:00:00',
-    activities: [
-      { id: 'a23', type: 'status_change', title: 'ปิดลีด — ซื้อรถยี่ห้ออื่น', content: 'ลูกค้าตัดสินใจซื้อ Honda HR-V แทน เนื่องจากราคาถูกกว่า', time: '2026-03-24T16:00:00', createdBy: 'somchai' },
-      { id: 'a24', type: 'call', title: 'โทรเสนอราคาสุดท้าย', content: 'เสนอส่วนลดพิเศษ ฿30,000 แต่ลูกค้ายังลังเล', time: '2026-03-22T11:00:00', createdBy: 'somchai' },
-      { id: 'a25', type: 'meeting', title: 'Walk-in ดูรถ', content: 'ลูกค้าเข้ามาดู Yaris Cross — เปรียบเทียบกับ Honda HR-V', time: '2026-03-12T14:00:00', createdBy: 'somchai' },
-    ],
-  },
-  anuwat: {
-    id: 'anuwat', name: 'อนุวัฒน์ พลอยงาม', init: 'อ', color: '#F97316',
-    level: 'warm', stage: 'new', source: 'Phone Inquiry', car: 'hilux',
-    phone: '088-666-7788', email: 'anuwat.p@email.com',
-    assignedTo: 'prayut', branch: 'bn',
-    createdAt: '2026-03-27T08:30:00',
-    activities: [
-      { id: 'a26', type: 'call', title: 'รับสายสอบถาม', content: 'ลูกค้าโทรสอบถามราคา Hilux Revo 4WD และสต็อกที่มี', time: '2026-03-27T08:30:00', createdBy: 'prayut' },
-      { id: 'a27', type: 'note', title: 'บันทึกความต้องการ', content: 'ลูกค้าต้องการ Hilux Revo Double Cab 4WD สีดำ — ใช้งานเกษตร', time: '2026-03-27T09:00:00', createdBy: 'prayut' },
-    ],
   },
 }
 
 export const LEADS_LIST = Object.values(LEADS)
 
-export const BRANCHES = [
-  { id: 'lp', name: 'สาขาลาดพร้าว', code: 'LP', location: 'ลาดพร้าว, กทม.' },
-  { id: 'bn', name: 'สาขาบางนา', code: 'BN', location: 'บางนา, กทม.' },
-  { id: 'on', name: 'สาขาอ่อนนุช', code: 'ON', location: 'อ่อนนุช, กทม.' },
+// Gallery views for car detail
+export const GALLERY_VIEWS = [
+  { id: 'ext', label: 'Exterior', bg: 'linear-gradient(160deg,#F0FAF3 0%,#E2F2E8 100%)' },
+  { id: 'side', label: 'Side View', bg: 'linear-gradient(160deg,#F0FAF3 0%,#E8F0FA 100%)' },
+  { id: 'rear', label: 'Rear', bg: 'linear-gradient(160deg,#FAF0F3 0%,#F0F3FA 100%)' },
+  { id: 'int', label: 'Interior', bg: 'linear-gradient(160deg,#F5F0FA 0%,#FAF0F3 100%)' },
+  { id: 'vid', label: 'Video', bg: '#111827' },
 ]
 
+// Color options for car detail
+export const COLOR_OPTIONS = [
+  { name: 'Pearl White', hex: '#F5F5F0' },
+  { name: 'Black Mica', hex: '#1a1a1a' },
+  { name: 'Silver Metallic', hex: '#C0C0C0' },
+  { name: 'Blue Metallic', hex: '#2563EB' },
+  { name: 'Red Mica', hex: '#DC2626' },
+]
+
+// Lead sources for A-Card form
+export const LEAD_SOURCES = ['Walk-in', 'LINE OA', 'Facebook', 'Instagram', 'Event', 'Referral']
+
+// Team members matching prototype leaderboard
 export const TEAM_MEMBERS = [
-  { id: 'malee', name: 'มาลี นวลสุข', init: 'ม', color: '#FF6B6B', units: 8, target: 10, leads: 12, conversion: 67, branch: 'lp' },
-  { id: 'suda', name: 'สุดา อิ่มสม', init: 'ส', color: '#FFD93D', units: 6, target: 10, leads: 10, conversion: 60, branch: 'bn' },
-  { id: 'somchai', name: 'สมชาย ชอบสัน', init: 'ส', color: '#4D96FF', units: 5, target: 10, leads: 14, conversion: 36, branch: 'lp' },
-  { id: 'prayut', name: 'ประยุทธ กิจวัฒน์', init: 'ป', color: '#6BCB77', units: 4, target: 10, leads: 8, conversion: 50, branch: 'bn' },
-  { id: 'napa', name: 'นภา รักษ์สม', init: 'น', color: '#9B59B6', units: 3, target: 10, leads: 6, conversion: 50, branch: 'on' },
+  { id: 'malee', name: 'มาลี รักดี', init: 'ม', color: '#1B7A3F', units: 61, target: 70 },
+  { id: 'suda', name: 'สุดา เจริญผล', init: 'ส', color: '#FFD93D', units: 52, target: 70 },
+  { id: 'somchai', name: 'สมชาย วงษ์ดี', init: 'ส', color: '#4D96FF', units: 45, target: 70 },
+  { id: 'prayut', name: 'ประยุทธ สมใจ', init: 'ป', color: '#6BCB77', units: 38, target: 70 },
+  { id: 'napa', name: 'นภา สุขสม', init: 'น', color: '#9B59B6', units: 29, target: 70 },
 ]
 
-export const DASHBOARD_KPIS = {
-  totalUnits: { value: 26, target: 50, label: 'ยอดขายรวม', unit: 'คัน' },
-  revenue: { value: 23400000, target: 50000000, label: 'รายได้', unit: '฿' },
-  activeLeads: { value: 42, target: 0, label: 'ลีดที่เปิดอยู่', unit: 'ราย' },
-  conversion: { value: 24, target: 35, label: 'อัตราการแปลง', unit: '%' },
+// Pipeline data matching prototype
+export const PIPELINE_DATA = {
+  hot: {
+    label: 'HOT', count: 7, color: '#DC2626', bg: '#FEF2F2', border: '#FECACA',
+    cards: [
+      { name: 'ดวงใจ ทองดี', car: 'Yaris Cross', rep: 'มาลี', price: '฿799K' },
+      { name: 'ธนวัฒน์ มีชัย', car: 'Land Cruiser FJ', rep: 'สุดา', price: '฿1,269K' },
+      { name: 'สิริพร วรรณา', car: 'bZ4X', rep: 'สมชาย', price: '฿1,529K' },
+    ],
+  },
+  warm: {
+    label: 'WARM', count: 12, color: '#D97706', bg: '#FFFBEB', border: '#FDE68A',
+    cards: [
+      { name: 'ประวิทย์ จันทร์', car: 'Land Cruiser FJ', rep: 'สุดา', price: '฿1,269K' },
+      { name: 'อรณี สุขสม', car: 'bZ4X', rep: 'สมชาย', price: '฿1,529K' },
+      { name: 'กมลชนก รุ่งเรือง', car: 'Corolla Altis', rep: 'มาลี', price: '฿909K' },
+    ],
+  },
+  cool: {
+    label: 'COOL', count: 23, color: '#2563EB', bg: '#EFF6FF', border: '#BFDBFE',
+    cards: [
+      { name: 'วิรัตน์ บุญมา', car: 'Hilux Revo', rep: 'ประยุทธ', price: '฿649K' },
+      { name: 'ศิริลักษณ์ ดำรงค์', car: 'GR 86', rep: 'นภา', price: '฿1,899K' },
+    ],
+  },
+  won: {
+    label: 'WON', count: 45, color: '#16A34A', bg: '#F0FDF4', border: '#BBF7D0',
+    cards: [
+      { name: 'จิรวัฒน์ ศรีรัตน์', car: 'Corolla Altis 2026', rep: 'มาลี', price: '฿909K', won: true },
+      { name: 'พรพิมล วงษ์ทอง', car: 'Yaris Cross', rep: 'สุดา', price: '฿799K', won: true },
+    ],
+  },
 }
 
+// Notifications matching prototype
+export const NOTIFICATIONS = [
+  { id: 'n1', type: 'hot', icon: 'flame', color: '#DC2626', borderColor: '#DC2626', title: 'Hot Lead: ดวงใจ ทองดี', body: 'ตัดสินใจซื้อ Yaris Cross วันนี้ — ต้องติดตามด่วน', time: '10 นาทีที่แล้ว' },
+  { id: 'n2', type: 'warn', icon: 'calendar', color: '#D97706', borderColor: '#EA580C', title: 'นัดหมาย 14:00 วันนี้', body: 'ประวิทย์ จันทร์ — Land Cruiser FJ Test Drive', time: '3 ชั่วโมงที่แล้ว' },
+  { id: 'n3', type: 'success', icon: 'check', color: '#16A34A', borderColor: '#16A34A', title: 'จิรวัฒน์ ศรีรัตน์ — WON', body: 'Corolla Altis 2026 Pearl White — ฿909,000', time: 'เมื่อวาน 16:30' },
+  { id: 'n4', type: 'info', icon: 'car', color: '#6B7280', borderColor: '#E5E7EB', title: 'สต็อค Yaris Cross อัปเดต', body: '3 คัน สี Pearl White พร้อมส่ง 2 เม.ย.', time: 'เมื่อวาน 09:00' },
+  { id: 'n5', type: 'info', icon: 'target', color: '#6B7280', borderColor: '#E5E7EB', title: 'เป้าหมายรายสัปดาห์', body: 'ต้องปิดอีก 25 units ภายใน 3 วัน — สู้ๆ!', time: '2 วันที่แล้ว' },
+]
+
+// Weekly data for chart
 export const WEEKLY_DATA = {
   labels: ['W1', 'W2', 'W3', 'W4'],
   units: [48, 62, 71, 64],
 }
 
-export const AI_INSIGHTS = [
-  { id: 'i1', type: 'alert', title: 'สมชายมียอดขายต่ำกว่าเป้า 50%', message: 'แนะนำให้จัดอบรมเทคนิคการปิดการขาย', icon: '🚨' },
-  { id: 'i2', type: 'warning', title: 'Lead จาก Facebook ลดลง 15%', message: 'ตรวจสอบ campaign โฆษณาและ budget', icon: '⚠️' },
-  { id: 'i3', type: 'info', title: 'Yaris Cross มียอดจองสูงสุด', message: 'พิจารณาสต็อกเพิ่มเติมสำหรับเดือนหน้า', icon: '💡' },
+// Top models for reports
+export const TOP_MODELS = [
+  { name: 'Yaris Cross', units: 38 },
+  { name: 'Corolla Altis', units: 32 },
+  { name: 'Hilux Revo', units: 28 },
+  { name: 'Land Cruiser FJ', units: 18 },
+  { name: 'bZ4X EV', units: 14 },
+  { name: 'GR 86', units: 8 },
 ]
 
-export const NOTIFICATIONS = [
-  { id: 'n1', title: 'ลีดใหม่จาก Facebook', body: 'คุณสมศักดิ์ สนใจ Corolla Altis — โปรดติดต่อภายใน 24 ชม.', type: 'lead_update', read: false, time: '2026-03-28T09:00:00' },
-  { id: 'n2', title: 'จองสำเร็จ!', body: 'คุณจิรวัฒน์ จอง Hilux Revo เรียบร้อยแล้ว', type: 'booking', read: false, time: '2026-03-27T15:30:00' },
-  { id: 'n3', title: 'เป้าหมายประจำสัปดาห์', body: 'ทีมขายสาขาลาดพร้าว ทำได้ 70% ของเป้า', type: 'info', read: true, time: '2026-03-27T08:00:00' },
-  { id: 'n4', title: 'นัดหมายพรุ่งนี้', body: 'คุณดวงใจ นัดทดสอบ Yaris Cross เวลา 10:00', type: 'info', read: true, time: '2026-03-26T18:00:00' },
+// Branch targets for targets page
+export const BRANCH_TARGETS = [
+  { name: 'สาขาลาดพร้าว', units: 117, target: 150 },
+  { name: 'สาขาอ่อนนุช', units: 62, target: 100 },
+  { name: 'สาขาบางนา', units: 66, target: 100 },
 ]
 
 export const DEMO_USERS = {
-  sales: { id: 'demo-sales', email: 'sales@demo.com', name: 'สมศักดิ์ ดีงาม', role: 'sales', branch: 'lp' },
-  mgr: { id: 'demo-mgr', email: 'manager@demo.com', name: 'วิชัย ผู้จัดการ', role: 'mgr', branch: 'lp' },
+  sales: { id: 'demo-sales', email: 'malee.sales', name: 'มาลี', role: 'sales', init: 'ม' },
+  mgr: { id: 'demo-mgr', email: 'manager', name: 'วิชัย', role: 'mgr', init: 'ว' },
 }

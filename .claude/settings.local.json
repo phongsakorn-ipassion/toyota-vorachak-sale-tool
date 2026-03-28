@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(npx vite:*)",
+      "Bash(public/icons/icon-192.svg:*)",
+      "Bash(cp public/icons/icon-192.svg public/icons/icon-512.svg)",
+      "Bash(cp public/icons/icon-192.svg public/icons/apple-touch-icon.svg)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(ls -la \"/Users/ppungpong/Library/Mobile Documents/com~apple~CloudDocs/Work 🧑‍💻/iPassion/Presale/Toyota Vorachak/Sale Tools/04 - Demo/.git/\"*.lock)",
+      "Bash(ls -la .git/*.lock)",
+      "Bash(ls -la .git/refs/heads/*.lock)",
+      "Bash(gh auth:*)",
+      "Bash(gh repo:*)",
+      "Bash(gh secret:*)",
+      "Bash(gh run:*)",
+      "Bash(gh api:*)",
+      "Bash(curl -sI \"https://phongsakorn-ipassion.github.io/toyota-vorachak-sale-tool/\")",
+      "Bash(open \"https://phongsakorn-ipassion.github.io/toyota-vorachak-sale-tool/\")",
+      "Bash(open \"/Users/ppungpong/Library/Mobile Documents/com~apple~CloudDocs/Work 🧑‍💻/iPassion/Presale/Toyota Vorachak/Sale Tools/04 - Demo/Toyota-SaleTool-Prototype-v5.html\")",
+      "Bash(npm run:*)"
+    ]
+  }
+}

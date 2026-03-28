@@ -1,240 +1,128 @@
-import React, { useMemo } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { useAuthStore } from '../stores/authStore'
-import { useLeadStore } from '../stores/leadStore'
-import { useBookingStore } from '../stores/bookingStore'
-import { useDashboardStore } from '../stores/dashboardStore'
-import { CARS } from '../lib/mockData'
-import { formatCurrency } from '../lib/formats'
-import Icon from '../components/icons/Icon'
-import BranchSelector from '../components/dashboard/BranchSelector'
-import KPIGrid from '../components/dashboard/KPIGrid'
-import TeamChart from '../components/dashboard/TeamChart'
-import Leaderboard from '../components/dashboard/Leaderboard'
-import InsightCards from '../components/dashboard/InsightCards'
+import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuthStore } from '../stores/authStore';
+import { TEAM_MEMBERS } from '../lib/mockData';
+import Icon from '../components/icons/Icon';
+import { Chart, BarElement, CategoryScale, LinearScale, BarController } from 'chart.js';
+
+Chart.register(BarElement, CategoryScale, LinearScale, BarController);
 
 export default function ManagerDashboard() {
-  const navigate = useNavigate()
-  const user = useAuthStore((s) => s.user)
-  const userName = user?.name || 'Manager'
+  const navigate = useNavigate();
+  const user = useAuthStore((s) => s.user);
+  const [branch, setBranch] = useState('lp');
+  const chartRef = useRef(null);
+  const chartInst = useRef(null);
 
-  const leads = useLeadStore((s) => s.leads)
-  const bookings = useBookingStore((s) => s.bookings)
-  const selectedBranch = useDashboardStore((s) => s.selectedBranch)
-  const teamMembersAll = useDashboardStore((s) => s.teamMembers)
-  const getSelectedBranchInfo = useDashboardStore((s) => s.getSelectedBranchInfo)
-
-  const branchInfo = getSelectedBranchInfo()
-
-  // ---------------------------------------------------------------------------
-  // Filter everything by selected branch
-  // ---------------------------------------------------------------------------
-  const filteredLeads = useMemo(() => {
-    if (selectedBranch === 'all') return leads
-    return leads.filter((l) => l.branch === selectedBranch)
-  }, [leads, selectedBranch])
-
-  const filteredTeam = useMemo(() => {
-    if (selectedBranch === 'all') return teamMembersAll
-    return teamMembersAll.filter((m) => m.branch === selectedBranch)
-  }, [teamMembersAll, selectedBranch])
-
-  const filteredBookings = useMemo(() => {
-    if (selectedBranch === 'all') return bookings
-    // Filter bookings by checking if the linked lead belongs to the branch
-    const branchLeadIds = new Set(filteredLeads.map((l) => l.id))
-    return bookings.filter((b) => b.leadId && branchLeadIds.has(b.leadId))
-  }, [bookings, selectedBranch, filteredLeads])
-
-  // ---------------------------------------------------------------------------
-  // Compute KPIs dynamically
-  // ---------------------------------------------------------------------------
-  const kpis = useMemo(() => {
-    const wonLeads = filteredLeads.filter((l) => l.level === 'won')
-    const hotLeads = filteredLeads.filter((l) => l.level === 'hot')
-    const newLeads = filteredLeads.filter((l) => l.stage === 'new')
-
-    // Revenue from won leads (car prices)
-    const revenue = wonLeads.reduce((sum, l) => {
-      const car = CARS[l.car]
-      return sum + (car ? car.price : 0)
-    }, 0)
-
-    // Also add revenue from confirmed bookings
-    const bookingRevenue = filteredBookings
-      .filter((b) => b.status === 'confirmed')
-      .reduce((sum, b) => sum + (b.carPrice || 0), 0)
-
-    const totalRevenue = revenue + bookingRevenue
-
-    // Team target
-    const teamTarget = filteredTeam.reduce((sum, m) => sum + m.target, 0)
-
-    return {
-      teamUnits: {
-        value: wonLeads.length,
-        target: teamTarget || 50,
-        label: 'ยอดขาย',
-        unit: 'คัน',
+  useEffect(() => {
+    if (!chartRef.current) return;
+    if (chartInst.current) chartInst.current.destroy();
+    chartInst.current = new Chart(chartRef.current, {
+      type: 'bar',
+      data: {
+        labels: TEAM_MEMBERS.map(m => m.name.split(' ')[0]),
+        datasets: [{
+          data: TEAM_MEMBERS.map(m => m.units),
+          backgroundColor: TEAM_MEMBERS.map(m => {
+            const pct = m.units / m.target * 100;
+            return pct >= 70 ? '#1B7A3F' : pct >= 50 ? '#D97706' : '#DC2626';
+          }),
+          borderRadius: 6,
+        }],
       },
-      revenue: {
-        value: totalRevenue,
-        target: 0,
-        label: 'รายได้',
-        unit: '฿',
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true, max: 80 }, x: { grid: { display: false } } },
       },
-      newLeads: {
-        value: newLeads.length,
-        target: 0,
-        label: 'Lead ใหม่',
-        unit: 'ราย',
-      },
-      hotLeads: {
-        value: hotLeads.length,
-        target: 0,
-        label: 'Hot Lead',
-        unit: 'ราย',
-      },
-    }
-  }, [filteredLeads, filteredBookings, filteredTeam])
+    });
+    return () => { if (chartInst.current) chartInst.current.destroy(); };
+  }, []);
 
-  // ---------------------------------------------------------------------------
-  // Compute team member stats from leads (won count per member)
-  // ---------------------------------------------------------------------------
-  const teamWithDynamic = useMemo(() => {
-    return filteredTeam.map((member) => {
-      const memberLeads = filteredLeads.filter((l) => l.assignedTo === member.id)
-      const wonCount = memberLeads.filter((l) => l.level === 'won').length
-      return {
-        ...member,
-        units: member.units + wonCount, // base units + dynamic won leads
-        leads: memberLeads.length || member.leads,
-      }
-    })
-  }, [filteredTeam, filteredLeads])
-
-  // ---------------------------------------------------------------------------
-  // Dynamic insights
-  // ---------------------------------------------------------------------------
-  const insights = useMemo(() => {
-    const result = []
-
-    // Check team members below 50% target
-    teamWithDynamic.forEach((m) => {
-      const pct = m.target > 0 ? Math.round((m.units / m.target) * 100) : 0
-      if (pct < 50) {
-        result.push({
-          id: `alert-${m.id}`,
-          type: 'alert',
-          icon: '\uD83D\uDEA8',
-          title: `${m.name} ยอดขายต่ำกว่าเป้า 50%`,
-          message: `ทำได้ ${m.units}/${m.target} คัน (${pct}%) — แนะนำให้จัดอบรมหรือ coaching`,
-        })
-      }
-    })
-
-    // Hot leads not followed up (no activity in last 24hrs)
-    const now = Date.now()
-    const oneDayMs = 24 * 60 * 60 * 1000
-    const staleHotLeads = filteredLeads.filter((l) => {
-      if (l.level !== 'hot') return false
-      const lastActivity = l.activities?.[0]?.time
-      if (!lastActivity) return true
-      return now - new Date(lastActivity).getTime() > oneDayMs
-    })
-    if (staleHotLeads.length > 0) {
-      result.push({
-        id: 'warn-stale-hot',
-        type: 'warning',
-        icon: '\u26A0\uFE0F',
-        title: `Hot Lead ${staleHotLeads.length} ราย ไม่มีกิจกรรมใน 24 ชม.`,
-        message: staleHotLeads.map((l) => l.name).join(', ') + ' — ควรติดตามทันที',
-      })
-    }
-
-    // Best selling car model
-    const carCount = {}
-    filteredLeads
-      .filter((l) => l.level === 'won')
-      .forEach((l) => {
-        const car = CARS[l.car]
-        const name = car ? car.name : l.car
-        carCount[name] = (carCount[name] || 0) + 1
-      })
-    const bestCar = Object.entries(carCount).sort((a, b) => b[1] - a[1])[0]
-    if (bestCar) {
-      result.push({
-        id: 'info-best-car',
-        type: 'info',
-        icon: '\uD83D\uDCA1',
-        title: `${bestCar[0]} มียอดจองสูงสุด`,
-        message: `${bestCar[1]} คัน — พิจารณาสต็อกเพิ่มเติมสำหรับเดือนหน้า`,
-      })
-    }
-
-    // If no insights, add a default positive one
-    if (result.length === 0) {
-      result.push({
-        id: 'info-default',
-        type: 'info',
-        icon: '\uD83D\uDCA1',
-        title: 'ทีมงานทำงานได้ดี',
-        message: 'ยังไม่มีประเด็นที่ต้องเฝ้าระวัง — รักษาผลงานต่อไป',
-      })
-    }
-
-    return result
-  }, [teamWithDynamic, filteredLeads])
-
-  // ---------------------------------------------------------------------------
-  // Quick actions
-  // ---------------------------------------------------------------------------
-  const quickActions = [
-    { label: 'ดู Pipeline', path: '/pipeline', icon: 'pipeline', bg: 'bg-blue-50', color: 'text-blue-600' },
-    { label: 'ตั้งเป้าหมาย', path: '/targets', icon: 'target', bg: 'bg-green-50', color: 'text-green-600' },
-    { label: 'Export Report', path: '/reports', icon: 'download', bg: 'bg-purple-50', color: 'text-purple-600' },
-  ]
+  const rankColors = ['#FEF3C7', '#F1F5F9', '#FEF2EE'];
+  const rankTextColors = ['#B45309', '#475569', '#C2410C'];
 
   return (
-    <div className="p-4 pb-24 space-y-4">
-      {/* Greeting */}
-      <div>
-        <div className="text-lg font-bold text-t1">
-          สวัสดี, {userName}
+    <div className="screen-enter">
+      <div className="bg-white px-4 py-[13px] flex items-center gap-[11px] border-b border-border">
+        <div className="w-[42px] h-[42px] rounded-full bg-t1 flex items-center justify-center text-[15px] font-extrabold text-white flex-shrink-0">{user?.init || 'ว'}</div>
+        <div className="flex-1">
+          <h2 className="text-[15px] font-extrabold text-t1">Manager Dashboard</h2>
+          <p className="text-[11px] text-t2 mt-[1px]">วรจักร์ยนต์ · มีนาคม 2026</p>
         </div>
-        <div className="text-xs text-t2">
-          {branchInfo.id === 'all' ? 'วรจักร์ยนต์ — ทุกสาขา' : `วรจักร์ยนต์ ${branchInfo.name}`}
-        </div>
+        <button onClick={() => navigate('/notifications')} className="relative text-t2 cursor-pointer">
+          <Icon name="bell" size={22} />
+          <span className="absolute top-0 right-0 w-[7px] h-[7px] rounded-full bg-hot" style={{ border: '1.5px solid white' }} />
+        </button>
       </div>
 
-      {/* Branch Selector */}
-      <BranchSelector />
+      <div className="flex-1 overflow-y-auto px-4 pt-4 pb-24" style={{ WebkitOverflowScrolling: 'touch' }}>
+        {/* Branch Filter */}
+        <div className="flex gap-2 overflow-x-auto pb-2 mb-3" style={{ WebkitOverflowScrolling: 'touch' }}>
+          {[{ id: 'lp', label: 'ลาดพร้าว' }, { id: 'on', label: 'อ่อนนุช' }, { id: 'bn', label: 'บางนา' }, { id: 'all', label: 'ทุกสาขา' }].map(b => (
+            <button key={b.id} onClick={() => setBranch(b.id)} className={`pill-filter ${branch === b.id ? 'on' : ''}`}>{b.label}</button>
+          ))}
+        </div>
 
-      {/* KPIs */}
-      <KPIGrid kpis={kpis} keys={['teamUnits', 'revenue', 'newLeads', 'hotLeads']} />
+        {/* KPI Grid */}
+        <div className="grid grid-cols-2 gap-[10px] mb-3">
+          {[
+            { num: '245', label: 'ยอดขายเดือนนี้', sub: 'เป้า 350 units' },
+            { num: '70%', label: 'ความคืบหน้า', sub: 'เหลือ 105 units', green: true },
+            { num: '18', label: 'Lead ใหม่วันนี้', sub: '+3 vs เมื่อวาน', green: true },
+            { num: '7', label: 'Hot Lead', sub: 'รอการติดตาม', warm: true },
+          ].map(k => (
+            <div key={k.label} className="bg-white rounded-lg border border-border p-[14px]">
+              <p className={`text-[26px] font-extrabold leading-none ${k.green ? 'text-primary' : k.warm ? 'text-warm' : 'text-t1'}`}>{k.num}</p>
+              <p className="text-[12px] text-t2 mt-[3px]">{k.label}</p>
+              <p className="text-[10px] text-t3 mt-[2px]">{k.sub}</p>
+            </div>
+          ))}
+        </div>
 
-      {/* Team Chart */}
-      <TeamChart teamMembers={teamWithDynamic} />
+        {/* Team Chart */}
+        <div className="card-base">
+          <div className="card-hd"><span className="card-title">Team Performance</span><span className="text-[12px] font-bold text-primary cursor-pointer">มีนาคม 2026</span></div>
+          <div style={{ height: 180 }}><canvas ref={chartRef} /></div>
+        </div>
 
-      {/* Leaderboard */}
-      <Leaderboard teamMembers={teamWithDynamic} />
+        {/* Leaderboard */}
+        <div className="card-base">
+          <div className="card-hd">
+            <span className="card-title"><Icon name="trophy" size={16} className="text-warm" /> Leaderboard</span>
+            <button onClick={() => navigate('/pipeline')} className="text-[12px] font-bold text-primary cursor-pointer">Pipeline →</button>
+          </div>
+          {TEAM_MEMBERS.map((m, i) => {
+            const pct = Math.round(m.units / m.target * 100);
+            const barColor = pct >= 70 ? '#1B7A3F' : pct >= 50 ? '#D97706' : '#DC2626';
+            return (
+              <div key={m.id} className="flex items-center gap-[10px] py-[9px] border-b border-border last:border-b-0">
+                <div className="w-[27px] h-[27px] rounded-full flex items-center justify-center text-[11px] font-extrabold flex-shrink-0" style={{ background: i < 3 ? rankColors[i] : '#F5F7F5', color: i < 3 ? rankTextColors[i] : '#6B7280' }}>{i + 1}</div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[13px] font-bold text-t1">{m.name}</p>
+                  <div className="h-[5px] bg-border rounded-[3px] mt-[5px]"><div className="h-full rounded-[3px]" style={{ width: `${pct}%`, background: barColor }} /></div>
+                </div>
+                <div className="text-right">
+                  <p className="text-[13px] font-extrabold text-t1">{m.units}</p>
+                  <p className="text-[10px] text-t3">/ {m.target}</p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
 
-      {/* Insights */}
-      <InsightCards insights={insights} />
-
-      {/* Quick Actions */}
-      <div className="grid grid-cols-3 gap-3 mt-4">
-        {quickActions.map((action) => (
-          <div
-            key={action.path}
-            className={`${action.bg} bg-card rounded-lg border border-border flex flex-col items-center justify-center py-4 gap-2 cursor-pointer`}
-            onClick={() => navigate(action.path)}
-          >
-            <Icon name={action.icon} size={24} className={action.color} />
-            <span className="text-[11px] font-medium text-t1 text-center">{action.label}</span>
+        {/* Insights */}
+        <div className="sec-lbl">Insights & Alerts</div>
+        {[
+          { type: 'alert', bg: '#FEF2F2', color: '#991B1B', border: '#FECACA', icon: '🚨', text: 'นภา สุขสม ยังต่ำกว่าเป้า 41% — ควรนัดพูดคุยเพื่อสนับสนุน' },
+          { type: 'warn', bg: '#FFFBEB', color: '#92400E', border: '#FDE68A', icon: '⚠️', text: 'Hot Lead 7 รายการ รอการติดตามนานกว่า 24 ชั่วโมง' },
+          { type: 'info', bg: '#EBF7EF', color: '#1B7A3F', border: '#C4E3CE', icon: '💡', text: 'Yaris Cross ขายดีที่สุดเดือนนี้ — 38 คัน' },
+        ].map((ins, i) => (
+          <div key={i} className="rounded-md p-[11px] text-[12px] font-semibold mb-2 leading-relaxed flex items-start gap-2" style={{ background: ins.bg, color: ins.color, border: `1px solid ${ins.border}` }}>
+            <span>{ins.icon}</span>{ins.text}
           </div>
         ))}
       </div>
     </div>
-  )
+  );
 }

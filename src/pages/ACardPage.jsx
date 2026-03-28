@@ -1,307 +1,105 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import PageHeader from '../components/layout/PageHeader';
-import Input from '../components/ui/Input';
-import Button from '../components/ui/Button';
-import FilterPill from '../components/ui/FilterPill';
-import Toast from '../components/ui/Toast';
-import { useLeadStore } from '../stores/leadStore';
-import { CARS_LIST } from '../lib/mockData';
-import { LEAD_SOURCES, BUDGET_RANGES } from '../lib/constants';
-
-const LEVEL_OPTIONS = [
-  { key: 'hot', emoji: '\uD83D\uDD25', label: 'ร้อน', bg: 'bg-red-50', border: 'border-red-200', activeBorder: 'border-red-500' },
-  { key: 'warm', emoji: '\uD83C\uDF21\uFE0F', label: 'อุ่น', bg: 'bg-amber-50', border: 'border-amber-200', activeBorder: 'border-amber-500' },
-  { key: 'cool', emoji: '\u2744\uFE0F', label: 'เย็น', bg: 'bg-blue-50', border: 'border-blue-200', activeBorder: 'border-blue-500' },
-];
-
-const BUDGET_OPTIONS = [
-  { key: '', label: '-- เลือกงบประมาณ --' },
-  { key: 'under800', label: 'ต่ำกว่า 800,000' },
-  { key: '800to1300', label: '800,000 - 1,300,000' },
-  { key: 'over1300', label: 'มากกว่า 1,300,000' },
-];
-
-const INITIALS_COLORS = ['#DC2626', '#8B5CF6', '#F59E0B', '#10B981', '#4D96FF', '#FF6B6B', '#6BCB77', '#9B59B6'];
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import Icon from '../components/icons/Icon';
+import { CARS_LIST, LEAD_SOURCES } from '../lib/mockData';
 
 export default function ACardPage() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const editId = searchParams.get('edit');
-  const isEditMode = !!editId;
-
-  const addLead = useLeadStore((s) => s.addLead);
-  const updateLead = useLeadStore((s) => s.updateLead);
-  const leads = useLeadStore((s) => s.leads);
-
-  const [level, setLevel] = useState('hot');
   const [source, setSource] = useState('Walk-in');
-  const [name, setName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [email, setEmail] = useState('');
-  const [lineId, setLineId] = useState('');
-  const [car, setCar] = useState('');
-  const [budget, setBudget] = useState('');
-  const [notes, setNotes] = useState('');
-  const [errors, setErrors] = useState({});
-  const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
+  const [interest, setInterest] = useState('hot');
 
-  // Load existing lead data in edit mode
-  useEffect(() => {
-    if (isEditMode && editId) {
-      const existingLead = leads.find((l) => l.id === editId);
-      if (existingLead) {
-        setName(existingLead.name || '');
-        setPhone(existingLead.phone || '');
-        setEmail(existingLead.email || '');
-        setLineId(existingLead.lineId || '');
-        setLevel(existingLead.level || 'hot');
-        setSource(existingLead.source || 'Walk-in');
-        setCar(existingLead.car || '');
-        setBudget(existingLead.budget || '');
-        setNotes('');
-      }
-    }
-  }, [isEditMode, editId, leads]);
-
-  const validate = () => {
-    const newErrors = {};
-    if (!name.trim()) newErrors.name = 'กรุณากรอกชื่อลูกค้า';
-    if (!phone.trim()) newErrors.phone = 'กรุณากรอกเบอร์โทรศัพท์';
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSave = () => {
-    if (!validate()) return;
-
-    if (isEditMode) {
-      // Update existing lead
-      const data = {
-        name: name.trim(),
-        phone: phone.trim(),
-        email: email.trim() || undefined,
-        lineId: lineId.trim() || undefined,
-        level,
-        source,
-        car: car || undefined,
-        budget: budget || undefined,
-      };
-      updateLead(editId, data);
-
-      // Add note as activity if provided
-      if (notes.trim()) {
-        const addActivity = useLeadStore.getState().addActivity;
-        addActivity(editId, {
-          type: 'note',
-          title: 'บันทึกจากการแก้ไข',
-          content: notes.trim(),
-        });
-      }
-
-      setToast({ visible: true, message: 'แก้ไข Lead สำเร็จ!', type: 'success' });
-      setTimeout(() => navigate(`/lead/${editId}`), 800);
-    } else {
-      // Create new lead
-      const initial = name.trim().charAt(0);
-      const color = INITIALS_COLORS[Math.floor(Math.random() * INITIALS_COLORS.length)];
-      const id = `lead_${Date.now()}`;
-
-      const newLead = {
-        id,
-        name: name.trim(),
-        init: initial,
-        color,
-        level,
-        source,
-        car: car || undefined,
-        budget: budget || undefined,
-        phone: phone.trim(),
-        email: email.trim() || undefined,
-        lineId: lineId.trim() || undefined,
-        createdAt: new Date().toISOString(),
-        activities: notes.trim()
-          ? [{
-              id: `a${Date.now()}`,
-              type: 'note',
-              title: 'บันทึกจาก A-Card',
-              content: notes.trim(),
-              time: new Date().toISOString(),
-            }]
-          : [],
-      };
-
-      addLead(newLead);
-      setToast({ visible: true, message: 'บันทึก Lead สำเร็จ!', type: 'success' });
-      setTimeout(() => navigate('/leads'), 800);
-    }
+  const saveACard = () => {
+    alert('บันทึกสำเร็จ! ✓\nA-Card synced to Toyota NextGen');
   };
 
   return (
-    <div className="flex flex-col h-full bg-surface">
-      <PageHeader
-        title={isEditMode ? 'แก้ไข Lead' : 'ลงทะเบียนลูกค้า'}
-        showBack
-      />
+    <div className="screen-enter flex flex-col h-full">
+      {/* Header */}
+      <div className="bg-white px-4 py-[13px] flex items-center gap-[11px] border-b border-border flex-shrink-0">
+        <button onClick={() => navigate(-1)} className="w-9 h-9 rounded-full flex items-center justify-center bg-bg border border-border text-t1 cursor-pointer"><Icon name="back" size={18} /></button>
+        <div className="flex-1"><h2 className="text-[15px] font-extrabold text-t1">ลงทะเบียนลูกค้า</h2><p className="text-[11px] text-t2 mt-[1px]">New Lead — A-Card Digital</p></div>
+        <span className="text-t2"><Icon name="clip" size={20} /></span>
+      </div>
 
-      <div className="flex-1 overflow-y-auto px-4 py-4">
-        {/* Interest level */}
-        <div className="mb-5">
-          <label className="block text-sm font-semibold text-t1 mb-2">
-            ระดับความสนใจ
-          </label>
-          <div className="grid grid-cols-3 gap-3">
-            {LEVEL_OPTIONS.map((opt) => {
-              const isActive = level === opt.key;
-              return (
-                <button
-                  key={opt.key}
-                  onClick={() => setLevel(opt.key)}
-                  className={`
-                    flex flex-col items-center justify-center gap-1 p-3 rounded-lg border-2
-                    transition-all duration-150 cursor-pointer
-                    ${opt.bg}
-                    ${isActive ? `${opt.activeBorder} scale-105` : `${opt.border} scale-100`}
-                  `.trim()}
-                >
-                  <span className="text-xl">{opt.emoji}</span>
-                  <span className="text-xs font-bold text-t1">{opt.label}</span>
-                </button>
-              );
-            })}
-          </div>
+      <div className="flex-1 overflow-y-auto px-4 pt-4 pb-24" style={{ WebkitOverflowScrolling: 'touch' }}>
+        {/* Customer Info */}
+        <div className="card-base">
+          <div className="card-hd"><span className="card-title">ข้อมูลลูกค้า | Customer Info</span></div>
+          {[
+            { label: 'ชื่อ-นามสกุล / Full Name *', icon: 'user', type: 'text', ph: 'กรอกชื่อลูกค้า' },
+            { label: 'เบอร์โทร / Phone *', icon: 'phone', type: 'tel', ph: '08X-XXX-XXXX' },
+            { label: 'อีเมล / Email', icon: 'mail', type: 'email', ph: 'example@email.com' },
+            { label: 'LINE ID', icon: 'chat', type: 'text', ph: '@lineid' },
+          ].map((f) => (
+            <div key={f.label} className="mb-3">
+              <label className="block text-[10px] font-extrabold text-t2 tracking-wider uppercase mb-[5px]">{f.label}</label>
+              <div className="relative">
+                <span className="absolute left-[13px] top-1/2 -translate-y-1/2 text-t3"><Icon name={f.icon} size={15} /></span>
+                <input type={f.type} placeholder={f.ph} className="w-full py-3 pl-[38px] pr-3 bg-white border border-border rounded-md text-[13px] text-t1 outline-none focus:border-primary" style={{ fontFamily: "'Sarabun', sans-serif" }} />
+              </div>
+            </div>
+          ))}
         </div>
 
-        {/* Lead source */}
-        <div className="mb-5">
-          <label className="block text-sm font-semibold text-t1 mb-2">
-            แหล่งที่มา
-          </label>
-          <div className="flex gap-2 overflow-x-auto no-scrollbar">
-            {LEAD_SOURCES.map((src) => (
-              <FilterPill
-                key={src}
-                label={src}
-                active={source === src}
-                onClick={() => setSource(src)}
-              />
+        {/* Lead Source */}
+        <div className="card-base">
+          <div className="card-hd"><span className="card-title">ช่องทาง | Lead Source</span></div>
+          <div className="flex flex-wrap gap-[7px]">
+            {LEAD_SOURCES.map((s) => (
+              <button key={s} onClick={() => setSource(s)} className={`pill-filter ${source === s ? 'on' : ''}`}>{s}</button>
             ))}
           </div>
         </div>
 
-        {/* Form fields */}
-        <Input
-          label="ชื่อลูกค้า *"
-          icon="profile"
-          placeholder="กรอกชื่อ-นามสกุล"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          error={errors.name}
-        />
-
-        <Input
-          label="โทรศัพท์ *"
-          icon="phone"
-          type="tel"
-          placeholder="08x-xxx-xxxx"
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-          error={errors.phone}
-        />
-
-        <Input
-          label="อีเมล"
-          icon="mail"
-          type="email"
-          placeholder="email@example.com"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
-
-        <Input
-          label="LINE ID"
-          icon="line"
-          placeholder="@line_id"
-          value={lineId}
-          onChange={(e) => setLineId(e.target.value)}
-        />
-
-        {/* Car selector */}
-        <div className="mb-4">
-          <label className="block text-sm font-semibold text-t1 mb-1.5">
-            รุ่นรถที่สนใจ
-          </label>
-          <select
-            value={car}
-            onChange={(e) => setCar(e.target.value)}
-            className="w-full border border-border rounded-sm py-3 px-3.5 text-sm bg-white text-t1 focus:border-primary focus:outline-none transition-colors"
-          >
-            <option value="">-- เลือกรุ่นรถ --</option>
-            {CARS_LIST.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name} ({c.priceLabel})
-              </option>
+        {/* Interest Level */}
+        <div className="card-base">
+          <div className="card-hd"><span className="card-title">ระดับความสนใจ | Interest Level</span></div>
+          <div className="grid grid-cols-3 gap-2">
+            {[
+              { id: 'hot', icon: 'flame', label: 'HOT', sub: 'พร้อมซื้อ', sel: 'border-hot bg-red-50' },
+              { id: 'warm', icon: 'sun', label: 'WARM', sub: 'สนใจ', sel: 'border-warm bg-amber-50' },
+              { id: 'cool', icon: 'snow', label: 'COOL', sub: 'สำรวจ', sel: 'border-cool bg-blue-50' },
+            ].map((l) => (
+              <button key={l.id} onClick={() => setInterest(l.id)} className={`p-3 rounded-md text-center border-[1.5px] transition-all cursor-pointer ${interest === l.id ? l.sel : 'border-border bg-white'}`} style={{ fontFamily: "'Sarabun', sans-serif" }}>
+                <div className="flex justify-center mb-[3px]"><Icon name={l.icon} size={20} /></div>
+                <div className="text-[12px] font-extrabold text-t1">{l.label}</div>
+                <div className="text-[10px] text-t2">{l.sub}</div>
+              </button>
             ))}
-          </select>
+          </div>
         </div>
 
-        {/* Budget selector */}
-        <div className="mb-4">
-          <label className="block text-sm font-semibold text-t1 mb-1.5">
-            งบประมาณ
-          </label>
-          <select
-            value={budget}
-            onChange={(e) => setBudget(e.target.value)}
-            className="w-full border border-border rounded-sm py-3 px-3.5 text-sm bg-white text-t1 focus:border-primary focus:outline-none transition-colors"
-          >
-            {BUDGET_OPTIONS.map((b) => (
-              <option key={b.key} value={b.key}>
-                {b.label}
-              </option>
-            ))}
-          </select>
+        {/* Model + Budget */}
+        <div className="card-base">
+          <div className="card-hd"><span className="card-title">รุ่นรถที่สนใจ | Model of Interest</span></div>
+          <div className="mb-3">
+            <label className="block text-[10px] font-extrabold text-t2 tracking-wider uppercase mb-[5px]">Model</label>
+            <select className="w-full py-3 px-3 bg-white border border-border rounded-md text-[13px] text-t1 outline-none focus:border-primary appearance-none cursor-pointer" style={{ fontFamily: "'Sarabun', sans-serif" }}>
+              <option>เลือกรุ่นรถ</option>
+              {CARS_LIST.map(c => <option key={c.id} value={c.id}>{c.name} — {c.priceLabel}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-[10px] font-extrabold text-t2 tracking-wider uppercase mb-[5px]">Budget</label>
+            <select className="w-full py-3 px-3 bg-white border border-border rounded-md text-[13px] text-t1 outline-none focus:border-primary appearance-none cursor-pointer" style={{ fontFamily: "'Sarabun', sans-serif" }}>
+              <option>ต่ำกว่า 500K</option>
+              <option>500K-1M</option>
+              <option>1M-2M</option>
+              <option>มากกว่า 2M</option>
+            </select>
+          </div>
         </div>
 
         {/* Notes */}
-        <div className="mb-4">
-          <label className="block text-sm font-semibold text-t1 mb-1.5">
-            หมายเหตุ
-          </label>
-          <textarea
-            rows={3}
-            placeholder="บันทึกข้อมูลเพิ่มเติม..."
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            className="w-full border border-border rounded-sm py-3 px-3.5 text-sm bg-white text-t1 focus:border-primary focus:outline-none transition-colors resize-none"
-          />
+        <div className="card-base">
+          <div className="card-hd"><span className="card-title">หมายเหตุ / Notes</span></div>
+          <textarea placeholder="บันทึกรายละเอียดเพิ่มเติม..." rows={3} className="w-full py-3 px-3 bg-white border border-border rounded-md text-[13px] text-t1 outline-none focus:border-primary resize-none" style={{ fontFamily: "'Sarabun', sans-serif" }} />
         </div>
 
-        {/* Buttons */}
-        <div className="flex gap-3 mt-2 pb-4">
-          <Button
-            variant="outline"
-            fullWidth
-            onClick={() => navigate(-1)}
-          >
-            ยกเลิก
-          </Button>
-          <Button
-            variant="primary"
-            fullWidth
-            onClick={handleSave}
-          >
-            {isEditMode ? 'บันทึกการแก้ไข' : 'บันทึก Lead'}
-          </Button>
-        </div>
+        <button onClick={saveACard} className="btn-p cursor-pointer mb-4">
+          <Icon name="check" size={16} /> บันทึก Lead / Save A-Card
+        </button>
       </div>
-
-      <Toast
-        message={toast.message}
-        type={toast.type}
-        isVisible={toast.visible}
-        onClose={() => setToast((t) => ({ ...t, visible: false }))}
-      />
     </div>
   );
 }

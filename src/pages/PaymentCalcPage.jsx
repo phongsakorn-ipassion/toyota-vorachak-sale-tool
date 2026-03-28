@@ -1,169 +1,100 @@
-import React from 'react'
-import { useNavigate } from 'react-router-dom'
-import PageHeader from '../components/layout/PageHeader'
-import Card from '../components/ui/Card'
-import Button from '../components/ui/Button'
-import { useBookingStore } from '../stores/bookingStore'
-import { CARS, CARS_LIST } from '../lib/mockData'
-import { LOAN_TERMS } from '../lib/constants'
-import { formatPrice, monthlyPayment } from '../lib/formats'
+import React, { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
+import Icon from '../components/icons/Icon';
+import { CARS } from '../lib/mockData';
+import { LOAN_TERMS, DEFAULT_INTEREST_RATE } from '../lib/constants';
 
 export default function PaymentCalcPage() {
-  const navigate = useNavigate()
-  const {
-    carId,
-    setCarId,
-    downPaymentPct,
-    setDownPayment,
-    loanTerm,
-    setLoanTerm,
-    interestRate,
-    getSelectedCar,
-    getDownPayment,
-    getLoanAmount,
-    getMonthlyPayment,
-  } = useBookingStore()
+  const navigate = useNavigate();
+  const car = CARS.corolla;
+  const [downPct, setDownPct] = useState(20);
+  const [term, setTerm] = useState(60);
 
-  const car = getSelectedCar()
-  const downAmount = getDownPayment()
-  const loanAmount = getLoanAmount()
-  const monthly = getMonthlyPayment()
+  const calc = useMemo(() => {
+    const down = car.price * downPct / 100;
+    const financed = car.price - down;
+    const r = DEFAULT_INTEREST_RATE / 100 / 12;
+    const n = term;
+    const monthly = financed * r * Math.pow(1 + r, n) / (Math.pow(1 + r, n) - 1);
+    return { down, financed, monthly: Math.round(monthly) };
+  }, [downPct, term, car.price]);
 
-  // Calculate total interest and total payment
-  const totalPayment = car ? monthly * loanTerm : 0
-  const totalInterest = car ? totalPayment - loanAmount : 0
-
-  const handleProceedBooking = () => {
-    if (!carId) return
-    navigate('/booking')
-  }
+  const fmt = (n) => n.toLocaleString('th-TH');
 
   return (
-    <div className="flex flex-col h-full bg-surface">
-      <PageHeader title="คำนวณสินเชื่อ" showBack />
+    <div className="screen-enter flex flex-col h-full">
+      <div className="bg-white px-4 py-[13px] flex items-center gap-[11px] border-b border-border flex-shrink-0">
+        <button onClick={() => navigate(-1)} className="w-9 h-9 rounded-full flex items-center justify-center bg-bg border border-border text-t1 cursor-pointer"><Icon name="back" size={18} /></button>
+        <div className="flex-1"><h2 className="text-[15px] font-extrabold text-t1">คำนวณสินเชื่อ</h2><p className="text-[11px] text-t2 mt-[1px]">Payment Calculator</p></div>
+        <span className="text-t2"><Icon name="calc" size={20} /></span>
+      </div>
 
-      <div className="flex-1 overflow-y-auto pb-6">
-        <div className="p-4 space-y-5">
-
-          {/* Car Selector */}
-          {car ? (
-            <Card className="flex items-center gap-3">
-              <img
-                src={car.img}
-                alt={car.name}
-                className="w-20 h-14 object-cover rounded-md"
-              />
-              <div className="flex-1 min-w-0">
-                <p className="font-bold text-t1 text-sm">{car.name}</p>
-                <p className="text-primary font-extrabold text-base">{formatPrice(car.price)}</p>
-              </div>
-              <button
-                onClick={() => setCarId(null)}
-                className="text-xs text-t3 underline cursor-pointer"
-              >
-                เปลี่ยน
-              </button>
-            </Card>
-          ) : (
-            <Card>
-              <label className="block text-sm font-semibold text-t1 mb-2">เลือกรถ</label>
-              <select
-                value=""
-                onChange={(e) => setCarId(e.target.value)}
-                className="w-full border border-border rounded-lg py-3 px-3 text-sm bg-white text-t1 focus:border-primary focus:outline-none"
-              >
-                <option value="" disabled>-- เลือกรุ่นรถ --</option>
-                {CARS_LIST.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name} — {c.priceLabel}
-                  </option>
-                ))}
-              </select>
-            </Card>
-          )}
-
-          {/* Down Payment */}
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-semibold text-t1">เงินดาวน์</span>
-              <span className="text-sm font-bold text-primary">{downPaymentPct}%</span>
-            </div>
-            <input
-              type="range"
-              min={0}
-              max={100}
-              step={5}
-              value={downPaymentPct}
-              onChange={(e) => setDownPayment(Number(e.target.value))}
-              className="w-full accent-primary"
-            />
-            <p className="text-sm text-t2 mt-1">
-              {car ? formatPrice(downAmount) : '฿0'}
-            </p>
+      <div className="flex-1 overflow-y-auto px-4 pt-4 pb-24" style={{ WebkitOverflowScrolling: 'touch' }}>
+        {/* Car summary */}
+        <div className="flex items-center gap-3 p-3 bg-white rounded-lg border border-border mb-3">
+          <div className="w-[80px] h-[64px] rounded-md border border-border flex items-center justify-center flex-shrink-0 overflow-hidden p-1" style={{ background: car.bg }}>
+            <img src={car.img} alt={car.name} className="w-full h-full object-contain" />
           </div>
-
-          {/* Loan Term */}
-          <div>
-            <p className="text-sm font-semibold text-t1 mb-2">ระยะเวลาผ่อน</p>
-            <div className="flex flex-wrap gap-2">
-              {LOAN_TERMS.map((term) => (
-                <button
-                  key={term}
-                  onClick={() => setLoanTerm(term)}
-                  className={`
-                    py-2 px-3 rounded-full text-xs font-semibold transition-colors cursor-pointer
-                    ${loanTerm === term
-                      ? 'bg-primary text-white'
-                      : 'bg-gray-100 text-t2 hover:bg-gray-200'}
-                  `.trim()}
-                >
-                  {term} เดือน
-                </button>
-              ))}
-            </div>
+          <div className="flex-1">
+            <p className="text-[14px] font-extrabold text-t1">{car.name}</p>
+            <p className="text-[11px] text-t2">{car.type} · {car.fuel}</p>
           </div>
-
-          {/* Interest Rate */}
-          <p className="text-sm text-t2">
-            อัตราดอกเบี้ย {interestRate}% ต่อปี
-          </p>
-
-          {/* Results Card */}
-          {car && (
-            <div className="bg-primary-light rounded-lg p-4">
-              <p className="text-2xl font-extrabold text-primary text-center">
-                {formatPrice(monthly)}/เดือน
-              </p>
-
-              <div className="grid grid-cols-3 gap-3 mt-4">
-                <div className="text-center">
-                  <p className="text-xs text-t2">ยอดจัดไฟแนนซ์</p>
-                  <p className="text-sm font-bold text-t1 mt-0.5">{formatPrice(loanAmount)}</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-xs text-t2">ดอกเบี้ยรวม</p>
-                  <p className="text-sm font-bold text-t1 mt-0.5">{formatPrice(totalInterest)}</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-xs text-t2">ยอดรวมทั้งหมด</p>
-                  <p className="text-sm font-bold text-t1 mt-0.5">{formatPrice(totalPayment)}</p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* CTA Button */}
-          <Button
-            fullWidth
-            size="lg"
-            disabled={!carId}
-            onClick={handleProceedBooking}
-          >
-            ดำเนินการจอง
-          </Button>
-
+          <span className="inline-flex items-center gap-1 px-[9px] py-[2px] rounded-[20px] text-[11px] font-semibold text-t2 bg-bg border border-border">ราคาเต็ม</span>
         </div>
+
+        {/* Payment Hero */}
+        <div className="bg-primary rounded-lg p-5 text-center mb-3">
+          <p className="text-[12px] text-white/70 mb-1">ผ่อนต่อเดือน / Monthly Payment</p>
+          <p className="text-[36px] font-extrabold text-white leading-none">฿{fmt(calc.monthly)}</p>
+          <p className="text-[11px] text-white/65 mt-[5px]">{car.name} · {term} เดือน · ดาวน์ {downPct}%</p>
+        </div>
+
+        {/* Down Payment */}
+        <div className="card-base">
+          <div className="card-hd">
+            <span className="card-title">เงินดาวน์ / Down Payment</span>
+            <span className="text-[13px] font-extrabold text-primary">฿{fmt(calc.down)} ({downPct}%)</span>
+          </div>
+          <input type="range" min={10} max={50} step={5} value={downPct} onChange={e => setDownPct(Number(e.target.value))} className="w-full accent-primary" />
+          <div className="flex justify-between mt-1">
+            <span className="text-[10px] text-t3">10%</span>
+            <span className="text-[10px] text-t3">50%</span>
+          </div>
+        </div>
+
+        {/* Loan Term */}
+        <div className="card-base">
+          <div className="card-hd"><span className="card-title">ระยะเวลาผ่อน / Loan Term</span></div>
+          <div className="flex gap-2">
+            {LOAN_TERMS.map(t => (
+              <button key={t} onClick={() => setTerm(t)} className={`flex-1 p-3 rounded-md text-center font-extrabold text-[14px] border-[1.5px] transition-all cursor-pointer ${term === t ? 'bg-primary-light border-primary text-primary' : 'bg-bg border-border text-t2'}`} style={{ fontFamily: "'Sarabun', sans-serif" }}>
+                {t}
+                <span className="block text-[10px] font-semibold">เดือน</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Breakdown */}
+        <div className="card-base">
+          <div className="card-hd"><span className="card-title">รายละเอียด / Breakdown</span></div>
+          {[
+            { icon: 'card', label: 'ดาวน์ / Down Payment', val: `฿${fmt(calc.down)}` },
+            { icon: 'bank', label: 'ยอดจัด / Financed Amount', val: `฿${fmt(calc.financed)}` },
+            { icon: 'calendar', label: `ดอกเบี้ย ${DEFAULT_INTEREST_RATE}% / ${term} เดือน`, val: 'Toyota Leasing Thailand' },
+          ].map(r => (
+            <div key={r.label} className="flex items-center gap-3 py-3 border-b border-border last:border-b-0">
+              <div className="w-9 h-9 bg-primary-light rounded-sm flex items-center justify-center text-primary flex-shrink-0"><Icon name={r.icon} size={16} /></div>
+              <div className="flex-1"><p className="text-[13px] font-bold text-t1">{r.label}</p><p className="text-[11px] text-t2 mt-[1px]">{r.val}</p></div>
+              <span className="text-t3"><Icon name="chevronRight" size={16} /></span>
+            </div>
+          ))}
+        </div>
+
+        {/* Actions */}
+        <button onClick={() => alert('ส่ง LINE สำเร็จ ✓')} className="btn-o cursor-pointer mb-[10px]"><Icon name="chat" size={16} /> ส่งทาง LINE / Share via LINE</button>
+        <button onClick={() => navigate('/booking')} className="btn-p cursor-pointer mb-4"><Icon name="book" size={16} /> Book Now</button>
       </div>
     </div>
-  )
+  );
 }

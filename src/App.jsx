@@ -5,7 +5,6 @@ import ProtectedRoute from './components/ProtectedRoute';
 import LoginPage from './pages/LoginPage';
 import CatalogPage from './pages/CatalogPage';
 import CarDetailPage from './pages/CarDetailPage';
-import LeadListPage from './pages/LeadListPage';
 import LeadDetailPage from './pages/LeadDetailPage';
 import ACardPage from './pages/ACardPage';
 import PaymentCalcPage from './pages/PaymentCalcPage';
@@ -16,29 +15,25 @@ import PipelinePage from './pages/PipelinePage';
 import TargetsPage from './pages/TargetsPage';
 import ReportsPage from './pages/ReportsPage';
 import NotificationsPage from './pages/NotificationsPage';
-import ProfilePage from './pages/ProfilePage';
 
 export default function App() {
   return (
     <HashRouter>
       <Routes>
-        {/* Public routes */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/" element={<Navigate to="/login" replace />} />
 
-        {/* Protected routes inside AppShell */}
         <Route element={<AppShell />}>
-          {/* Sales + Manager */}
+          {/* Sales + Manager shared */}
           <Route element={<ProtectedRoute allowedRoles={['sales', 'mgr']} />}>
             <Route path="/sales-dash" element={<SalesDashboard />} />
             <Route path="/catalog" element={<CatalogPage />} />
             <Route path="/car/:id" element={<CarDetailPage />} />
             <Route path="/calc" element={<PaymentCalcPage />} />
-            <Route path="/leads" element={<LeadListPage />} />
+            <Route path="/leads" element={<ACardPage />} />
             <Route path="/lead/:id" element={<LeadDetailPage />} />
-            <Route path="/reports" element={<ReportsPage />} />
             <Route path="/notifications" element={<NotificationsPage />} />
-            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/reports" element={<ReportsPage />} />
           </Route>
 
           {/* Sales only */}
@@ -55,7 +50,6 @@ export default function App() {
           </Route>
         </Route>
 
-        {/* Catch-all */}
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </HashRouter>
