@@ -29,7 +29,7 @@ export default function BottomNav() {
   const currentPath = location.pathname;
 
   return (
-    <nav className="absolute bottom-0 left-0 right-0 h-[78px] bg-white border-t border-border flex items-start pt-[11px] shrink-0 z-50">
+    <nav className="fixed bottom-0 left-0 right-0 h-[78px] bg-white border-t border-border flex items-start pt-[11px] shrink-0 z-50" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
       {tabs.map((tab) => {
         const isActive = currentPath === tab.path;
         return (
