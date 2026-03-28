@@ -1,0 +1,1736 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Toyota Sale Tool v4 — วรจักร์ยนต์</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+/* ================================================================
+   DESIGN TOKENS — extracted from 02 - Design Example
+================================================================ */
+:root {
+  --p:#1B7A3F;--p-dk:#145E30;--p-lt:#EBF7EF;--p-md:#C4E3CE;
+  --avail:#16A34A;--transit:#EA580C;
+  --hot:#DC2626;--warm:#D97706;--cool:#2563EB;
+  --t1:#111827;--t2:#6B7280;--t3:#9CA3AF;
+  --bg:#F5F7F5;--card:#FFFFFF;--border:#E5E7EB;--bdr2:#D1D5DB;
+  --r-sm:8px;--r-md:12px;--r-lg:16px;--r-xl:20px;--r-pill:100px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:'Sarabun',-apple-system,sans-serif;background:#0A0A0A;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:24px 16px 56px;gap:16px}
+
+/* ── Demo bar ── */
+.demo-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center}
+.demo-label{color:rgba(255,255,255,.35);font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase}
+.dev-btn{background:rgba(255,255,255,.06);color:rgba(255,255,255,.55);border:1px solid rgba(255,255,255,.10);padding:6px 18px;border-radius:var(--r-pill);cursor:pointer;font-size:12px;font-family:'Sarabun',sans-serif;font-weight:600;transition:all .2s;display:inline-flex;align-items:center;gap:5px}
+.dev-btn.on{background:var(--p);border-color:var(--p);color:#fff}
+
+/* ── Device frame ── */
+.device{transition:all .3s ease}
+.device.phone{width:390px}
+.device.tablet{width:768px}
+.app-shell{width:100%;background:var(--bg);border-radius:46px;overflow:hidden;position:relative;height:844px;display:flex;flex-direction:column;box-shadow:0 40px 100px rgba(0,0,0,.7),0 0 0 1px rgba(255,255,255,.05)}
+.device.tablet .app-shell{height:960px;border-radius:24px}
+
+/* ── Status bar ── */
+.sbar{height:50px;background:var(--card);display:flex;align-items:center;justify-content:space-between;padding:0 24px;flex-shrink:0;border-bottom:1px solid var(--border)}
+.sbar-t{font-size:14px;font-weight:700;color:var(--t1)}
+.sbar-r{display:flex;align-items:center;gap:6px;color:var(--t1)}
+.sig-bars{display:flex;align-items:flex-end;gap:1.5px;height:12px}
+.sig-bars span{width:3px;background:var(--t1);border-radius:1px}
+
+/* ── Screen ── */
+.screen{display:none;flex-direction:column;flex:1;overflow:hidden}
+.screen.active{display:flex;animation:sIn .22s ease}
+@keyframes sIn{from{opacity:0;transform:translateX(8px)}to{opacity:1;transform:translateX(0)}}
+
+/* ── Scroll ── */
+.scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px 16px 88px}
+.scroll::-webkit-scrollbar{display:none}
+.device.tablet .scroll{padding:20px 24px 96px}
+
+/* ── Icons ── */
+.ic{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
+.ic svg{display:block}
+
+/* ── Page header ── */
+.ph{background:var(--card);padding:13px 16px;display:flex;align-items:center;gap:11px;border-bottom:1px solid var(--border);flex-shrink:0}
+.ph-back{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--t1);cursor:pointer;background:var(--bg);border:1px solid var(--border);flex-shrink:0;transition:opacity .2s}
+.ph-back:active{opacity:.5}
+.ph-txt{flex:1}
+.ph-txt h2{font-size:15px;font-weight:800;color:var(--t1);line-height:1.25}
+.ph-txt p{font-size:11px;color:var(--t2);margin-top:1px}
+.ph-icon{cursor:pointer;color:var(--t2)}
+
+/* ══════ BOTTOM NAV ══════ */
+.nav{position:absolute;bottom:0;left:0;right:0;height:78px;background:var(--card);border-top:1px solid var(--border);display:flex;align-items:flex-start;padding-top:11px;z-index:50}
+.ntab{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;font-size:10px;font-weight:700;color:var(--t3);font-family:'Sarabun',sans-serif;transition:color .18s;position:relative;padding:2px 4px}
+.ntab .ni{display:flex;align-items:center;justify-content:center;width:24px;height:24px}
+.ntab .nl{font-size:10px;font-weight:700}
+.ntab.on{color:var(--p)}
+.ntab.on::after{content:'';position:absolute;bottom:-9px;left:50%;transform:translateX(-50%);width:5px;height:5px;border-radius:50%;background:var(--p)}
+.nav-badge{position:absolute;top:0;right:-4px;width:7px;height:7px;border-radius:50%;background:var(--hot);border:1.5px solid var(--card)}
+
+/* ══════ CARDS ══════ */
+.card{background:var(--card);border-radius:var(--r-lg);border:1px solid var(--border);padding:15px;margin-bottom:12px}
+.card-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.card-title{font-size:14px;font-weight:800;color:var(--t1);display:flex;align-items:center;gap:6px}
+.card-link{font-size:12px;font-weight:700;color:var(--p);cursor:pointer}
+.sec-lbl{font-size:10px;font-weight:800;color:var(--t3);letter-spacing:1.1px;text-transform:uppercase;margin:4px 0 10px;display:flex;align-items:center;gap:5px}
+
+/* ══════ STATUS DOT ══════ */
+.dot{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:var(--avail)}
+.dot::before{content:'';width:7px;height:7px;border-radius:50%;background:currentColor;display:inline-block;flex-shrink:0}
+.dot-orange{color:var(--transit)}
+
+/* ══════ FILTER PILLS ══════ */
+.fpills{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;-webkit-overflow-scrolling:touch;flex-shrink:0}
+.fpills::-webkit-scrollbar{display:none}
+.fpill{padding:8px 16px;border-radius:var(--r-pill);font-size:12px;font-weight:700;white-space:nowrap;cursor:pointer;font-family:'Sarabun',sans-serif;background:var(--card);color:var(--t2);border:1px solid var(--border);flex-shrink:0;transition:all .18s;display:inline-flex;align-items:center;gap:5px}
+.fpill.on{background:var(--p);color:#fff;border-color:var(--p)}
+.fpill.on svg{color:#fff}
+
+/* ══════ BUTTONS ══════ */
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;padding:15px 20px;border-radius:var(--r-pill);font-size:14px;font-weight:700;font-family:'Sarabun',sans-serif;cursor:pointer;border:none;transition:all .15s;width:100%}
+.btn:active{transform:scale(0.98)}
+.btn-p{background:var(--p);color:#fff}
+.btn-p:active{background:var(--p-dk)}
+.btn-o{background:var(--bg);color:var(--t1);border:1px solid var(--border)}
+.btn-g{background:transparent;color:var(--p);border:1.5px solid var(--p)}
+
+/* ══════ INPUTS ══════ */
+.flabel{display:block;font-size:10px;font-weight:800;color:var(--t2);letter-spacing:.7px;text-transform:uppercase;margin-bottom:5px}
+.fwrap{position:relative}
+.ficon{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--t3);pointer-events:none;display:flex;align-items:center}
+.finput,.fselect{width:100%;padding:12px 13px 12px 38px;background:var(--card);border:1px solid var(--border);border-radius:var(--r-md);font-size:13px;font-family:'Sarabun',sans-serif;color:var(--t1);outline:none;transition:border-color .2s}
+.finput.bare{padding-left:13px}
+.finput:focus,.fselect:focus{border-color:var(--p)}
+.fselect{appearance:none;cursor:pointer}
+.fg{margin-bottom:12px}
+textarea.finput{padding-left:13px;padding-top:12px;resize:none}
+
+/* ══════ FEATURED CARD ══════ */
+.feat-card{background:var(--card);border-radius:var(--r-lg);border:1px solid var(--border);overflow:hidden;margin-bottom:12px;cursor:pointer;transition:opacity .18s}
+.feat-card:active{opacity:.8}
+.feat-img{position:relative;background:linear-gradient(135deg,#F0FAF3 0%,#E8F5EC 50%,#DCF0E2 100%);height:160px;display:flex;align-items:center;justify-content:center;border-bottom:1px solid var(--border)}
+.feat-car-svg{width:65%;max-width:220px;color:var(--p)}
+.badge-l{position:absolute;top:12px;left:12px;padding:4px 10px;border-radius:var(--r-pill);font-size:10px;font-weight:700;color:#fff;background:var(--transit);display:flex;align-items:center;gap:3px}
+.badge-r{position:absolute;top:12px;right:12px;padding:4px 10px;border-radius:var(--r-pill);font-size:10px;font-weight:700;color:#fff;background:var(--p)}
+.feat-body{padding:14px 15px}
+.feat-name{font-size:16px;font-weight:800;color:var(--t1)}
+.feat-cat{font-size:12px;color:var(--t2);margin:2px 0 10px;display:flex;align-items:center;gap:4px}
+.feat-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.ftag-row{display:flex;gap:6px;flex-wrap:wrap}
+.ftag{display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border-radius:20px;font-size:11px;font-weight:600;color:var(--t2);background:var(--bg);border:1px solid var(--border)}
+
+/* ══════ CAR LIST ITEM ══════ */
+.car-item{display:flex;align-items:center;gap:12px;padding:12px;background:var(--card);border-radius:var(--r-lg);border:1px solid var(--border);margin-bottom:10px;cursor:pointer;transition:opacity .18s}
+.car-item:active{opacity:.7}
+.car-thumb{width:80px;height:64px;border-radius:var(--r-md);background:var(--bg);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;padding:4px}
+.car-thumb svg{width:100%;height:100%}
+.car-info{flex:1;min-width:0}
+.car-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:2px}
+.car-name{font-size:14px;font-weight:800;color:var(--t1)}
+.car-prc{font-size:13px;font-weight:800;color:var(--t1);white-space:nowrap}
+.car-prc span{font-size:10px;color:var(--t2);font-weight:500}
+.car-cat{font-size:11px;color:var(--t2);margin-bottom:7px}
+.car-tags{display:flex;gap:5px;flex-wrap:wrap}
+.car-link{font-size:12px;font-weight:700;color:var(--p);flex-shrink:0;align-self:center}
+
+/* ══════ GALLERY (car detail) ══════ */
+.gallery-wrap{position:relative;background:linear-gradient(160deg,#F0FAF3 0%,#E2F2E8 100%);flex-shrink:0;overflow:hidden}
+.gallery-main{width:100%;height:210px;display:flex;align-items:center;justify-content:center;position:relative}
+.gallery-car-img{width:85%;max-width:340px;height:auto;object-fit:contain;transition:opacity .3s;filter:drop-shadow(0 8px 24px rgba(0,0,0,.15))}
+.car-thumb img{width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 2px 6px rgba(0,0,0,.1))}
+.feat-car-img{width:80%;max-width:280px;height:auto;object-fit:contain;filter:drop-shadow(0 6px 20px rgba(0,0,0,.12))}
+.gallery-video{width:100%;height:100%;border:none;border-radius:0}
+/* ── 3-level filter ── */
+.filter-level{margin-bottom:10px;}
+.filter-level-lbl{font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px;display:flex;align-items:center;gap:5px;}
+.filter-level-lbl svg{opacity:.6;}
+.filter-chevron{font-size:11px;color:var(--t3);margin-left:auto;}
+/* ── Spec accordion ── */
+.spec-section{border-top:1px solid var(--border);margin-top:4px;}
+.spec-section-hd{display:flex;align-items:center;justify-content:space-between;padding:10px 0;cursor:pointer;user-select:none;}
+.spec-section-title{font-size:12px;font-weight:700;color:var(--t1);display:flex;align-items:center;gap:6px;}
+.spec-section-title svg{color:var(--p);}
+.spec-section-body{padding-bottom:8px;display:none;}
+.spec-section-body.open{display:block;}
+.spec-row{display:flex;justify-content:space-between;align-items:flex-start;padding:5px 0;border-bottom:1px solid var(--border);}
+.spec-row:last-child{border-bottom:none;}
+.spec-row-lbl{font-size:11px;color:var(--t3);flex:0 0 45%;}
+.spec-row-val{font-size:11px;font-weight:600;color:var(--t1);text-align:right;flex:1;}
+.spec-tag{display:inline-block;background:var(--bg);border:1px solid var(--border);border-radius:20px;font-size:10px;font-weight:600;padding:2px 8px;margin:2px 2px 0 0;color:var(--t2);}
+.spec-tag.green{background:#F0FDF4;border-color:#BBF7D0;color:#15803D;}
+/* ── Booking QR journey ── */
+.booking-step{display:none;}
+.booking-step.active{display:block;}
+.qr-wrap{display:flex;flex-direction:column;align-items:center;background:white;border-radius:16px;padding:20px;box-shadow:0 2px 12px rgba(0,0,0,.08);margin:4px 0 12px;}
+.qr-img{width:180px;height:180px;border-radius:8px;}
+.qr-title{font-size:14px;font-weight:700;color:var(--t1);margin-top:12px;}
+.qr-sub{font-size:11px;color:var(--t3);margin-top:3px;text-align:center;}
+.qr-amount{font-size:24px;font-weight:800;color:var(--p);margin-top:8px;}
+.qr-timer{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--warm);font-weight:600;margin-top:6px;}
+.payment-method-row{display:flex;gap:8px;margin-bottom:12px;}
+.pay-method{flex:1;border:2px solid var(--border);border-radius:10px;padding:10px;text-align:center;cursor:pointer;font-size:11px;font-weight:600;color:var(--t2);}
+.pay-method.on{border-color:var(--p);color:var(--p);background:#F0FDF4;}
+.pay-method svg{display:block;margin:0 auto 4px;}
+.gallery-car{width:70%;max-width:280px;transition:opacity .3s}
+.gallery-lbl{position:absolute;bottom:10px;left:14px;font-size:11px;font-weight:700;color:var(--t2);background:rgba(255,255,255,.85);padding:3px 10px;border-radius:var(--r-pill);backdrop-filter:blur(4px)}
+.gallery-cnt{position:absolute;bottom:10px;right:14px;font-size:11px;font-weight:600;color:var(--t3);background:rgba(255,255,255,.85);padding:3px 10px;border-radius:var(--r-pill);backdrop-filter:blur(4px)}
+.gallery-360{position:absolute;top:12px;right:12px;font-size:11px;font-weight:700;color:var(--p);background:rgba(255,255,255,.9);border:1px solid var(--p-md);padding:4px 12px;border-radius:var(--r-pill);cursor:pointer;display:flex;align-items:center;gap:4px;backdrop-filter:blur(4px)}
+.gallery-strip{display:flex;gap:8px;padding:10px 14px;overflow-x:auto;background:var(--card);border-bottom:1px solid var(--border)}
+.gallery-strip::-webkit-scrollbar{display:none}
+.gthumb{flex-shrink:0;width:68px;height:52px;border-radius:var(--r-sm);background:var(--bg);border:2px solid transparent;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;overflow:hidden;transition:all .18s}
+.gthumb.on{border-color:var(--p)}
+.gthumb svg{width:42px;height:28px}
+.gthumb-lbl{font-size:8px;font-weight:700;color:var(--t3);letter-spacing:.3px}
+.gthumb.vid{background:var(--t1)}
+.gthumb.vid .gthumb-lbl{color:rgba(255,255,255,.5)}
+.gthumb.vid svg{color:rgba(255,255,255,.7)}
+
+/* ══════ SPEC GRID ══════ */
+.spec-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.spec-cell{display:flex;align-items:center;gap:10px;padding:10px 11px;background:var(--bg);border-radius:var(--r-md)}
+.spec-ico{color:var(--p);display:flex;flex-shrink:0}
+.spec-lbl{font-size:10px;color:var(--t3)}
+.spec-val{font-size:12px;font-weight:700;color:var(--t1)}
+
+/* ══════ PLAN ROW ══════ */
+.plan-row{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)}
+.plan-row:last-child{border-bottom:none;padding-bottom:0}
+.plan-ico{width:36px;height:36px;background:var(--p-lt);border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;color:var(--p);flex-shrink:0}
+.plan-info{flex:1}
+.plan-name{font-size:13px;font-weight:700;color:var(--t1)}
+.plan-sub{font-size:11px;color:var(--t2);margin-top:1px}
+.plan-arr{color:var(--t3);cursor:pointer;display:flex}
+
+/* ══════ LEAD LIST ══════ */
+.lead-item{display:flex;align-items:center;gap:11px;padding:11px 0;border-bottom:1px solid var(--border);cursor:pointer}
+.lead-item:last-child{border-bottom:none;padding-bottom:0}
+.lead-item:first-child{padding-top:0}
+.avatar{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:#fff;flex-shrink:0}
+.lead-info{flex:1;min-width:0}
+.lead-name{font-size:13px;font-weight:700;color:var(--t1)}
+.lead-car{font-size:11px;color:var(--t2);margin-top:2px;display:flex;align-items:center;gap:3px}
+.lead-meta{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0}
+.lead-time{font-size:10px;color:var(--t3)}
+
+/* Status badges */
+.badge{display:inline-flex;align-items:center;gap:3px;padding:3px 9px;border-radius:var(--r-pill);font-size:10px;font-weight:700}
+.badge-hot{background:#FEF2F2;color:var(--hot)}
+.badge-warm{background:#FFFBEB;color:var(--warm)}
+.badge-cool{background:#EFF6FF;color:var(--cool)}
+.badge-win{background:var(--p-lt);color:var(--p)}
+
+/* ══════ TARGET CARD ══════ */
+.target-card{background:var(--p);border-radius:var(--r-lg);padding:18px;margin-bottom:12px;position:relative;overflow:hidden}
+.target-card::before{content:'';position:absolute;top:-20px;right:-20px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,.07)}
+.target-card::after{content:'';position:absolute;bottom:-30px;right:30px;width:80px;height:80px;border-radius:50%;background:rgba(255,255,255,.05)}
+.tc-sub{font-size:11px;color:rgba(255,255,255,.65);font-weight:600;margin-bottom:2px}
+.tc-num{font-size:34px;font-weight:800;color:#fff;line-height:1}
+.tc-of{font-size:12px;color:rgba(255,255,255,.6);margin-top:1px}
+.tc-bar{height:5px;background:rgba(255,255,255,.2);border-radius:3px;margin:11px 0 10px}
+.tc-fill{height:100%;background:#fff;border-radius:3px}
+.tc-row{display:flex;gap:24px}
+.tc-stat{display:flex;flex-direction:column;gap:2px}
+.tc-sn{font-size:18px;font-weight:800;color:#fff}
+.tc-sl{font-size:10px;color:rgba(255,255,255,.6)}
+
+/* ══════ QUICK ACTIONS ══════ */
+.qas{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.qa{background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);padding:14px 8px;text-align:center;cursor:pointer;transition:opacity .18s}
+.qa:active{opacity:.7}
+.qa-i{margin-bottom:5px;display:flex;justify-content:center;color:var(--p)}
+.qa-l{font-size:11px;font-weight:700;color:var(--t1);line-height:1.3}
+
+/* ══════ COLOR PICKER ══════ */
+.colors{display:flex;gap:10px;flex-wrap:wrap}
+.cdot{width:28px;height:28px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:all .18s}
+.cdot.on{border-color:var(--p);transform:scale(1.2)}
+
+/* ══════ KPI GRID ══════ */
+.kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.kpi-card{background:var(--card);border-radius:var(--r-lg);border:1px solid var(--border);padding:14px}
+.kpi-num{font-size:26px;font-weight:800;color:var(--t1);line-height:1}
+.kpi-lbl{font-size:12px;color:var(--t2);margin-top:3px}
+.kpi-sub{font-size:10px;color:var(--t3);margin-top:2px}
+
+/* ══════ LEADERBOARD ══════ */
+.team-item{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border)}
+.team-item:last-child{border-bottom:none;padding-bottom:0}
+.rank{width:27px;height:27px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;background:var(--bg);color:var(--t2)}
+.rank.g{background:#FEF3C7;color:#B45309}
+.rank.s{background:#F1F5F9;color:#475569}
+.rank.b{background:#FEF2EE;color:#C2410C}
+.team-info{flex:1;min-width:0}
+.team-name{font-size:13px;font-weight:700;color:var(--t1)}
+.bar-bg{height:5px;background:var(--border);border-radius:3px;margin-top:5px}
+.bar-fg{height:100%;background:var(--p);border-radius:3px}
+.bar-fg.warn{background:var(--warm)}
+.bar-fg.danger{background:var(--hot)}
+.team-score{text-align:right}
+.t-units{font-size:13px;font-weight:800;color:var(--t1)}
+.t-tgt{font-size:10px;color:var(--t3)}
+
+/* ══════ INSIGHTS ══════ */
+.insight{border-radius:var(--r-md);padding:11px 13px;font-size:12px;font-weight:600;margin-bottom:8px;line-height:1.45;display:flex;align-items:flex-start;gap:8px}
+.i-alert{background:#FEF2F2;color:#991B1B;border:1px solid #FECACA}
+.i-warn{background:#FFFBEB;color:#92400E;border:1px solid #FDE68A}
+.i-info{background:var(--p-lt);color:var(--p);border:1px solid var(--p-md)}
+
+/* ══════ PIPELINE ══════ */
+.pipe-wrap{display:flex;gap:10px;overflow-x:auto;padding-bottom:10px;-webkit-overflow-scrolling:touch}
+.pipe-wrap::-webkit-scrollbar{display:none}
+.pcol{min-width:158px;flex-shrink:0}
+.pcol-hd{display:flex;align-items:center;justify-content:space-between;padding:8px 10px;border-radius:var(--r-md);margin-bottom:8px;border:1px solid;font-size:11px;font-weight:800}
+.pcol-cnt{min-width:22px;height:22px;border-radius:var(--r-pill);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;padding:0 6px}
+.pcard{background:var(--card);border:1px solid var(--border);border-radius:var(--r-md);padding:11px 10px;margin-bottom:8px}
+.pcard.won{border-left:3px solid var(--p)}
+.pcard-name{font-size:12px;font-weight:700;color:var(--t1);margin-bottom:2px}
+.pcard-car{font-size:11px;color:var(--t2);margin-bottom:6px}
+.pcard-ft{display:flex;justify-content:space-between}
+.pcard-rep{font-size:10px;color:var(--t3)}
+.pcard-price{font-size:10px;font-weight:700;color:var(--p)}
+
+/* Summary pills */
+.sum-pills{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:14px}
+.spill{padding:6px 12px;border-radius:var(--r-pill);font-size:11px;font-weight:700;display:flex;align-items:center;gap:4px}
+.sp-h{background:#FEF2F2;color:var(--hot)}
+.sp-w{background:#FFFBEB;color:var(--warm)}
+.sp-c{background:#EFF6FF;color:var(--cool)}
+.sp-g{background:var(--p-lt);color:var(--p)}
+.sp-x{background:#F1F5F9;color:var(--t2)}
+
+/* ══════ LOGIN ══════ */
+.login-body{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;background:var(--bg)}
+.login-logo{width:72px;height:72px;border-radius:50%;background:var(--p);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;margin-bottom:12px}
+.login-brand{font-size:20px;font-weight:800;color:var(--t1);margin-bottom:3px}
+.login-sub{font-size:12px;color:var(--t2);margin-bottom:28px}
+.role-sel{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px;width:100%}
+.role-opt{padding:14px 8px;border-radius:var(--r-lg);text-align:center;border:1.5px solid var(--border);background:var(--card);cursor:pointer;transition:all .18s;font-family:'Sarabun',sans-serif}
+.role-opt.on{border-color:var(--p);background:var(--p-lt)}
+.role-opt .ri{margin-bottom:4px;display:flex;justify-content:center;color:var(--p)}
+.role-opt .rl{font-size:12px;font-weight:800;color:var(--t1)}
+.role-opt .rs{font-size:10px;color:var(--t2)}
+
+/* ══════ CAR DETAIL HERO ══════ */
+.det-info{padding:14px 16px;background:var(--card);border-bottom:1px solid var(--border)}
+.det-brand-lbl{font-size:10px;color:var(--t3);font-weight:600;text-transform:uppercase;letter-spacing:.7px;margin-bottom:6px}
+.det-fields{display:flex;gap:16px;flex-wrap:wrap}
+.det-field{margin-bottom:4px}
+.det-field-lbl{font-size:10px;color:var(--t2);font-weight:600}
+.det-field-val{font-size:15px;font-weight:800;color:var(--t1);line-height:1.2}
+.det-price-val{font-size:15px;font-weight:800;color:var(--p)}
+
+/* Advisory */
+.advisory{display:flex;align-items:flex-start;gap:9px;padding:11px 13px;background:var(--p-lt);border-radius:var(--r-md);border:1px solid var(--p-md);margin-bottom:14px}
+.advisory-dot{width:7px;height:7px;border-radius:50%;background:var(--avail);flex-shrink:0;margin-top:4px}
+.advisory-txt{font-size:11px;color:var(--p);font-weight:500;line-height:1.55}
+
+/* CTA row */
+.cta-row{display:flex;gap:10px;margin-top:4px}
+.cta-row .btn{flex:1}
+
+/* ══════ PAYMENT CALCULATOR ══════ */
+.pay-hero{background:var(--p);border-radius:var(--r-lg);padding:20px;text-align:center;margin-bottom:12px}
+.pay-lbl{font-size:12px;color:rgba(255,255,255,.7);margin-bottom:4px}
+.pay-amt{font-size:36px;font-weight:800;color:#fff;line-height:1}
+.pay-desc{font-size:11px;color:rgba(255,255,255,.65);margin-top:5px}
+.terms{display:flex;gap:8px}
+.term-btn{flex:1;padding:12px;border-radius:var(--r-md);text-align:center;font-size:14px;font-weight:800;color:var(--t2);background:var(--bg);border:1.5px solid var(--border);cursor:pointer;font-family:'Sarabun',sans-serif;transition:all .18s}
+.term-btn span{display:block;font-size:10px;font-weight:600}
+.term-btn.on{background:var(--p-lt);border-color:var(--p);color:var(--p)}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:5px;background:var(--border);border-radius:3px;outline:none}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:var(--p);cursor:pointer;border:3px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.2)}
+
+/* ══════ A-CARD ══════ */
+.icards{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.icard{padding:12px 8px;border-radius:var(--r-md);text-align:center;cursor:pointer;border:1.5px solid var(--border);background:var(--card);transition:all .18s;font-family:'Sarabun',sans-serif}
+.icard .ie{display:flex;justify-content:center;margin-bottom:3px}
+.icard .il{font-size:12px;font-weight:800;color:var(--t1)}
+.icard .is{font-size:10px;color:var(--t2)}
+.icard.sel-hot{border-color:var(--hot);background:#FEF2F2}
+.icard.sel-warm{border-color:var(--warm);background:#FFFBEB}
+.icard.sel-cool{border-color:var(--cool);background:#EFF6FF}
+.source-pills{display:flex;flex-wrap:wrap;gap:7px}
+.spill-btn{padding:7px 14px;border-radius:var(--r-pill);font-size:12px;font-weight:700;cursor:pointer;font-family:'Sarabun',sans-serif;transition:all .18s;background:var(--card);color:var(--t2);border:1px solid var(--border);display:inline-flex;align-items:center;gap:4px}
+.spill-btn.on{background:var(--p);color:#fff;border-color:var(--p)}
+
+/* Green card */
+.green-card{background:var(--p);border-radius:var(--r-lg);padding:16px;position:relative;overflow:hidden}
+.green-card::before{content:'';position:absolute;top:-15px;right:-15px;width:90px;height:90px;border-radius:50%;background:rgba(255,255,255,.07)}
+.gc-sub{font-size:11px;color:rgba(255,255,255,.65);margin-bottom:3px}
+.gc-num{font-size:26px;font-weight:800;color:#fff}
+.gc-note{font-size:10px;color:rgba(255,255,255,.5);margin-top:2px}
+
+/* ══════ LEAD DETAIL ══════ */
+.ld-hero{background:var(--card);padding:18px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:14px}
+.ld-avatar{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;color:#fff}
+.ld-name{font-size:17px;font-weight:800;color:var(--t1)}
+.ld-sub{font-size:12px;color:var(--t2);display:flex;align-items:center;gap:4px;margin-top:2px}
+.ld-actions{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}
+.ld-act{display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 6px;background:var(--card);border:1px solid var(--border);border-radius:var(--r-md);cursor:pointer;transition:opacity .18s}
+.ld-act:active{opacity:.7}
+.ld-act-i{color:var(--p);display:flex}
+.ld-act-l{font-size:10px;font-weight:700;color:var(--t2)}
+.timeline-item{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)}
+.timeline-item:last-child{border-bottom:none}
+.tl-dot{width:8px;height:8px;border-radius:50%;background:var(--p);flex-shrink:0;margin-top:5px}
+.tl-dot.tl-gray{background:var(--t3)}
+.tl-content{flex:1}
+.tl-title{font-size:12px;font-weight:700;color:var(--t1)}
+.tl-time{font-size:10px;color:var(--t3);margin-top:2px}
+
+/* ══════ BOOKING CONFIRM ══════ */
+.book-success{text-align:center;padding:32px 16px 24px}
+.book-check{width:64px;height:64px;border-radius:50%;background:var(--p-lt);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;color:var(--p)}
+.book-title{font-size:20px;font-weight:800;color:var(--t1);margin-bottom:4px}
+.book-sub{font-size:13px;color:var(--t2)}
+.book-num{font-size:13px;font-weight:800;color:var(--p);margin-top:8px;padding:6px 14px;background:var(--p-lt);border-radius:var(--r-pill);display:inline-block}
+.book-detail{margin-top:16px;text-align:left}
+.bd-row{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border);font-size:12px}
+.bd-row:last-child{border-bottom:none}
+.bd-lbl{color:var(--t2);font-weight:600}
+.bd-val{color:var(--t1);font-weight:700;text-align:right}
+
+/* ══════ TARGETS SCREEN ══════ */
+.tgt-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);padding:14px;margin-bottom:10px}
+.tgt-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.tgt-name{font-size:13px;font-weight:700;color:var(--t1)}
+.tgt-pct{font-size:13px;font-weight:800}
+.tgt-bar{height:6px;background:var(--border);border-radius:3px}
+.tgt-fill{height:100%;border-radius:3px;background:var(--p)}
+.tgt-fill.warn{background:var(--warm)}
+.tgt-fill.danger{background:var(--hot)}
+.tgt-row{display:flex;justify-content:space-between;margin-top:6px;font-size:10px;color:var(--t3)}
+
+/* ══════ REPORTS SCREEN ══════ */
+.rpt-stat{text-align:center;padding:16px;background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg)}
+.rpt-val{font-size:22px;font-weight:800;color:var(--t1);line-height:1}
+.rpt-lbl{font-size:11px;color:var(--t2);margin-top:3px}
+.rpt-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)}
+.rpt-row:last-child{border-bottom:none}
+.rpt-rank{font-size:11px;font-weight:800;color:var(--t3);width:20px}
+.rpt-model{flex:1;font-size:13px;font-weight:700;color:var(--t1)}
+.rpt-units{font-size:13px;font-weight:800;color:var(--p)}
+.export-row{display:flex;gap:8px;margin-top:12px}
+.export-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:12px;background:var(--bg);border:1px solid var(--border);border-radius:var(--r-md);font-size:12px;font-weight:700;color:var(--t1);cursor:pointer;font-family:'Sarabun',sans-serif}
+.export-btn:active{opacity:.7}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════
+     SVG ICON SPRITES
+══════════════════════════════════════════ -->
+<svg style="display:none" xmlns="http://www.w3.org/2000/svg">
+<!-- Navigation Icons -->
+<symbol id="ic-home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></symbol>
+<symbol id="ic-users" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></symbol>
+<symbol id="ic-car" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17h1m12 0h1M6 17H3V12l2.5-5h13L21 12v5h-3M6 17a2 2 0 104 0m4 0a2 2 0 104 0"/></symbol>
+<symbol id="ic-calc" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="10" y2="10"/><line x1="14" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="10" y2="14"/><line x1="14" y1="14" x2="16" y2="14"/><line x1="8" y1="18" x2="16" y2="18"/></symbol>
+<symbol id="ic-chart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></symbol>
+<symbol id="ic-target" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></symbol>
+<symbol id="ic-report" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></symbol>
+<symbol id="ic-pipeline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></symbol>
+<!-- Action Icons -->
+<symbol id="ic-back" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></symbol>
+<symbol id="ic-bell" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></symbol>
+<symbol id="ic-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></symbol>
+<symbol id="ic-more" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></symbol>
+<symbol id="ic-clip" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></symbol>
+<!-- Form/Field Icons -->
+<symbol id="ic-user" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
+<symbol id="ic-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></symbol>
+<symbol id="ic-phone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6A19.79 19.79 0 012.12 4.11 2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></symbol>
+<symbol id="ic-mail" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22 6 12 13 2 6"/></symbol>
+<symbol id="ic-chat" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></symbol>
+<!-- Spec Icons -->
+<symbol id="ic-fuel" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="12" height="16" rx="2"/><path d="M15 12h2a2 2 0 012 2v2a2 2 0 002 2"/><path d="M19 8V6"/><path d="M7 12h4"/></symbol>
+<symbol id="ic-seat" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 18v-6a5 5 0 0110 0v6"/><path d="M5 18h14a2 2 0 012 2H3a2 2 0 012-2z"/><circle cx="12" cy="5" r="2"/></symbol>
+<symbol id="ic-gear" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></symbol>
+<symbol id="ic-power" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></symbol>
+<symbol id="ic-shield" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></symbol>
+<symbol id="ic-wrench" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></symbol>
+<symbol id="ic-leaf" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 8C8 10 5.9 16.17 3.82 22"/><path d="M6 22s-2-10 5-14c4-2.25 8-3 11-3 0 5-2 9-5 11-3 2-7 3-10 4z"/></symbol>
+<symbol id="ic-card" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></symbol>
+<symbol id="ic-bank" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="12 2 20 7 4 7"/><line x1="6" y1="11" x2="6" y2="17"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/><line x1="18" y1="11" x2="18" y2="17"/><line x1="3" y1="21" x2="21" y2="21"/><line x1="3" y1="7" x2="21" y2="7"/></symbol>
+<symbol id="ic-calendar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></symbol>
+<symbol id="ic-flame" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0011 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 11-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 002.5 2.5z"/></symbol>
+<symbol id="ic-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></symbol>
+<symbol id="ic-snow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="2" x2="12" y2="22"/><path d="M17 7l-5-5-5 5"/><path d="M17 17l-5 5-5-5"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M7 7L2 12l5 5"/><path d="M17 7l5 5-5 5"/></symbol>
+<symbol id="ic-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></symbol>
+<symbol id="ic-share" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></symbol>
+<symbol id="ic-trophy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 010-5H6"/><path d="M18 9h1.5a2.5 2.5 0 000-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20 17 22"/><path d="M18 2H6v7a6 6 0 1012 0V2z"/></symbol>
+<symbol id="ic-walk" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="2"/><path d="M10 22l1-5-3-3 2-4 4 1 2 3"/><path d="M15 13l3 7"/></symbol>
+<symbol id="ic-flag" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></symbol>
+<symbol id="ic-camera" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></symbol>
+<symbol id="ic-image" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></symbol>
+<symbol id="ic-play" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></symbol>
+<symbol id="ic-rotate" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></symbol>
+<symbol id="ic-qr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="5" y="5" width="3" height="3" fill="currentColor" stroke="none"/><rect x="16" y="5" width="3" height="3" fill="currentColor" stroke="none"/><rect x="5" y="16" width="3" height="3" fill="currentColor" stroke="none"/><line x1="14" y1="14" x2="14" y2="14"/><line x1="17" y1="14" x2="17" y2="14"/><line x1="20" y1="14" x2="20" y2="14"/><line x1="14" y1="17" x2="14" y2="17"/><line x1="17" y1="17" x2="20" y2="17"/><line x1="20" y1="20" x2="20" y2="20"/><line x1="14" y1="20" x2="17" y2="20"/></symbol>
+<symbol id="ic-star" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></symbol>
+<symbol id="ic-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></symbol>
+<symbol id="ic-edit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></symbol>
+<symbol id="ic-book" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></symbol>
+
+<!-- ══════ CAR SILHOUETTE SVGs ══════ -->
+<symbol id="car-sedan" viewBox="0 0 200 80">
+<path d="M18 58L24 50L40 32L62 26L118 26L140 34L164 50L164 58Z" fill="currentColor" fill-opacity=".12" stroke="currentColor" stroke-width="2"/>
+<path d="M43 50L54 33L78 31L78 50Z" fill="rgba(147,197,253,.35)" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+<path d="M82 31L112 31L130 43L130 50L82 50Z" fill="rgba(147,197,253,.35)" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+<circle cx="58" cy="62" r="11" fill="currentColor" fill-opacity=".08" stroke="currentColor" stroke-width="2"/><circle cx="58" cy="62" r="5" fill="currentColor" fill-opacity=".15"/>
+<circle cx="140" cy="62" r="11" fill="currentColor" fill-opacity=".08" stroke="currentColor" stroke-width="2"/><circle cx="140" cy="62" r="5" fill="currentColor" fill-opacity=".15"/>
+<line x1="24" y1="50" x2="164" y2="50" stroke="currentColor" stroke-width="1.5"/>
+</symbol>
+
+<symbol id="car-cross" viewBox="0 0 200 80">
+<path d="M16 58L20 48L32 26L60 20L126 20L152 34L168 50L168 58Z" fill="currentColor" fill-opacity=".12" stroke="currentColor" stroke-width="2"/>
+<path d="M34 46L44 26L68 24L68 46Z" fill="rgba(147,197,253,.35)" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+<path d="M72 24L120 24L142 36L142 46L72 46Z" fill="rgba(147,197,253,.35)" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+<circle cx="55" cy="63" r="12" fill="currentColor" fill-opacity=".08" stroke="currentColor" stroke-width="2"/><circle cx="55" cy="63" r="5.5" fill="currentColor" fill-opacity=".15"/>
+<circle cx="148" cy="63" r="12" fill="currentColor" fill-opacity=".08" stroke="currentColor" stroke-width="2"/><circle cx="148" cy="63" r="5.5" fill="currentColor" fill-opacity=".15"/>
+<line x1="20" y1="48" x2="168" y2="50" stroke="currentColor" stroke-width="1.5"/>
+</symbol>
+
+<symbol id="car-suv" viewBox="0 0 200 80">
+<path d="M12 60L12 46L22 20L50 16L148 16L172 38L174 60Z" fill="currentColor" fill-opacity=".12" stroke="currentColor" stroke-width="2"/>
+<path d="M24 44L32 22L56 20L56 44Z" fill="rgba(147,197,253,.35)" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+<path d="M60 20L122 20L148 32L148 44L60 44Z" fill="rgba(147,197,253,.35)" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+<circle cx="50" cy="66" r="14" fill="currentColor" fill-opacity=".08" stroke="currentColor" stroke-width="2"/><circle cx="50" cy="66" r="6" fill="currentColor" fill-opacity=".15"/>
+<circle cx="150" cy="66" r="14" fill="currentColor" fill-opacity=".08" stroke="currentColor" stroke-width="2"/><circle cx="150" cy="66" r="6" fill="currentColor" fill-opacity=".15"/>
+<line x1="12" y1="46" x2="174" y2="48" stroke="currentColor" stroke-width="1.5"/>
+</symbol>
+
+<symbol id="car-ev" viewBox="0 0 200 80">
+<path d="M15 58L18 48L30 24L58 20L132 20L158 34L172 50L172 58Z" fill="currentColor" fill-opacity=".12" stroke="currentColor" stroke-width="2"/>
+<path d="M32 46L42 26L66 24L66 46Z" fill="rgba(147,197,253,.35)" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+<path d="M70 24L124 24L148 36L148 46L70 46Z" fill="rgba(147,197,253,.35)" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+<circle cx="54" cy="63" r="12" fill="currentColor" fill-opacity=".08" stroke="currentColor" stroke-width="2"/><circle cx="54" cy="63" r="5.5" fill="currentColor" fill-opacity=".15"/>
+<circle cx="150" cy="63" r="12" fill="currentColor" fill-opacity=".08" stroke="currentColor" stroke-width="2"/><circle cx="150" cy="63" r="5.5" fill="currentColor" fill-opacity=".15"/>
+<line x1="18" y1="48" x2="172" y2="50" stroke="currentColor" stroke-width="1.5"/>
+<circle cx="93" cy="14" r="4" fill="none" stroke="currentColor" stroke-width="1.5"/>
+<path d="M91 14h4M93 12v4" stroke="currentColor" stroke-width="1.2"/>
+</symbol>
+
+<symbol id="car-pickup" viewBox="0 0 200 80">
+<path d="M18 60L18 46L24 20L56 16L72 16L80 24L80 42L80 60Z" fill="currentColor" fill-opacity=".12" stroke="currentColor" stroke-width="2"/>
+<path d="M82 36L156 36L168 50L168 60L82 60Z" fill="currentColor" fill-opacity=".08" stroke="currentColor" stroke-width="2"/>
+<path d="M26 50L34 22L60 20L66 22L74 42L74 50Z" fill="rgba(147,197,253,.35)" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+<circle cx="48" cy="66" r="13" fill="currentColor" fill-opacity=".08" stroke="currentColor" stroke-width="2"/><circle cx="48" cy="66" r="5.5" fill="currentColor" fill-opacity=".15"/>
+<circle cx="144" cy="66" r="13" fill="currentColor" fill-opacity=".08" stroke="currentColor" stroke-width="2"/><circle cx="144" cy="66" r="5.5" fill="currentColor" fill-opacity=".15"/>
+</symbol>
+
+<symbol id="car-sport" viewBox="0 0 200 80">
+<path d="M17 62L22 52L38 32L65 24L118 24L146 34L172 52L170 62Z" fill="currentColor" fill-opacity=".12" stroke="currentColor" stroke-width="2"/>
+<path d="M42 52L56 30L78 28L78 52Z" fill="rgba(147,197,253,.35)" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+<path d="M82 28L113 28L134 42L134 52L82 52Z" fill="rgba(147,197,253,.35)" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+<circle cx="56" cy="66" r="11" fill="currentColor" fill-opacity=".08" stroke="currentColor" stroke-width="2"/><circle cx="56" cy="66" r="5" fill="currentColor" fill-opacity=".15"/>
+<circle cx="142" cy="66" r="11" fill="currentColor" fill-opacity=".08" stroke="currentColor" stroke-width="2"/><circle cx="142" cy="66" r="5" fill="currentColor" fill-opacity=".15"/>
+<line x1="22" y1="52" x2="170" y2="52" stroke="currentColor" stroke-width="1.5"/>
+</symbol>
+
+<!-- Interior view -->
+<symbol id="car-interior" viewBox="0 0 200 80">
+<rect x="30" y="10" width="140" height="58" rx="8" fill="currentColor" fill-opacity=".06" stroke="currentColor" stroke-width="1.5"/>
+<circle cx="70" cy="48" r="18" fill="none" stroke="currentColor" stroke-width="2"/>
+<circle cx="70" cy="48" r="6" fill="currentColor" fill-opacity=".15"/>
+<line x1="70" y1="30" x2="70" y2="36" stroke="currentColor" stroke-width="1.5"/>
+<line x1="70" y1="60" x2="70" y2="66" stroke="currentColor" stroke-width="1.5"/>
+<line x1="52" y1="48" x2="58" y2="48" stroke="currentColor" stroke-width="1.5"/>
+<line x1="82" y1="48" x2="88" y2="48" stroke="currentColor" stroke-width="1.5"/>
+<rect x="105" y="18" width="52" height="32" rx="4" fill="currentColor" fill-opacity=".08" stroke="currentColor" stroke-width="1.5"/>
+<line x1="115" y1="28" x2="147" y2="28" stroke="currentColor" stroke-width="1"/>
+<line x1="115" y1="34" x2="140" y2="34" stroke="currentColor" stroke-width="1"/>
+<line x1="115" y1="40" x2="145" y2="40" stroke="currentColor" stroke-width="1"/>
+<rect x="110" y="55" width="16" height="10" rx="3" fill="currentColor" fill-opacity=".1" stroke="currentColor" stroke-width="1"/>
+<rect x="132" y="55" width="16" height="10" rx="3" fill="currentColor" fill-opacity=".1" stroke="currentColor" stroke-width="1"/>
+</symbol>
+</svg>
+
+<!-- ══════ Demo Controls ══════ -->
+<div class="demo-bar">
+  <span class="demo-label">Device</span>
+  <button id="btn-phone" class="dev-btn on" onclick="setDevice('phone')"><svg width="14" height="14"><use href="#ic-phone"/></svg> iPhone</button>
+  <button id="btn-tablet" class="dev-btn" onclick="setDevice('tablet')"><svg width="14" height="14"><use href="#ic-phone"/></svg> iPad</button>
+  <span class="demo-label" style="margin-left:8px;">Role</span>
+  <button id="btn-sales" class="dev-btn on" onclick="switchRole('sales')"><svg width="14" height="14"><use href="#ic-users"/></svg> Sales</button>
+  <button id="btn-mgr" class="dev-btn" onclick="switchRole('mgr')"><svg width="14" height="14"><use href="#ic-chart"/></svg> Manager</button>
+</div>
+
+<!-- ══════ Device Frame ══════ -->
+<div class="device phone" id="device">
+<div class="app-shell">
+
+<!-- Status Bar -->
+<div class="sbar">
+  <span class="sbar-t">9:41</span>
+  <div class="sbar-r">
+    <div class="sig-bars"><span style="height:4px"></span><span style="height:6px"></span><span style="height:9px"></span><span style="height:12px"></span></div>
+    <svg width="15" height="12" viewBox="0 0 24 18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M1 8c4.5-5 17-5 22 0"/><path d="M5 12c3.5-3.5 10-3.5 14 0"/><circle cx="12" cy="16" r="1" fill="currentColor" stroke="none"/></svg>
+    <svg width="22" height="11" viewBox="0 0 28 14" fill="none"><rect x="1" y="1" width="22" height="12" rx="3" stroke="currentColor" stroke-width="1.5"/><rect x="24" y="4" width="3" height="6" rx="1.5" fill="currentColor" opacity=".3"/><rect x="3" y="3" width="17" height="8" rx="1.5" fill="currentColor"/></svg>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════ SCREEN: LOGIN ═══════════════════════ -->
+<div class="screen active" id="s-login">
+  <div class="login-body">
+    <div class="login-logo"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><path d="M5 17h1m12 0h1M6 17H3V12l2.5-5h13L21 12v5h-3M6 17a2 2 0 104 0m4 0a2 2 0 104 0"/></svg></div>
+    <div class="login-brand">Toyota Sale Tool</div>
+    <div class="login-sub">วรจักร์ยนต์ · Digital Sales Platform</div>
+    <div style="width:100%;">
+      <div class="fg">
+        <label class="flabel">ชื่อผู้ใช้ / Username</label>
+        <div class="fwrap"><span class="ficon"><svg width="14" height="14"><use href="#ic-user"/></svg></span>
+          <input class="finput" type="text" placeholder="กรอก username" value="malee.sales"></div>
+      </div>
+      <div class="fg">
+        <label class="flabel">รหัสผ่าน / Password</label>
+        <div class="fwrap"><span class="ficon"><svg width="14" height="14"><use href="#ic-lock"/></svg></span>
+          <input class="finput" type="password" value="••••••••"></div>
+      </div>
+      <div class="role-sel">
+        <div class="role-opt on" id="ro-sales" onclick="selRole('sales',this)">
+          <div class="ri"><svg width="24" height="24"><use href="#ic-users"/></svg></div>
+          <div class="rl">Sales Staff</div><div class="rs">พนักงานขาย</div>
+        </div>
+        <div class="role-opt" id="ro-mgr" onclick="selRole('mgr',this)">
+          <div class="ri"><svg width="24" height="24"><use href="#ic-chart"/></svg></div>
+          <div class="rl">Manager</div><div class="rs">ผู้จัดการ</div>
+        </div>
+      </div>
+      <button class="btn btn-p" onclick="doLogin()">เข้าสู่ระบบ / Login</button>
+      <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--t3);">Connected: DDMS · SAP · Toyota NextGen</div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════ SCREEN: SALES DASHBOARD ═══════════════════════ -->
+<div class="screen" id="s-sales-dash">
+  <div class="ph">
+    <div class="avatar" style="background:var(--p);width:38px;height:38px;font-size:14px;">ม</div>
+    <div class="ph-txt" style="margin-left:2px;">
+      <h2>สวัสดี มาลี</h2><p>วรจักร์ยนต์ · มีนาคม 2026</p>
+    </div>
+    <div style="position:relative;cursor:pointer;" onclick="go('s-notif')">
+      <svg width="22" height="22" style="color:var(--t1)"><use href="#ic-bell"/></svg>
+      <div style="position:absolute;top:0;right:0;width:8px;height:8px;background:var(--hot);border-radius:50%;border:1.5px solid var(--card);"></div>
+    </div>
+  </div>
+  <div class="scroll">
+    <div class="target-card">
+      <div class="tc-sub">ยอดขายเดือนนี้ / Monthly Target</div>
+      <div class="tc-num">45 <span style="font-size:16px;opacity:.7;">units</span></div>
+      <div class="tc-of">เป้าหมาย / Target: 70 units</div>
+      <div class="tc-bar"><div class="tc-fill" style="width:64%;"></div></div>
+      <div class="tc-row">
+        <div class="tc-stat"><div class="tc-sn">3</div><div class="tc-sl">จองวันนี้</div></div>
+        <div class="tc-stat"><div class="tc-sn">7</div><div class="tc-sl">Hot Leads</div></div>
+        <div class="tc-stat"><div class="tc-sn">25</div><div class="tc-sl">เหลืออีก</div></div>
+      </div>
+    </div>
+
+    <div class="sec-lbl">Quick Actions</div>
+    <div class="qas">
+      <div class="qa" onclick="go('s-acard')">
+        <div class="qa-i"><svg width="24" height="24"><use href="#ic-clip"/></svg></div><div class="qa-l">A-Card ใหม่</div>
+      </div>
+      <div class="qa" onclick="go('s-catalog')">
+        <div class="qa-i"><svg width="24" height="24"><use href="#ic-car"/></svg></div><div class="qa-l">รุ่นรถ</div>
+      </div>
+      <div class="qa" onclick="go('s-calc')">
+        <div class="qa-i"><svg width="24" height="24"><use href="#ic-calc"/></svg></div><div class="qa-l">คำนวณผ่อน</div>
+      </div>
+    </div>
+
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+      <div class="card-title"><svg width="18" height="18" style="color:var(--hot)"><use href="#ic-flame"/></svg> Lead ร้อนวันนี้</div>
+      <div class="card-link" onclick="go('s-pipeline')">ดูทั้งหมด →</div>
+    </div>
+
+    <div class="feat-card" onclick="goLeadDetail('duangjai')">
+      <div class="feat-img">
+        <img class="feat-car-img" src="https://www.toyota.co.th/media/product/series/gallery/large/fbf58299b9b02df75ff3693dda511fd1773ac674d8d62dacef543f386fb29e5b.webp?v=726" alt="Yaris Cross" onerror="this.outerHTML='<svg class=feat-car-svg style=color:var(--p)><use href=#car-cross/></svg>'">
+        <div class="badge-l"><svg width="12" height="12"><use href="#ic-flame"/></svg> HOT</div>
+        <div class="badge-r">ตัดสินใจวันนี้</div>
+      </div>
+      <div class="feat-body">
+        <div class="feat-row">
+          <div><div class="feat-name">ดวงใจ ทองดี</div><div class="feat-cat"><svg width="12" height="12"><use href="#ic-walk"/></svg> Walk-in · สาขาลาดพร้าว</div></div>
+          <div style="text-align:right;">
+            <div class="badge badge-hot"><svg width="10" height="10"><use href="#ic-flame"/></svg> HOT</div>
+            <div class="lead-time" style="margin-top:4px;">10:30 น.</div>
+          </div>
+        </div>
+        <div class="ftag-row">
+          <span class="ftag"><svg width="11" height="11"><use href="#ic-card"/></svg> งบ ฿800K</span>
+          <span class="ftag"><svg width="11" height="11"><use href="#ic-bank"/></svg> Toyota Leasing</span>
+          <span class="ftag"><svg width="11" height="11"><use href="#ic-calendar"/></svg> วันนี้</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-hd"><div class="card-title">Lead ทั้งหมดวันนี้</div><div class="card-link" onclick="go('s-pipeline')">See All</div></div>
+      <div class="lead-item" onclick="goLeadDetail('prawit')">
+        <div class="avatar" style="background:#8B5CF6;">ป</div>
+        <div class="lead-info">
+          <div class="lead-name">ประวิทย์ จันทร์</div>
+          <div class="lead-car"><svg width="11" height="11"><use href="#ic-car"/></svg> Land Cruiser FJ · ฿1,269,000</div>
+        </div>
+        <div class="lead-meta"><span class="badge badge-warm"><svg width="10" height="10"><use href="#ic-sun"/></svg> Warm</span><div class="lead-time">14:00</div></div>
+      </div>
+      <div class="lead-item" onclick="goLeadDetail('oranee')">
+        <div class="avatar" style="background:#3B82F6;">อ</div>
+        <div class="lead-info">
+          <div class="lead-name">อรณี สุขสม</div>
+          <div class="lead-car"><svg width="11" height="11"><use href="#ic-power"/></svg> bZ4X EV · ฿1,529,000</div>
+        </div>
+        <div class="lead-meta"><span class="badge badge-warm"><svg width="10" height="10"><use href="#ic-sun"/></svg> Warm</span><div class="lead-time">15:30</div></div>
+      </div>
+      <div class="lead-item" onclick="goLeadDetail('jirawat')">
+        <div class="avatar" style="background:#10B981;">จ</div>
+        <div class="lead-info">
+          <div class="lead-name">จิรวัฒน์ ศรีรัตน์</div>
+          <div class="lead-car"><svg width="11" height="11"><use href="#ic-car"/></svg> Corolla Altis · ฿909,000</div>
+        </div>
+        <div class="lead-meta"><span class="badge badge-win"><svg width="10" height="10"><use href="#ic-check"/></svg> Won</span><div class="lead-time">11:45</div></div>
+      </div>
+    </div>
+
+    <div class="green-card">
+      <div class="gc-sub">คอมมิชชั่นเดือนนี้ / My Commission</div>
+      <div class="gc-num">฿34,500</div>
+      <div class="gc-note">ประมาณการ · 2% × 45 units</div>
+    </div>
+    <div style="height:8px;"></div>
+  </div>
+
+  <div class="nav" id="nav-sales">
+    <div class="ntab on" onclick="go('s-sales-dash')"><span class="ni"><svg width="22" height="22"><use href="#ic-home"/></svg></span><span class="nl">หน้าหลัก</span></div>
+    <div class="ntab" onclick="go('s-acard')"><span class="ni" style="position:relative;"><svg width="22" height="22"><use href="#ic-users"/></svg><div class="nav-badge"></div></span><span class="nl">Leads</span></div>
+    <div class="ntab" onclick="go('s-catalog')"><span class="ni"><svg width="22" height="22"><use href="#ic-car"/></svg></span><span class="nl">รุ่นรถ</span></div>
+    <div class="ntab" onclick="go('s-calc')"><span class="ni"><svg width="22" height="22"><use href="#ic-calc"/></svg></span><span class="nl">ผ่อน</span></div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════ SCREEN: A-CARD ═══════════════════════ -->
+<div class="screen" id="s-acard">
+  <div class="ph">
+    <div class="ph-back" onclick="goBack()"><svg width="18" height="18"><use href="#ic-back"/></svg></div>
+    <div class="ph-txt"><h2>ลงทะเบียนลูกค้า</h2><p>New Lead — A-Card Digital</p></div>
+    <div class="ph-icon"><svg width="20" height="20"><use href="#ic-clip"/></svg></div>
+  </div>
+  <div class="scroll">
+    <div class="card">
+      <div class="card-hd"><div class="card-title">ข้อมูลลูกค้า | Customer Info</div></div>
+      <div class="fg"><label class="flabel">ชื่อ-นามสกุล / Full Name *</label><div class="fwrap"><span class="ficon"><svg width="14" height="14"><use href="#ic-user"/></svg></span><input class="finput" type="text" placeholder="กรอกชื่อลูกค้า"></div></div>
+      <div class="fg"><label class="flabel">เบอร์โทร / Phone *</label><div class="fwrap"><span class="ficon"><svg width="14" height="14"><use href="#ic-phone"/></svg></span><input class="finput" type="tel" placeholder="08X-XXX-XXXX"></div></div>
+      <div class="fg"><label class="flabel">อีเมล / Email</label><div class="fwrap"><span class="ficon"><svg width="14" height="14"><use href="#ic-mail"/></svg></span><input class="finput" type="email" placeholder="example@email.com"></div></div>
+      <div class="fg" style="margin-bottom:0;"><label class="flabel">LINE ID</label><div class="fwrap"><span class="ficon"><svg width="14" height="14"><use href="#ic-chat"/></svg></span><input class="finput" type="text" placeholder="@lineid"></div></div>
+    </div>
+    <div class="card">
+      <div class="card-hd"><div class="card-title">ช่องทาง | Lead Source</div></div>
+      <div class="source-pills">
+        <div class="spill-btn on" onclick="selPill(this)"><svg width="12" height="12"><use href="#ic-walk"/></svg> Walk-in</div>
+        <div class="spill-btn" onclick="selPill(this)"><svg width="12" height="12"><use href="#ic-chat"/></svg> LINE OA</div>
+        <div class="spill-btn" onclick="selPill(this)"><svg width="12" height="12"><use href="#ic-share"/></svg> Facebook</div>
+        <div class="spill-btn" onclick="selPill(this)"><svg width="12" height="12"><use href="#ic-camera"/></svg> Instagram</div>
+        <div class="spill-btn" onclick="selPill(this)"><svg width="12" height="12"><use href="#ic-flag"/></svg> Event</div>
+        <div class="spill-btn" onclick="selPill(this)"><svg width="12" height="12"><use href="#ic-users"/></svg> Referral</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hd"><div class="card-title">ระดับความสนใจ | Interest Level</div></div>
+      <div class="icards">
+        <div class="icard sel-hot" id="ic-hot" onclick="selInt('hot')"><span class="ie"><svg width="22" height="22" style="color:var(--hot)"><use href="#ic-flame"/></svg></span><div class="il">HOT</div><div class="is">พร้อมซื้อ</div></div>
+        <div class="icard" id="ic-warm" onclick="selInt('warm')"><span class="ie"><svg width="22" height="22" style="color:var(--warm)"><use href="#ic-sun"/></svg></span><div class="il">WARM</div><div class="is">สนใจ</div></div>
+        <div class="icard" id="ic-cool" onclick="selInt('cool')"><span class="ie"><svg width="22" height="22" style="color:var(--cool)"><use href="#ic-snow"/></svg></span><div class="il">COOL</div><div class="is">สำรวจ</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hd"><div class="card-title">รุ่นรถที่สนใจ | Model of Interest</div></div>
+      <div class="fg"><label class="flabel">Model</label><select class="fselect bare" style="padding-left:13px;"><option>— เลือกรุ่นรถ —</option><option>Corolla Altis 2026 — ฿909,000</option><option selected>Yaris Cross — ฿799,000</option><option>Land Cruiser FJ — ฿1,269,000</option><option>bZ4X (EV) — ฿1,529,000</option><option>Hilux Revo — ฿649,000</option><option>GR 86 — ฿1,899,000</option></select></div>
+      <div class="fg" style="margin-bottom:0;"><label class="flabel">งบประมาณ / Budget</label><select class="fselect bare" style="padding-left:13px;"><option>ต่ำกว่า ฿500,000</option><option selected>฿500,000 – ฿1,000,000</option><option>฿1,000,000 – ฿2,000,000</option><option>มากกว่า ฿2,000,000</option></select></div>
+    </div>
+    <div class="card"><div class="card-hd"><div class="card-title">หมายเหตุ / Notes</div></div><textarea class="finput" rows="3" placeholder="บันทึกรายละเอียดเพิ่มเติม..."></textarea></div>
+    <button class="btn btn-p" onclick="saveACard()"><svg width="16" height="16"><use href="#ic-check"/></svg> บันทึก Lead / Save A-Card</button>
+    <div style="height:10px;"></div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════ SCREEN: CAR CATALOG ═══════════════════════ -->
+<div class="screen" id="s-catalog">
+  <div class="ph">
+    <div class="ph-back" onclick="goBack()"><svg width="18" height="18"><use href="#ic-back"/></svg></div>
+    <div class="ph-txt"><h2>รุ่นรถยนต์</h2><p>Vehicle Catalog — วรจักร์ยนต์</p></div>
+    <div class="ph-icon"><svg width="20" height="20"><use href="#ic-search"/></svg></div>
+  </div>
+  <div class="scroll">
+    <div class="fg"><div class="fwrap"><span class="ficon"><svg width="14" height="14"><use href="#ic-search"/></svg></span><input class="finput" type="text" placeholder="ค้นหารุ่นรถ / Search models..." oninput="filterSearch(this.value)"></div></div>
+
+    <!-- Level 1: ประเภทรถ / Type -->
+    <div class="filter-level">
+      <div class="filter-level-lbl"><svg width="12" height="12"><use href="#ic-car"/></svg> ประเภทรถ / Type</div>
+      <div class="fpills" id="type-pills">
+        <div class="fpill on" onclick="filterType(this,'all')">ทั้งหมด</div>
+        <div class="fpill" onclick="filterType(this,'sedan')">Sedan</div>
+        <div class="fpill" onclick="filterType(this,'cross')">Crossover</div>
+        <div class="fpill" onclick="filterType(this,'suv')">SUV</div>
+        <div class="fpill" onclick="filterType(this,'ev')"><svg width="10" height="10"><use href="#ic-power"/></svg> EV</div>
+        <div class="fpill" onclick="filterType(this,'pickup')">Pickup</div>
+        <div class="fpill" onclick="filterType(this,'sport')">Sport</div>
+      </div>
+    </div>
+
+    <!-- Level 2: รุ่นรถ / Model -->
+    <div class="filter-level">
+      <div class="filter-level-lbl"><svg width="12" height="12"><use href="#ic-report"/></svg> รุ่นรถ / Model</div>
+      <div class="fpills" id="model-pills">
+        <div class="fpill on" onclick="filterModel(this,'all')">ทั้งหมด</div>
+        <div class="fpill" data-cat="sedan" onclick="filterModel(this,'corolla')">Corolla Altis</div>
+        <div class="fpill" data-cat="cross" onclick="filterModel(this,'yaris')">Yaris Cross</div>
+        <div class="fpill" data-cat="suv" onclick="filterModel(this,'lc')">Land Cruiser FJ</div>
+        <div class="fpill" data-cat="ev" onclick="filterModel(this,'bz4x')">bZ4X</div>
+        <div class="fpill" data-cat="pickup" onclick="filterModel(this,'hilux')">Hilux Revo</div>
+        <div class="fpill" data-cat="sport" onclick="filterModel(this,'gr86')">GR 86</div>
+      </div>
+    </div>
+
+    <!-- Level 3: งบประมาณ / Budget -->
+    <div class="filter-level" style="margin-bottom:14px;">
+      <div class="filter-level-lbl"><svg width="12" height="12"><use href="#ic-card"/></svg> งบประมาณ / Budget</div>
+      <div class="fpills" id="budget-pills">
+        <div class="fpill on" onclick="filterBudget(this,'all')">ทั้งหมด</div>
+        <div class="fpill" onclick="filterBudget(this,'under800')">ต่ำกว่า ฿800K</div>
+        <div class="fpill" onclick="filterBudget(this,'800to1300')">฿800K – ฿1.3M</div>
+        <div class="fpill" onclick="filterBudget(this,'over1300')">฿1.3M+</div>
+      </div>
+    </div>
+
+    <div id="car-list"></div>
+  </div>
+  <div class="nav">
+    <div class="ntab" onclick="go('s-sales-dash')"><span class="ni"><svg width="22" height="22"><use href="#ic-home"/></svg></span><span class="nl">หน้าหลัก</span></div>
+    <div class="ntab" onclick="go('s-acard')"><span class="ni"><svg width="22" height="22"><use href="#ic-users"/></svg></span><span class="nl">Leads</span></div>
+    <div class="ntab on"><span class="ni"><svg width="22" height="22"><use href="#ic-car"/></svg></span><span class="nl">รุ่นรถ</span></div>
+    <div class="ntab" onclick="go('s-calc')"><span class="ni"><svg width="22" height="22"><use href="#ic-calc"/></svg></span><span class="nl">ผ่อน</span></div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════ SCREEN: CAR DETAIL + GALLERY ═══════════════════════ -->
+<div class="screen" id="s-car-detail">
+  <div class="ph">
+    <div class="ph-back" onclick="goBack()"><svg width="18" height="18"><use href="#ic-back"/></svg></div>
+    <div class="ph-txt"><h2 id="det-name-h">Corolla Altis 2026</h2><p>Toyota — Vehicle Detail</p></div>
+    <div class="ph-icon"><svg width="20" height="20"><use href="#ic-share"/></svg></div>
+  </div>
+
+  <div class="scroll" style="padding:0;">
+    <!-- Gallery -->
+    <div class="gallery-wrap" id="gallery-wrap">
+      <div class="gallery-main" id="gallery-main">
+        <svg class="gallery-car" id="gallery-car-svg" style="color:var(--p)"><use href="#car-sedan"/></svg>
+        <div class="gallery-lbl" id="gallery-lbl">Exterior</div>
+        <div class="gallery-cnt" id="gallery-cnt">1 / 5</div>
+        <div class="gallery-360" onclick="alert('360° Interactive View loading...')"><svg width="14" height="14"><use href="#ic-rotate"/></svg> 360°</div>
+      </div>
+      <div class="gallery-strip" id="gallery-strip"></div>
+    </div>
+
+    <!-- Info bar -->
+    <div class="det-info">
+      <div class="det-brand-lbl" id="det-brand">Brand — Toyota</div>
+      <div class="det-fields">
+        <div class="det-field"><div class="det-field-lbl">Model</div><div class="det-field-val" id="det-model">Corolla Altis 2026</div></div>
+        <div class="det-field"><div class="det-field-lbl">Type</div><div class="det-field-val" id="det-type">Sedan</div></div>
+        <div class="det-field"><div class="det-field-lbl">Price</div><div class="det-price-val" id="det-price">฿909,000</div></div>
+      </div>
+    </div>
+
+    <div style="padding:14px 16px 0;">
+      <div class="advisory">
+        <div class="advisory-dot"></div>
+        <div class="advisory-txt" id="det-notice">ก่อนจอง กรุณาตรวจสอบสต็อคและสีที่ต้องการก่อนทำการจอง / Please verify stock and color availability before booking.</div>
+      </div>
+
+      <div class="card">
+        <div class="card-hd"><div class="card-title">Car Specifications</div></div>
+        <!-- Quick overview grid -->
+        <div class="spec-grid" id="det-specs"></div>
+        <!-- Detailed accordion specs -->
+        <div id="det-spec-accordion">
+          <!-- Engine section -->
+          <div class="spec-section">
+            <div class="spec-section-hd" onclick="toggleSpec(this)">
+              <div class="spec-section-title"><svg width="14" height="14"><use href="#ic-power"/></svg> เครื่องยนต์ / Engine</div>
+              <span class="filter-chevron" id="chev-engine">▼</span>
+            </div>
+            <div class="spec-section-body" id="spec-engine"></div>
+          </div>
+          <!-- Dimensions section -->
+          <div class="spec-section">
+            <div class="spec-section-hd" onclick="toggleSpec(this)">
+              <div class="spec-section-title"><svg width="14" height="14"><use href="#ic-report"/></svg> มิติตัวถัง / Dimensions</div>
+              <span class="filter-chevron" id="chev-dim">▼</span>
+            </div>
+            <div class="spec-section-body" id="spec-dim"></div>
+          </div>
+          <!-- Safety section -->
+          <div class="spec-section">
+            <div class="spec-section-hd" onclick="toggleSpec(this)">
+              <div class="spec-section-title"><svg width="14" height="14"><use href="#ic-shield"/></svg> ความปลอดภัย / Safety</div>
+              <span class="filter-chevron" id="chev-safety">▼</span>
+            </div>
+            <div class="spec-section-body" id="spec-safety"></div>
+          </div>
+          <!-- Features section -->
+          <div class="spec-section">
+            <div class="spec-section-hd" onclick="toggleSpec(this)">
+              <div class="spec-section-title"><svg width="14" height="14"><use href="#ic-star"/></svg> ฟีเจอร์ / Features</div>
+              <span class="filter-chevron" id="chev-feat">▼</span>
+            </div>
+            <div class="spec-section-body" id="spec-feat"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-hd"><div class="card-title">เลือกสี | Choose Color</div></div>
+        <div class="colors" id="det-colors">
+          <div class="cdot on" style="background:#F5F5F5;border:1px solid #ddd;" onclick="pickColor(this,'Pearl White')"></div>
+          <div class="cdot" style="background:#1A1A1A;" onclick="pickColor(this,'Black Mica')"></div>
+          <div class="cdot" style="background:#BDC3C7;" onclick="pickColor(this,'Silver Metallic')"></div>
+          <div class="cdot" style="background:#2471A3;" onclick="pickColor(this,'Blue Metallic')"></div>
+          <div class="cdot" style="background:#922B21;" onclick="pickColor(this,'Red Mica')"></div>
+        </div>
+        <div style="margin-top:10px;font-size:12px;color:var(--t2);" id="det-color-name">Pearl White</div>
+      </div>
+
+      <div class="card">
+        <div class="card-hd"><div class="card-title">Stock & Availability</div><div class="card-link">See More</div></div>
+        <div style="display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--border);margin-bottom:2px;">
+          <div class="dot" id="det-avail-dot">In Stock</div>
+          <div style="font-size:11px;color:var(--t3);" id="det-stock-sub">3 units — สาขาลาดพร้าว</div>
+        </div>
+        <div class="plan-row"><div class="plan-ico"><svg width="16" height="16"><use href="#ic-shield"/></svg></div><div class="plan-info"><div class="plan-name">ประกัน / Warranty</div><div class="plan-sub" id="dd-warranty">3 ปี / 100,000 กม.</div></div><div class="plan-arr"><svg width="16" height="16"><use href="#ic-back" style="transform:rotate(180deg)"/></svg></div></div>
+        <div class="plan-row"><div class="plan-ico"><svg width="16" height="16"><use href="#ic-wrench"/></svg></div><div class="plan-info"><div class="plan-name">ฟรีเซอร์วิส / Free Service</div><div class="plan-sub">5 ครั้ง / 5 times</div></div><div class="plan-arr"><svg width="16" height="16"><use href="#ic-back" style="transform:rotate(180deg)"/></svg></div></div>
+        <div class="plan-row"><div class="plan-ico"><svg width="16" height="16"><use href="#ic-leaf"/></svg></div><div class="plan-info"><div class="plan-name">อัตราสิ้นเปลือง / Economy</div><div class="plan-sub" id="dd-eco">23.3 km/L</div></div><div class="plan-arr"><svg width="16" height="16"><use href="#ic-back" style="transform:rotate(180deg)"/></svg></div></div>
+      </div>
+
+      <div class="cta-row">
+        <button class="btn btn-g" onclick="go('s-calc')"><svg width="16" height="16"><use href="#ic-calc"/></svg> คำนวณผ่อน</button>
+        <button class="btn btn-p" onclick="goBookingConfirm()"><svg width="16" height="16"><use href="#ic-book"/></svg> Book Now</button>
+      </div>
+      <div style="height:12px;"></div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════ SCREEN: CALCULATOR ═══════════════════════ -->
+<div class="screen" id="s-calc">
+  <div class="ph">
+    <div class="ph-back" onclick="goBack()"><svg width="18" height="18"><use href="#ic-back"/></svg></div>
+    <div class="ph-txt"><h2>คำนวณสินเชื่อ</h2><p>Payment Calculator</p></div>
+    <div class="ph-icon"><svg width="20" height="20"><use href="#ic-calc"/></svg></div>
+  </div>
+  <div class="scroll">
+    <div class="car-item" style="margin-bottom:12px;cursor:default;">
+      <div class="car-thumb" style="background:#EEF2FF;"><svg style="color:var(--p);width:100%;height:100%"><use href="#car-sedan"/></svg></div>
+      <div class="car-info"><div class="car-row"><div class="car-name">Corolla Altis 2026</div><div class="car-prc">฿909,000</div></div><div class="car-cat">Sedan · 1.8L Hybrid</div><div class="car-tags"><span class="ftag">ราคาเต็ม</span></div></div>
+    </div>
+    <div class="pay-hero"><div class="pay-lbl">ผ่อนต่อเดือน / Monthly Payment</div><div class="pay-amt" id="monthly-display">฿12,450</div><div class="pay-desc" id="pay-desc">Corolla Altis 2026 · 60 เดือน · ดาวน์ 20%</div></div>
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <div class="card-title">เงินดาวน์ / Down Payment</div>
+        <div style="font-size:13px;font-weight:800;color:var(--p);" id="down-display">฿181,800 <span style="font-size:11px;color:var(--t2);font-weight:500;">(20%)</span></div>
+      </div>
+      <input type="range" id="down-slider" min="10" max="50" value="20" oninput="calcUpdate()">
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--t3);margin-top:5px;"><span>10% min</span><span>50% max</span></div>
+    </div>
+    <div class="card">
+      <div class="card-title" style="margin-bottom:12px;">ระยะเวลาผ่อน / Loan Term</div>
+      <div class="terms">
+        <div class="term-btn" onclick="selTerm(this,48)">48<span>เดือน</span></div>
+        <div class="term-btn on" onclick="selTerm(this,60)">60<span>เดือน</span></div>
+        <div class="term-btn" onclick="selTerm(this,72)">72<span>เดือน</span></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title" style="margin-bottom:4px;">รายละเอียด / Breakdown</div>
+      <div class="plan-row"><div class="plan-ico"><svg width="16" height="16"><use href="#ic-card"/></svg></div><div class="plan-info"><div class="plan-name">ดาวน์ / Down Payment</div><div class="plan-sub" id="bd-down">฿181,800</div></div><div class="plan-arr"><svg width="16" height="16" style="color:var(--t3)"><use href="#ic-back" style="transform:rotate(180deg)"/></svg></div></div>
+      <div class="plan-row"><div class="plan-ico"><svg width="16" height="16"><use href="#ic-bank"/></svg></div><div class="plan-info"><div class="plan-name">ยอดจัด / Financed Amount</div><div class="plan-sub" id="bd-fin">฿727,200</div></div><div class="plan-arr"><svg width="16" height="16" style="color:var(--t3)"><use href="#ic-back" style="transform:rotate(180deg)"/></svg></div></div>
+      <div class="plan-row"><div class="plan-ico"><svg width="16" height="16"><use href="#ic-calendar"/></svg></div><div class="plan-info"><div class="plan-name">ดอกเบี้ย 2.49% / <span id="bd-term">60 เดือน</span></div><div class="plan-sub">Toyota Leasing Thailand</div></div><div class="plan-arr"><svg width="16" height="16" style="color:var(--t3)"><use href="#ic-back" style="transform:rotate(180deg)"/></svg></div></div>
+    </div>
+    <button class="btn btn-o" style="margin-bottom:10px;" onclick="alert('ส่งรายละเอียดให้ลูกค้าทาง LINE เรียบร้อย!')"><svg width="16" height="16"><use href="#ic-chat"/></svg> ส่งทาง LINE / Share via LINE</button>
+    <button class="btn btn-p" onclick="goBookingConfirm()"><svg width="16" height="16"><use href="#ic-book"/></svg> Book Now</button>
+    <div style="height:10px;"></div>
+  </div>
+  <div class="nav">
+    <div class="ntab" onclick="go('s-sales-dash')"><span class="ni"><svg width="22" height="22"><use href="#ic-home"/></svg></span><span class="nl">หน้าหลัก</span></div>
+    <div class="ntab" onclick="go('s-acard')"><span class="ni"><svg width="22" height="22"><use href="#ic-users"/></svg></span><span class="nl">Leads</span></div>
+    <div class="ntab" onclick="go('s-catalog')"><span class="ni"><svg width="22" height="22"><use href="#ic-car"/></svg></span><span class="nl">รุ่นรถ</span></div>
+    <div class="ntab on"><span class="ni"><svg width="22" height="22"><use href="#ic-calc"/></svg></span><span class="nl">ผ่อน</span></div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════ SCREEN: LEAD DETAIL ═══════════════════════ -->
+<div class="screen" id="s-lead-detail">
+  <div class="ph">
+    <div class="ph-back" onclick="goBack()"><svg width="18" height="18"><use href="#ic-back"/></svg></div>
+    <div class="ph-txt"><h2 id="ld-h-name">Lead Detail</h2><p>Customer Profile</p></div>
+    <div class="ph-icon"><svg width="20" height="20"><use href="#ic-more"/></svg></div>
+  </div>
+  <div class="ld-hero">
+    <div class="ld-avatar" id="ld-avatar" style="background:#8B5CF6;">ด</div>
+    <div>
+      <div class="ld-name" id="ld-name">ดวงใจ ทองดี</div>
+      <div class="ld-sub"><svg width="12" height="12"><use href="#ic-walk"/></svg> <span id="ld-source">Walk-in · สาขาลาดพร้าว</span></div>
+    </div>
+    <div style="margin-left:auto;" id="ld-badge"><span class="badge badge-hot"><svg width="10" height="10"><use href="#ic-flame"/></svg> HOT</span></div>
+  </div>
+  <div class="scroll">
+    <div class="ld-actions">
+      <div class="ld-act" onclick="alert('Calling...')"><div class="ld-act-i"><svg width="20" height="20"><use href="#ic-phone"/></svg></div><div class="ld-act-l">โทร</div></div>
+      <div class="ld-act" onclick="alert('Opening LINE...')"><div class="ld-act-i"><svg width="20" height="20"><use href="#ic-chat"/></svg></div><div class="ld-act-l">LINE</div></div>
+      <div class="ld-act" onclick="go('s-acard')"><div class="ld-act-i"><svg width="20" height="20"><use href="#ic-edit"/></svg></div><div class="ld-act-l">แก้ไข</div></div>
+      <div class="ld-act" onclick="goBookingConfirm()"><div class="ld-act-i"><svg width="20" height="20"><use href="#ic-book"/></svg></div><div class="ld-act-l">จอง</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-hd"><div class="card-title">รุ่นรถที่สนใจ</div></div>
+      <div class="car-item" style="margin:0;cursor:default;" id="ld-car-item">
+        <div class="car-thumb" style="background:#F0FDF4;"><svg style="color:var(--p);width:100%;height:100%"><use href="#car-cross"/></svg></div>
+        <div class="car-info"><div class="car-name">Yaris Cross</div><div class="car-cat">Crossover · ฿799,000</div></div>
+        <div class="car-link" onclick="goCarDetail('yaris')">Details</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-hd"><div class="card-title">Timeline</div></div>
+      <div class="timeline-item"><div class="tl-dot"></div><div class="tl-content"><div class="tl-title">Walk-in เยี่ยมชมโชว์รูม</div><div class="tl-time">วันนี้ 10:30 น.</div></div></div>
+      <div class="timeline-item"><div class="tl-dot tl-gray"></div><div class="tl-content"><div class="tl-title">สร้าง A-Card</div><div class="tl-time">วันนี้ 10:35 น.</div></div></div>
+      <div class="timeline-item"><div class="tl-dot tl-gray"></div><div class="tl-content"><div class="tl-title">ทดลองขับ Yaris Cross</div><div class="tl-time">วันนี้ 11:00 น.</div></div></div>
+      <div class="timeline-item"><div class="tl-dot tl-gray"></div><div class="tl-content"><div class="tl-title">คำนวณสินเชื่อ — ฿10,980/เดือน</div><div class="tl-time">วันนี้ 11:30 น.</div></div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-hd"><div class="card-title">หมายเหตุ</div></div>
+      <div style="font-size:12px;color:var(--t2);line-height:1.6;">ลูกค้าสนใจ Yaris Cross สี Pearl White ต้องการดาวน์ 20% ผ่อน 60 เดือน ใช้ Toyota Leasing</div>
+    </div>
+    <div style="height:10px;"></div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════ SCREEN: BOOKING CONFIRM ═══════════════════════ -->
+<div class="screen" id="s-booking">
+  <div class="ph">
+    <div class="ph-back" onclick="goBack()"><svg width="18" height="18"><use href="#ic-back"/></svg></div>
+    <div class="ph-txt"><h2>การจอง</h2><p id="book-ph-sub">Booking Confirmation</p></div>
+  </div>
+  <div class="scroll">
+
+    <!-- ── Step 1: Review & confirm ── -->
+    <div class="booking-step active" id="bstep-1">
+      <!-- Progress bar -->
+      <div style="display:flex;align-items:center;gap:0;margin-bottom:16px;">
+        <div style="flex:1;text-align:center;"><div style="width:28px;height:28px;border-radius:50%;background:var(--p);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;margin:0 auto 4px;">1</div><div style="font-size:9px;font-weight:700;color:var(--p);">ยืนยัน</div></div>
+        <div style="flex:1;height:2px;background:var(--border);"></div>
+        <div style="flex:1;text-align:center;"><div style="width:28px;height:28px;border-radius:50%;background:var(--border);color:var(--t3);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;margin:0 auto 4px;">2</div><div style="font-size:9px;color:var(--t3);">ชำระเงิน</div></div>
+        <div style="flex:1;height:2px;background:var(--border);"></div>
+        <div style="flex:1;text-align:center;"><div style="width:28px;height:28px;border-radius:50%;background:var(--border);color:var(--t3);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;margin:0 auto 4px;">3</div><div style="font-size:9px;color:var(--t3);">สำเร็จ</div></div>
+      </div>
+      <div class="card">
+        <div class="card-hd"><div class="card-title">รายละเอียดการจอง</div></div>
+        <div class="book-detail">
+          <div class="bd-row"><span class="bd-lbl">รุ่น</span><span class="bd-val">Corolla Altis 2026</span></div>
+          <div class="bd-row"><span class="bd-lbl">สี</span><span class="bd-val">Pearl White</span></div>
+          <div class="bd-row"><span class="bd-lbl">ราคา</span><span class="bd-val">฿909,000</span></div>
+          <div class="bd-row"><span class="bd-lbl">เงินดาวน์</span><span class="bd-val">฿181,800 (20%)</span></div>
+          <div class="bd-row"><span class="bd-lbl">ผ่อน/เดือน</span><span class="bd-val">฿12,450 × 60 เดือน</span></div>
+          <div class="bd-row"><span class="bd-lbl">กำหนดส่งมอบ</span><span class="bd-val">14-21 วัน</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-hd"><div class="card-title">วิธีชำระเงินจอง</div></div>
+        <div class="payment-method-row">
+          <div class="pay-method on" id="pm-qr" onclick="selPayMethod('qr')">
+            <svg width="20" height="20" style="color:var(--p)"><use href="#ic-qr"/></svg>
+            QR PromptPay
+          </div>
+          <div class="pay-method" id="pm-transfer" onclick="selPayMethod('transfer')">
+            <svg width="20" height="20"><use href="#ic-bank"/></svg>
+            โอนเงิน
+          </div>
+          <div class="pay-method" id="pm-card" onclick="selPayMethod('card')">
+            <svg width="20" height="20"><use href="#ic-card"/></svg>
+            บัตรเครดิต
+          </div>
+        </div>
+      </div>
+      <button class="btn btn-p" onclick="goBookingPayment()"><svg width="16" height="16"><use href="#ic-qr"/></svg> สร้าง QR ชำระเงิน ฿5,000</button>
+      <div style="height:10px;"></div>
+    </div>
+
+    <!-- ── Step 2: QR Payment ── -->
+    <div class="booking-step" id="bstep-2">
+      <!-- Progress bar -->
+      <div style="display:flex;align-items:center;gap:0;margin-bottom:16px;">
+        <div style="flex:1;text-align:center;"><div style="width:28px;height:28px;border-radius:50%;background:#BBF7D0;color:var(--p);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;margin:0 auto 4px;">✓</div><div style="font-size:9px;color:var(--t3);">ยืนยัน</div></div>
+        <div style="flex:1;height:2px;background:var(--p);"></div>
+        <div style="flex:1;text-align:center;"><div style="width:28px;height:28px;border-radius:50%;background:var(--p);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;margin:0 auto 4px;">2</div><div style="font-size:9px;font-weight:700;color:var(--p);">ชำระเงิน</div></div>
+        <div style="flex:1;height:2px;background:var(--border);"></div>
+        <div style="flex:1;text-align:center;"><div style="width:28px;height:28px;border-radius:50%;background:var(--border);color:var(--t3);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;margin:0 auto 4px;">3</div><div style="font-size:9px;color:var(--t3);">สำเร็จ</div></div>
+      </div>
+      <div class="qr-wrap">
+        <div style="font-size:10px;color:var(--t3);margin-bottom:8px;font-weight:600;">สแกน QR เพื่อชำระ / Scan to Pay</div>
+        <img class="qr-img" id="booking-qr-img" src="" alt="QR Code" onerror="this.style.display='none';document.getElementById('booking-qr-canvas').style.display='block'">
+        <canvas id="booking-qr-canvas" width="180" height="180" style="display:none;border-radius:8px;"></canvas>
+        <div class="qr-title">ชำระเงินจอง / Booking Deposit</div>
+        <div class="qr-amount">฿5,000</div>
+        <div class="qr-sub">PromptPay — วรจักร์ยนต์ Co., Ltd.<br>เลขที่จอง #WRJ-2026-0384</div>
+        <div class="qr-timer"><svg width="12" height="12"><use href="#ic-calendar"/></svg> หมดอายุใน <span id="qr-countdown">14:59</span></div>
+      </div>
+      <div class="card">
+        <div class="card-hd"><div class="card-title">ช่องทางชำระอื่น ๆ</div></div>
+        <div class="plan-row"><div class="plan-ico"><svg width="16" height="16"><use href="#ic-bank"/></svg></div><div class="plan-info"><div class="plan-name">กสิกรไทย / KBank</div><div class="plan-sub">เลขบัญชี 123-4-56789-0 · บริษัท วรจักร์ยนต์</div></div></div>
+        <div class="plan-row"><div class="plan-ico"><svg width="16" height="16"><use href="#ic-bank"/></svg></div><div class="plan-info"><div class="plan-name">ไทยพาณิชย์ / SCB</div><div class="plan-sub">เลขบัญชี 987-6-54321-0 · บริษัท วรจักร์ยนต์</div></div></div>
+      </div>
+      <button class="btn btn-p" onclick="goBookingSuccess()"><svg width="16" height="16"><use href="#ic-check"/></svg> ยืนยันการชำระเงิน</button>
+      <button class="btn btn-o" style="margin-top:8px;" onclick="alert('ส่ง QR ทาง LINE เรียบร้อย!')"><svg width="16" height="16"><use href="#ic-chat"/></svg> ส่ง QR ให้ลูกค้าทาง LINE</button>
+      <div style="height:10px;"></div>
+    </div>
+
+    <!-- ── Step 3: Success ── -->
+    <div class="booking-step" id="bstep-3">
+      <!-- Progress bar -->
+      <div style="display:flex;align-items:center;gap:0;margin-bottom:16px;">
+        <div style="flex:1;text-align:center;"><div style="width:28px;height:28px;border-radius:50%;background:#BBF7D0;color:var(--p);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;margin:0 auto 4px;">✓</div><div style="font-size:9px;color:var(--t3);">ยืนยัน</div></div>
+        <div style="flex:1;height:2px;background:var(--p);"></div>
+        <div style="flex:1;text-align:center;"><div style="width:28px;height:28px;border-radius:50%;background:#BBF7D0;color:var(--p);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;margin:0 auto 4px;">✓</div><div style="font-size:9px;color:var(--t3);">ชำระเงิน</div></div>
+        <div style="flex:1;height:2px;background:var(--p);"></div>
+        <div style="flex:1;text-align:center;"><div style="width:28px;height:28px;border-radius:50%;background:var(--p);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;margin:0 auto 4px;">✓</div><div style="font-size:9px;font-weight:700;color:var(--p);">สำเร็จ</div></div>
+      </div>
+      <div class="book-success">
+        <div class="book-check"><svg width="32" height="32"><use href="#ic-check"/></svg></div>
+        <div class="book-title">จองเรียบร้อย!</div>
+        <div class="book-sub">Booking confirmed & synced to DMS</div>
+        <div class="book-num">#WRJ-2026-0384</div>
+      </div>
+      <div class="card">
+        <div class="card-hd"><div class="card-title">ขั้นตอนถัดไป</div></div>
+        <div class="plan-row"><div class="plan-ico" style="background:#F0FDF4;"><svg width="16" height="16" style="color:var(--p)"><use href="#ic-check"/></svg></div><div class="plan-info"><div class="plan-name">ชำระเงินจอง ฿5,000</div><div class="plan-sub" style="color:var(--p);">ชำระแล้ว ✓</div></div></div>
+        <div class="plan-row"><div class="plan-ico"><svg width="16" height="16"><use href="#ic-report"/></svg></div><div class="plan-info"><div class="plan-name">ส่งเอกสารสินเชื่อ</div><div class="plan-sub">ภายใน 3 วันทำการ</div></div></div>
+        <div class="plan-row"><div class="plan-ico"><svg width="16" height="16"><use href="#ic-calendar"/></svg></div><div class="plan-info"><div class="plan-name">นัดรับรถ</div><div class="plan-sub">ภายใน 14-21 วัน</div></div></div>
+      </div>
+      <button class="btn btn-o" style="margin-bottom:10px;" onclick="alert('ส่ง Booking Summary ทาง LINE เรียบร้อย!')"><svg width="16" height="16"><use href="#ic-share"/></svg> แชร์ Booking / Share</button>
+      <button class="btn btn-p" onclick="navHistory=[];go('s-sales-dash')"><svg width="16" height="16"><use href="#ic-home"/></svg> กลับหน้าหลัก</button>
+      <div style="height:10px;"></div>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ═══════════════════════ SCREEN: MANAGER DASHBOARD ═══════════════════════ -->
+<div class="screen" id="s-mgr-dash">
+  <div class="ph">
+    <div class="avatar" style="background:var(--t1);width:38px;height:38px;font-size:14px;">ว</div>
+    <div class="ph-txt" style="margin-left:4px;"><h2>Manager Dashboard</h2><p>วรจักร์ยนต์ · มีนาคม 2026</p></div>
+    <div style="position:relative;cursor:pointer;" onclick="go('s-notif')"><svg width="22" height="22" style="color:var(--t1)"><use href="#ic-bell"/></svg><div style="position:absolute;top:0;right:0;width:8px;height:8px;background:var(--hot);border-radius:50%;border:1.5px solid var(--card);"></div></div>
+  </div>
+  <div class="scroll">
+    <div class="fpills" id="branch-pills" style="margin-bottom:12px;">
+      <div class="fpill on" onclick="branchSw(this)">ลาดพร้าว</div>
+      <div class="fpill" onclick="branchSw(this)">อ่อนนุช</div>
+      <div class="fpill" onclick="branchSw(this)">บางนา</div>
+      <div class="fpill" onclick="branchSw(this)">ทุกสาขา</div>
+    </div>
+    <div class="kpi-grid">
+      <div class="kpi-card"><div class="kpi-num">245</div><div class="kpi-lbl">ยอดขายเดือนนี้</div><div class="kpi-sub">เป้า 350 units</div></div>
+      <div class="kpi-card"><div class="kpi-num" style="color:var(--p);">70%</div><div class="kpi-lbl">ความคืบหน้า</div><div class="kpi-sub">เหลือ 105 units</div></div>
+      <div class="kpi-card"><div class="kpi-num" style="color:var(--avail);">18</div><div class="kpi-lbl">Lead ใหม่วันนี้</div><div class="kpi-sub">+3 vs เมื่อวาน</div></div>
+      <div class="kpi-card"><div class="kpi-num" style="color:var(--warm);">7</div><div class="kpi-lbl">Hot Lead</div><div class="kpi-sub">รอการติดตาม</div></div>
+    </div>
+    <div class="card">
+      <div class="card-hd"><div class="card-title"><svg width="16" height="16"><use href="#ic-chart"/></svg> Team Performance</div><div class="card-link">มีนาคม 2026</div></div>
+      <canvas id="team-chart" height="148"></canvas>
+    </div>
+    <div class="card">
+      <div class="card-hd"><div class="card-title"><svg width="16" height="16"><use href="#ic-trophy"/></svg> Leaderboard</div><div class="card-link" onclick="go('s-pipeline')">Pipeline →</div></div>
+      <div class="team-item"><div class="rank g">1</div><div class="team-info"><div class="team-name">มาลี รักดี</div><div class="bar-bg"><div class="bar-fg" style="width:87%;"></div></div></div><div class="team-score"><div class="t-units">61</div><div class="t-tgt">/ 70</div></div></div>
+      <div class="team-item"><div class="rank s">2</div><div class="team-info"><div class="team-name">สุดา เจริญผล</div><div class="bar-bg"><div class="bar-fg" style="width:74%;"></div></div></div><div class="team-score"><div class="t-units">52</div><div class="t-tgt">/ 70</div></div></div>
+      <div class="team-item"><div class="rank b">3</div><div class="team-info"><div class="team-name">สมชาย วงษ์ดี</div><div class="bar-bg"><div class="bar-fg" style="width:64%;"></div></div></div><div class="team-score"><div class="t-units">45</div><div class="t-tgt">/ 70</div></div></div>
+      <div class="team-item"><div class="rank">4</div><div class="team-info"><div class="team-name">ประยุทธ สมใจ</div><div class="bar-bg"><div class="bar-fg warn" style="width:54%;"></div></div></div><div class="team-score"><div class="t-units">38</div><div class="t-tgt">/ 70</div></div></div>
+      <div class="team-item"><div class="rank">5</div><div class="team-info"><div class="team-name">นภา สุขสม</div><div class="bar-bg"><div class="bar-fg danger" style="width:41%;"></div></div></div><div class="team-score"><div class="t-units">29</div><div class="t-tgt">/ 70</div></div></div>
+    </div>
+    <div class="sec-lbl"><svg width="14" height="14"><use href="#ic-power"/></svg> Insights & Alerts</div>
+    <div class="insight i-alert"><svg width="14" height="14" style="flex-shrink:0;margin-top:1px"><use href="#ic-target"/></svg> นภา สุขสม ยังต่ำกว่าเป้า 41% — ควรนัดพูดคุยเพื่อสนับสนุน</div>
+    <div class="insight i-warn"><svg width="14" height="14" style="flex-shrink:0;margin-top:1px"><use href="#ic-flame"/></svg> Hot Lead 7 รายการ รอการติดตามนานกว่า 24 ชั่วโมง</div>
+    <div class="insight i-info"><svg width="14" height="14" style="flex-shrink:0;margin-top:1px"><use href="#ic-chart"/></svg> Yaris Cross ขายดีที่สุดเดือนนี้ — 38 คัน</div>
+  </div>
+  <div class="nav" id="nav-mgr">
+    <div class="ntab on" onclick="go('s-mgr-dash')"><span class="ni"><svg width="22" height="22"><use href="#ic-chart"/></svg></span><span class="nl">Dashboard</span></div>
+    <div class="ntab" onclick="go('s-pipeline')"><span class="ni" style="position:relative;"><svg width="22" height="22"><use href="#ic-pipeline"/></svg><div class="nav-badge"></div></span><span class="nl">Pipeline</span></div>
+    <div class="ntab" onclick="go('s-targets')"><span class="ni"><svg width="22" height="22"><use href="#ic-target"/></svg></span><span class="nl">Targets</span></div>
+    <div class="ntab" onclick="go('s-reports')"><span class="ni"><svg width="22" height="22"><use href="#ic-report"/></svg></span><span class="nl">Reports</span></div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════ SCREEN: PIPELINE ═══════════════════════ -->
+<div class="screen" id="s-pipeline">
+  <div class="ph">
+    <div class="ph-back" onclick="goBack()"><svg width="18" height="18"><use href="#ic-back"/></svg></div>
+    <div class="ph-txt"><h2>Lead Pipeline</h2><p>Sales Funnel — มีนาคม 2026</p></div>
+    <div class="ph-icon"><svg width="20" height="20"><use href="#ic-target"/></svg></div>
+  </div>
+  <div class="scroll" style="padding-left:12px;padding-right:12px;">
+    <div class="sum-pills">
+      <div class="spill sp-h"><svg width="12" height="12"><use href="#ic-flame"/></svg> Hot <strong>7</strong></div>
+      <div class="spill sp-w"><svg width="12" height="12"><use href="#ic-sun"/></svg> Warm <strong>12</strong></div>
+      <div class="spill sp-c"><svg width="12" height="12"><use href="#ic-snow"/></svg> Cool <strong>23</strong></div>
+      <div class="spill sp-g"><svg width="12" height="12"><use href="#ic-check"/></svg> Won <strong>45</strong></div>
+      <div class="spill sp-x">Lost <strong>8</strong></div>
+    </div>
+    <div class="pipe-wrap">
+      <div class="pcol"><div class="pcol-hd" style="background:#FEF2F2;border-color:#FECACA;color:var(--hot);">HOT<span class="pcol-cnt" style="background:var(--hot);">7</span></div>
+        <div class="pcard"><div class="pcard-name">ดวงใจ ทองดี</div><div class="pcard-car">Yaris Cross</div><div class="pcard-ft"><span class="pcard-rep">สมชาย ว.</span><span class="pcard-price">฿799,000</span></div></div>
+        <div class="pcard"><div class="pcard-name">ธนวัฒน์ มีชัย</div><div class="pcard-car">Land Cruiser FJ</div><div class="pcard-ft"><span class="pcard-rep">มาลี ร.</span><span class="pcard-price">฿1,269,000</span></div></div>
+        <div class="pcard"><div class="pcard-name">สิริพร วรรณา</div><div class="pcard-car">bZ4X EV</div><div class="pcard-ft"><span class="pcard-rep">สุดา จ.</span><span class="pcard-price">฿1,529,000</span></div></div>
+      </div>
+      <div class="pcol"><div class="pcol-hd" style="background:#FFFBEB;border-color:#FDE68A;color:var(--warm);">WARM<span class="pcol-cnt" style="background:var(--warm);">12</span></div>
+        <div class="pcard"><div class="pcard-name">ประวิทย์ จันทร์</div><div class="pcard-car">Land Cruiser FJ</div><div class="pcard-ft"><span class="pcard-rep">สมชาย ว.</span><span class="pcard-price">฿1,269,000</span></div></div>
+        <div class="pcard"><div class="pcard-name">อรณี สุขสม</div><div class="pcard-car">bZ4X EV</div><div class="pcard-ft"><span class="pcard-rep">สมชาย ว.</span><span class="pcard-price">฿1,529,000</span></div></div>
+        <div class="pcard"><div class="pcard-name">กมลชนก รุ่งเรือง</div><div class="pcard-car">Corolla Altis</div><div class="pcard-ft"><span class="pcard-rep">นภา ส.</span><span class="pcard-price">฿909,000</span></div></div>
+      </div>
+      <div class="pcol"><div class="pcol-hd" style="background:#EFF6FF;border-color:#BFDBFE;color:var(--cool);">COOL<span class="pcol-cnt" style="background:var(--cool);">23</span></div>
+        <div class="pcard"><div class="pcard-name">วิรัตน์ บุญมา</div><div class="pcard-car">Hilux Revo</div><div class="pcard-ft"><span class="pcard-rep">ประยุทธ ส.</span><span class="pcard-price">฿649,000</span></div></div>
+        <div class="pcard"><div class="pcard-name">ศิริลักษณ์ ดำรงค์</div><div class="pcard-car">GR 86</div><div class="pcard-ft"><span class="pcard-rep">สุดา จ.</span><span class="pcard-price">฿1,899,000</span></div></div>
+      </div>
+      <div class="pcol"><div class="pcol-hd" style="background:var(--p-lt);border-color:var(--p-md);color:var(--p);">WON<span class="pcol-cnt" style="background:var(--p);">45</span></div>
+        <div class="pcard won"><div class="pcard-name">จิรวัฒน์ ศรีรัตน์</div><div class="pcard-car">Corolla Altis 2026</div><div class="pcard-ft"><span class="pcard-rep">มาลี ร.</span><span class="pcard-price">฿909,000</span></div></div>
+        <div class="pcard won"><div class="pcard-name">พรพิมล วงษ์ทอง</div><div class="pcard-car">Yaris Cross</div><div class="pcard-ft"><span class="pcard-rep">สมชาย ว.</span><span class="pcard-price">฿799,000</span></div></div>
+      </div>
+    </div>
+  </div>
+  <div class="nav">
+    <div class="ntab" onclick="go('s-mgr-dash')"><span class="ni"><svg width="22" height="22"><use href="#ic-chart"/></svg></span><span class="nl">Dashboard</span></div>
+    <div class="ntab on"><span class="ni"><svg width="22" height="22"><use href="#ic-pipeline"/></svg></span><span class="nl">Pipeline</span></div>
+    <div class="ntab" onclick="go('s-targets')"><span class="ni"><svg width="22" height="22"><use href="#ic-target"/></svg></span><span class="nl">Targets</span></div>
+    <div class="ntab" onclick="go('s-reports')"><span class="ni"><svg width="22" height="22"><use href="#ic-report"/></svg></span><span class="nl">Reports</span></div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════ SCREEN: TARGETS ═══════════════════════ -->
+<div class="screen" id="s-targets">
+  <div class="ph">
+    <div class="ph-back" onclick="goBack()"><svg width="18" height="18"><use href="#ic-back"/></svg></div>
+    <div class="ph-txt"><h2>เป้าหมายรายบุคคล</h2><p>Individual Targets — มีนาคม 2026</p></div>
+  </div>
+  <div class="scroll">
+    <div class="target-card" style="margin-bottom:16px;">
+      <div class="tc-sub">เป้าหมายรวมทุกสาขา / Total Target</div>
+      <div class="tc-num">245 <span style="font-size:16px;opacity:.7;">/ 350 units</span></div>
+      <div class="tc-bar"><div class="tc-fill" style="width:70%;"></div></div>
+      <div class="tc-row">
+        <div class="tc-stat"><div class="tc-sn">70%</div><div class="tc-sl">สำเร็จ</div></div>
+        <div class="tc-stat"><div class="tc-sn">105</div><div class="tc-sl">เหลืออีก</div></div>
+        <div class="tc-stat"><div class="tc-sn">3</div><div class="tc-sl">วันที่เหลือ</div></div>
+      </div>
+    </div>
+    <div class="sec-lbl"><svg width="14" height="14"><use href="#ic-users"/></svg> Staff Targets</div>
+    <div class="tgt-card"><div class="tgt-hd"><div class="tgt-name">มาลี รักดี</div><div class="tgt-pct" style="color:var(--p);">87%</div></div><div class="tgt-bar"><div class="tgt-fill" style="width:87%;"></div></div><div class="tgt-row"><span>61 / 70 units</span><span>เหลือ 9 units</span></div></div>
+    <div class="tgt-card"><div class="tgt-hd"><div class="tgt-name">สุดา เจริญผล</div><div class="tgt-pct" style="color:var(--p);">74%</div></div><div class="tgt-bar"><div class="tgt-fill" style="width:74%;"></div></div><div class="tgt-row"><span>52 / 70 units</span><span>เหลือ 18 units</span></div></div>
+    <div class="tgt-card"><div class="tgt-hd"><div class="tgt-name">สมชาย วงษ์ดี</div><div class="tgt-pct" style="color:var(--p);">64%</div></div><div class="tgt-bar"><div class="tgt-fill" style="width:64%;"></div></div><div class="tgt-row"><span>45 / 70 units</span><span>เหลือ 25 units</span></div></div>
+    <div class="tgt-card"><div class="tgt-hd"><div class="tgt-name">ประยุทธ สมใจ</div><div class="tgt-pct" style="color:var(--warm);">54%</div></div><div class="tgt-bar"><div class="tgt-fill warn" style="width:54%;"></div></div><div class="tgt-row"><span>38 / 70 units</span><span>เหลือ 32 units</span></div></div>
+    <div class="tgt-card"><div class="tgt-hd"><div class="tgt-name">นภา สุขสม</div><div class="tgt-pct" style="color:var(--hot);">41%</div></div><div class="tgt-bar"><div class="tgt-fill danger" style="width:41%;"></div></div><div class="tgt-row"><span>29 / 70 units</span><span>เหลือ 41 units</span></div></div>
+
+    <div class="sec-lbl" style="margin-top:8px;"><svg width="14" height="14"><use href="#ic-home"/></svg> Branch Targets</div>
+    <div class="tgt-card"><div class="tgt-hd"><div class="tgt-name">สาขาลาดพร้าว</div><div class="tgt-pct" style="color:var(--p);">78%</div></div><div class="tgt-bar"><div class="tgt-fill" style="width:78%;"></div></div><div class="tgt-row"><span>117 / 150 units</span><span>เหลือ 33 units</span></div></div>
+    <div class="tgt-card"><div class="tgt-hd"><div class="tgt-name">สาขาอ่อนนุช</div><div class="tgt-pct" style="color:var(--warm);">62%</div></div><div class="tgt-bar"><div class="tgt-fill warn" style="width:62%;"></div></div><div class="tgt-row"><span>62 / 100 units</span><span>เหลือ 38 units</span></div></div>
+    <div class="tgt-card"><div class="tgt-hd"><div class="tgt-name">สาขาบางนา</div><div class="tgt-pct" style="color:var(--warm);">66%</div></div><div class="tgt-bar"><div class="tgt-fill warn" style="width:66%;"></div></div><div class="tgt-row"><span>66 / 100 units</span><span>เหลือ 34 units</span></div></div>
+  </div>
+  <div class="nav">
+    <div class="ntab" onclick="go('s-mgr-dash')"><span class="ni"><svg width="22" height="22"><use href="#ic-chart"/></svg></span><span class="nl">Dashboard</span></div>
+    <div class="ntab" onclick="go('s-pipeline')"><span class="ni"><svg width="22" height="22"><use href="#ic-pipeline"/></svg></span><span class="nl">Pipeline</span></div>
+    <div class="ntab on"><span class="ni"><svg width="22" height="22"><use href="#ic-target"/></svg></span><span class="nl">Targets</span></div>
+    <div class="ntab" onclick="go('s-reports')"><span class="ni"><svg width="22" height="22"><use href="#ic-report"/></svg></span><span class="nl">Reports</span></div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════ SCREEN: REPORTS ═══════════════════════ -->
+<div class="screen" id="s-reports">
+  <div class="ph">
+    <div class="ph-back" onclick="goBack()"><svg width="18" height="18"><use href="#ic-back"/></svg></div>
+    <div class="ph-txt"><h2>รายงานเดือน</h2><p>Monthly Report — มีนาคม 2026</p></div>
+  </div>
+  <div class="scroll">
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px;">
+      <div class="rpt-stat"><div class="rpt-val">245</div><div class="rpt-lbl">Units Sold</div></div>
+      <div class="rpt-stat"><div class="rpt-val" style="color:var(--p);">฿231M</div><div class="rpt-lbl">Revenue</div></div>
+      <div class="rpt-stat"><div class="rpt-val">฿943K</div><div class="rpt-lbl">Avg Deal</div></div>
+    </div>
+    <div class="card">
+      <div class="card-hd"><div class="card-title"><svg width="16" height="16"><use href="#ic-chart"/></svg> Weekly Trend</div></div>
+      <canvas id="weekly-chart" height="120"></canvas>
+    </div>
+    <div class="card">
+      <div class="card-hd"><div class="card-title"><svg width="16" height="16"><use href="#ic-trophy"/></svg> Top Models</div></div>
+      <div class="rpt-row"><div class="rpt-rank">1</div><div class="rpt-model">Yaris Cross</div><div class="rpt-units">38</div></div>
+      <div class="rpt-row"><div class="rpt-rank">2</div><div class="rpt-model">Corolla Altis</div><div class="rpt-units">32</div></div>
+      <div class="rpt-row"><div class="rpt-rank">3</div><div class="rpt-model">Hilux Revo</div><div class="rpt-units">28</div></div>
+      <div class="rpt-row"><div class="rpt-rank">4</div><div class="rpt-model">Land Cruiser FJ</div><div class="rpt-units">18</div></div>
+      <div class="rpt-row"><div class="rpt-rank">5</div><div class="rpt-model">bZ4X EV</div><div class="rpt-units">14</div></div>
+      <div class="rpt-row"><div class="rpt-rank">6</div><div class="rpt-model">GR 86</div><div class="rpt-units">8</div></div>
+    </div>
+    <div class="card">
+      <div class="card-hd"><div class="card-title"><svg width="16" height="16"><use href="#ic-download"/></svg> Export</div></div>
+      <div class="export-row">
+        <div class="export-btn" onclick="alert('Exporting PDF report...')"><svg width="16" height="16"><use href="#ic-report"/></svg> PDF Report</div>
+        <div class="export-btn" onclick="alert('Exporting Excel...')"><svg width="16" height="16"><use href="#ic-download"/></svg> Excel</div>
+      </div>
+    </div>
+  </div>
+  <div class="nav">
+    <div class="ntab" onclick="go('s-mgr-dash')"><span class="ni"><svg width="22" height="22"><use href="#ic-chart"/></svg></span><span class="nl">Dashboard</span></div>
+    <div class="ntab" onclick="go('s-pipeline')"><span class="ni"><svg width="22" height="22"><use href="#ic-pipeline"/></svg></span><span class="nl">Pipeline</span></div>
+    <div class="ntab" onclick="go('s-targets')"><span class="ni"><svg width="22" height="22"><use href="#ic-target"/></svg></span><span class="nl">Targets</span></div>
+    <div class="ntab on"><span class="ni"><svg width="22" height="22"><use href="#ic-report"/></svg></span><span class="nl">Reports</span></div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════ SCREEN: NOTIFICATIONS ═══════════════════════ -->
+<div class="screen" id="s-notif">
+  <div class="ph">
+    <div class="ph-back" onclick="goBack()"><svg width="18" height="18"><use href="#ic-back"/></svg></div>
+    <div class="ph-txt"><h2>การแจ้งเตือน</h2><p>Notifications</p></div>
+  </div>
+  <div class="scroll">
+    <div class="card" style="border-left:3px solid var(--hot);">
+      <div style="display:flex;gap:10px;align-items:flex-start;">
+        <div style="color:var(--hot);flex-shrink:0;margin-top:2px;"><svg width="18" height="18"><use href="#ic-flame"/></svg></div>
+        <div><div style="font-size:13px;font-weight:700;color:var(--t1);">Hot Lead: ดวงใจ ทองดี</div><div style="font-size:11px;color:var(--t2);margin-top:2px;">ตัดสินใจซื้อ Yaris Cross วันนี้ — ต้องติดตามด่วน</div><div style="font-size:10px;color:var(--t3);margin-top:4px;">10 นาทีที่แล้ว</div></div>
+      </div>
+    </div>
+    <div class="card" style="border-left:3px solid var(--warm);">
+      <div style="display:flex;gap:10px;align-items:flex-start;">
+        <div style="color:var(--warm);flex-shrink:0;margin-top:2px;"><svg width="18" height="18"><use href="#ic-calendar"/></svg></div>
+        <div><div style="font-size:13px;font-weight:700;color:var(--t1);">นัดหมาย 14:00 วันนี้</div><div style="font-size:11px;color:var(--t2);margin-top:2px;">ประวิทย์ จันทร์ — Land Cruiser FJ Test Drive</div><div style="font-size:10px;color:var(--t3);margin-top:4px;">3 ชั่วโมงที่แล้ว</div></div>
+      </div>
+    </div>
+    <div class="card" style="border-left:3px solid var(--p);">
+      <div style="display:flex;gap:10px;align-items:flex-start;">
+        <div style="color:var(--p);flex-shrink:0;margin-top:2px;"><svg width="18" height="18"><use href="#ic-check"/></svg></div>
+        <div><div style="font-size:13px;font-weight:700;color:var(--t1);">จิรวัฒน์ ศรีรัตน์ — WON</div><div style="font-size:11px;color:var(--t2);margin-top:2px;">Corolla Altis 2026 Pearl White — ฿909,000</div><div style="font-size:10px;color:var(--t3);margin-top:4px;">เมื่อวาน 16:30</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div style="display:flex;gap:10px;align-items:flex-start;">
+        <div style="color:var(--t3);flex-shrink:0;margin-top:2px;"><svg width="18" height="18"><use href="#ic-car"/></svg></div>
+        <div><div style="font-size:13px;font-weight:700;color:var(--t1);">สต็อค Yaris Cross อัปเดต</div><div style="font-size:11px;color:var(--t2);margin-top:2px;">3 คัน สี Pearl White พร้อมส่ง 2 เม.ย.</div><div style="font-size:10px;color:var(--t3);margin-top:4px;">เมื่อวาน 09:00</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div style="display:flex;gap:10px;align-items:flex-start;">
+        <div style="color:var(--t3);flex-shrink:0;margin-top:2px;"><svg width="18" height="18"><use href="#ic-target"/></svg></div>
+        <div><div style="font-size:13px;font-weight:700;color:var(--t1);">เป้าหมายรายสัปดาห์</div><div style="font-size:11px;color:var(--t2);margin-top:2px;">ต้องปิดอีก 25 units ภายใน 3 วัน — สู้ๆ!</div><div style="font-size:10px;color:var(--t3);margin-top:4px;">2 วันที่แล้ว</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+</div><!-- /app-shell -->
+</div><!-- /device -->
+
+
+<script>
+// ══════ STATE ══════
+let loginRoleVal='sales', navHistory=[], loanTerm=60, chartInst=null, weeklyChartInst=null;
+const LOAN_PRICE=909000;
+
+// ══════ CARS DATA ══════
+const CARS={
+  corolla:{name:'Corolla Altis 2026',type:'Sedan',price:'฿909,000',shape:'car-sedan',fuel:'Hybrid',seats:'5',gearbox:'CVT Auto',power:'140 hp',avail:'In Stock',stock:'3 units — สาขาลาดพร้าว',warranty:'3 ปี / 100,000 กม.',eco:'23.3 km/L',bg:'#EEF2FF',cat:'sedan',img:'https://tmna.aemassets.toyota.com/is/image/toyota/toyota/jellies/max/2026/corolla/le/1852/1k3/2.png?fmt=webp-alpha&wid=930&qlt=90',imgs:{ext:'https://tmna.aemassets.toyota.com/is/image/toyota/toyota/jellies/max/2026/corolla/le/1852/1k3/1.png?fmt=webp-alpha&wid=930&qlt=90',side:'https://tmna.aemassets.toyota.com/is/image/toyota/toyota/jellies/max/2026/corolla/le/1852/1k3/2.png?fmt=webp-alpha&wid=930&qlt=90',rear:'https://tmna.aemassets.toyota.com/is/image/toyota/toyota/jellies/max/2026/corolla/le/1852/1k3/3.png?fmt=webp-alpha&wid=930&qlt=90',int:'https://tmna.aemassets.toyota.com/is/image/toyota/toyota/jellies/max/2026/corolla/le/1852/1k3/4.png?fmt=webp-alpha&wid=930&qlt=90'},video:'suqtQAPxiBM'},
+  yaris:{name:'Yaris Cross',type:'Crossover',price:'฿799,000',shape:'car-cross',fuel:'Hybrid',seats:'5',gearbox:'CVT Auto',power:'116 hp',avail:'In Transit',stock:'ETA 5 วัน',warranty:'3 ปี / 100,000 กม.',eco:'21.8 km/L',bg:'#F0FDF4',cat:'cross',img:'https://www.toyota.co.th/media/product/series/gallery/large/fbf58299b9b02df75ff3693dda511fd1773ac674d8d62dacef543f386fb29e5b.webp?v=726',imgs:{ext:'https://www.toyota.co.th/media/product/series/gallery/large/fbf58299b9b02df75ff3693dda511fd1773ac674d8d62dacef543f386fb29e5b.webp?v=726',side:'https://www.toyota.co.th/media/product/series/gallery/large/df9ad18def9b9789b09cfc2fb701b38914ad1e25301b8403d18054f76f284396.webp?v=726',rear:'https://www.toyota.co.th/media/product/series/gallery/large/ed9f6b1ee71717212c5312738dff4fa183092df58d1c3f1ea2fe9bdff1aedf9c.webp?v=726',int:'https://www.toyota.co.th/media/product/series/gallery/large/df9ad18def9b9789b09cfc2fb701b38914ad1e25301b8403d18054f76f284396.webp?v=726'},video:'Yj1YmRrAQao'},
+  lc:{name:'Land Cruiser FJ',type:'SUV',price:'฿1,269,000',shape:'car-suv',fuel:'Petrol V6',seats:'7',gearbox:'10-Spd AT',power:'381 hp',avail:'In Stock',stock:'1 unit — สาขาบางนา',warranty:'5 ปี / 100,000 กม.',eco:'8.6 km/L',bg:'#F5F3FF',cat:'suv',img:'https://tmna.aemassets.toyota.com/is/image/toyota/toyota/jellies/max/2026/landcruiser/landcruiser1958/6165/202/1.png?fmt=png-alpha&wid=930&qlt=90',imgs:{ext:'https://tmna.aemassets.toyota.com/is/image/toyota/toyota/jellies/max/2026/landcruiser/landcruiser1958/6165/202/1.png?fmt=png-alpha&wid=930&qlt=90',side:'https://tmna.aemassets.toyota.com/is/image/toyota/toyota/jellies/max/2026/landcruiser/landcruiser1958/6165/202/2.png?fmt=png-alpha&wid=930&qlt=90',rear:'https://tmna.aemassets.toyota.com/is/image/toyota/toyota/jellies/max/2026/landcruiser/landcruiser1958/6165/202/3.png?fmt=png-alpha&wid=930&qlt=90',int:'https://tmna.aemassets.toyota.com/is/image/toyota/toyota/jellies/max/2026/landcruiser/landcruiser1958/6165/202/4.png?fmt=png-alpha&wid=930&qlt=90'},video:'ZE6MkxVRKXM'},
+  bz4x:{name:'bZ4X',type:'EV',price:'฿1,529,000',shape:'car-ev',fuel:'Electric',seats:'5',gearbox:'Auto (EV)',power:'204 hp',avail:'In Transit',stock:'ETA 7 วัน',warranty:'8 ปี Battery',eco:'400+ km range',bg:'#ECFDF5',cat:'ev',img:'https://tmna.aemassets.toyota.com/is/image/toyota/toyota/jellies/max/2026/bz/xle/2873/089/2.png?fmt=webp-alpha&wid=930&qlt=90',imgs:{ext:'https://tmna.aemassets.toyota.com/is/image/toyota/toyota/jellies/max/2026/bz/xle/2873/089/1.png?fmt=webp-alpha&wid=930&qlt=90',side:'https://tmna.aemassets.toyota.com/is/image/toyota/toyota/jellies/max/2026/bz/xle/2873/089/2.png?fmt=webp-alpha&wid=930&qlt=90',rear:'https://tmna.aemassets.toyota.com/is/image/toyota/toyota/jellies/max/2026/bz/xle/2873/089/3.png?fmt=webp-alpha&wid=930&qlt=90',int:'https://tmna.aemassets.toyota.com/is/image/toyota/toyota/jellies/max/2026/bz/xle/2873/089/4.png?fmt=webp-alpha&wid=930&qlt=90'},video:'Yj1YmRrAQao'},
+  hilux:{name:'Hilux Revo',type:'Pickup',price:'฿649,000',shape:'car-pickup',fuel:'Diesel',seats:'5',gearbox:'6-Spd AT',power:'150 hp',avail:'In Stock',stock:'6 units — สาขาลาดพร้าว',warranty:'3 ปี / 100,000 กม.',eco:'14.5 km/L',bg:'#FFF7ED',cat:'pickup',img:'https://tmna.aemassets.toyota.com/is/image/toyota/toyota/jellies/max/2026/tacoma/sr/7594/040/2.png?fmt=webp-alpha&wid=930&qlt=90',imgs:{ext:'https://tmna.aemassets.toyota.com/is/image/toyota/toyota/jellies/max/2026/tacoma/sr/7594/040/1.png?fmt=webp-alpha&wid=930&qlt=90',side:'https://tmna.aemassets.toyota.com/is/image/toyota/toyota/jellies/max/2026/tacoma/sr/7594/040/2.png?fmt=webp-alpha&wid=930&qlt=90',rear:'https://tmna.aemassets.toyota.com/is/image/toyota/toyota/jellies/max/2026/tacoma/sr/7594/040/3.png?fmt=webp-alpha&wid=930&qlt=90',int:'https://tmna.aemassets.toyota.com/is/image/toyota/toyota/jellies/max/2026/tacoma/sr/7594/040/4.png?fmt=webp-alpha&wid=930&qlt=90'},video:'suqtQAPxiBM'},
+  gr86:{name:'GR 86',type:'Sport',price:'฿1,899,000',shape:'car-sport',fuel:'Petrol',seats:'4',gearbox:'6-Spd MT',power:'234 hp',avail:'In Stock',stock:'1 unit — สาขาอ่อนนุช',warranty:'3 ปี / 100,000 กม.',eco:'10.5 km/L',bg:'#FFF1F2',cat:'sport',img:'https://tmna.aemassets.toyota.com/is/image/toyota/toyota/jellies/max/2026/gr86/gr86/6255/d4s/2.png?fmt=webp-alpha&wid=930&qlt=90',imgs:{ext:'https://tmna.aemassets.toyota.com/is/image/toyota/toyota/jellies/max/2026/gr86/gr86/6255/d4s/1.png?fmt=webp-alpha&wid=930&qlt=90',side:'https://tmna.aemassets.toyota.com/is/image/toyota/toyota/jellies/max/2026/gr86/gr86/6255/d4s/2.png?fmt=webp-alpha&wid=930&qlt=90',rear:'https://tmna.aemassets.toyota.com/is/image/toyota/toyota/jellies/max/2026/gr86/gr86/6255/d4s/3.png?fmt=webp-alpha&wid=930&qlt=90',int:'https://tmna.aemassets.toyota.com/is/image/toyota/toyota/jellies/max/2026/gr86/gr86/6255/d4s/4.png?fmt=webp-alpha&wid=930&qlt=90'},video:'ZE6MkxVRKXM'},
+};
+
+const LEADS={
+  duangjai:{name:'ดวงใจ ทองดี',init:'ด',color:'#DC2626',level:'hot',source:'Walk-in · สาขาลาดพร้าว',car:'yaris'},
+  prawit:{name:'ประวิทย์ จันทร์',init:'ป',color:'#8B5CF6',level:'warm',source:'LINE OA',car:'lc'},
+  oranee:{name:'อรณี สุขสม',init:'อ',color:'#3B82F6',level:'warm',source:'Facebook Lead',car:'bz4x'},
+  jirawat:{name:'จิรวัฒน์ ศรีรัตน์',init:'จ',color:'#10B981',level:'won',source:'Walk-in · สาขาลาดพร้าว',car:'corolla'},
+};
+
+const GALLERY_VIEWS=[
+  {id:'ext',label:'Exterior',bg:'linear-gradient(160deg,#F0FAF3 0%,#E2F2E8 100%)',svg:'shape'},
+  {id:'side',label:'Side View',bg:'linear-gradient(160deg,#EFF6FF 0%,#DBEAFE 100%)',svg:'shape'},
+  {id:'rear',label:'Rear',bg:'linear-gradient(160deg,#F5F3FF 0%,#EDE9FE 100%)',svg:'shape'},
+  {id:'int',label:'Interior',bg:'linear-gradient(160deg,#FAFAF7 0%,#F5F5F0 100%)',svg:'car-interior'},
+  {id:'vid',label:'Video',bg:'linear-gradient(160deg,#1F2937 0%,#111827 100%)',svg:'play'},
+];
+
+function goBack(){if(!navHistory.length)return;const cur=document.querySelector('.screen.active');if(cur)cur.classList.remove('active');const prev=document.getElementById(navHistory.pop());if(prev){prev.classList.add('active');if(prev.id==='s-mgr-dash')setTimeout(initChart,120);if(prev.id==='s-reports')setTimeout(initWeeklyChart,120);}}
+
+// ══════ DETAILED SPECS DATA ══════
+const SPECS={
+  corolla:{
+    engine:[['เครื่องยนต์','2ZR-FXE 1.8L Inline-4 DOHC'],['กำลัง','98 hp + 72 hp (Hybrid)'],['แรงบิด','142 Nm @ 3,600 rpm'],['ระบบขับเคลื่อน','FWD + Electric Motor'],['ถัง/ระยะ','43L / ~1,000 km']],
+    dim:[['ยาว × กว้าง × สูง','4,640 × 1,780 × 1,435 mm'],['ระยะฐานล้อ','2,700 mm'],['ความสูงจากพื้น','135 mm'],['น้ำหนักรถ','1,405 kg'],['ขนาดล้อ','205/55R16']],
+    safety:['Toyota Safety Sense (TSS)','Pre-Collision System (PCS)','Lane Departure Alert (LDA)','Automatic High Beam (AHB)','6 SRS Airbags','VSC + TRC + ABS + EBD','Rear Camera + Sensors'],
+    features:['10.5" Touchscreen Display','Apple CarPlay / Android Auto','Dual-Zone Auto Climate','8-Speaker Audio System','Wireless Charging','Smart Entry & Push Start','LED Headlights & DRL']
+  },
+  yaris:{
+    engine:[['เครื่องยนต์','M15A-FXE 1.5L Inline-3'],['กำลัง','91 hp + 59 hp (Hybrid)'],['แรงบิด','120 Nm @ 3,600 rpm'],['ระบบขับเคลื่อน','E-Four AWD (Optional)'],['ถัง/ระยะ','36L / ~900 km']],
+    dim:[['ยาว × กว้าง × สูง','4,180 × 1,765 × 1,590 mm'],['ระยะฐานล้อ','2,560 mm'],['ความสูงจากพื้น','175 mm'],['น้ำหนักรถ','1,200 kg'],['ขนาดล้อ','215/60R17']],
+    safety:['Toyota Safety Sense (TSS)','Pre-Collision w/ Pedestrian','Lane Tracing Assist (LTA)','Blind Spot Monitor (BSM)','6 SRS Airbags','Rear Cross-Traffic Alert','360° Surround Camera'],
+    features:['9" Touchscreen + Satnav','Apple CarPlay / Android Auto','Single-Zone Auto AC','เบาะหนังสังเคราะห์','Electric Parking Brake','Hill Assist Control','LED Matrix Headlights']
+  },
+  lc:{
+    engine:[['เครื่องยนต์','2TR-FE 2.7L 4-Cyl DOHC 16V'],['กำลัง','166 PS @ 5,200 rpm'],['แรงบิด','245 Nm @ 4,000 rpm'],['ระบบขับเคลื่อน','4WD + Diff Lock'],['เกียร์','6-Speed Automatic']],
+    dim:[['ยาว × กว้าง × สูง','4,610 × 1,855 × 1,890 mm'],['ระยะฐานล้อ','2,750 mm'],['ความสูงจากพื้น','245 mm'],['น้ำหนักรถ','1,990 kg'],['ขนาดล้อ','265/60R18 Alloy']],
+    safety:['6 SRS Airbags','BSM + Rear Cross-Traffic Alert','Pre-Collision System','Dynamic Radar Cruise Control','Lane Departure Alert','PKSB Front & Rear','Rear Camera + Sensors'],
+    features:['12.3" Toyota Audio Multimedia','Apple CarPlay / Android Auto','Dual-Zone Climate Control','เบาะหนังสังเคราะห์ 7 ที่นั่ง','Sunroof / Moonroof','Multi-Terrain Select (MTS)','Crawl Control']
+  },
+  bz4x:{
+    engine:[['มอเตอร์ไฟฟ้า','Permanent Magnet Synchronous'],['กำลัง','204 hp (Single) / 218 hp (AWD)'],['แรงบิด','266 Nm (FWD) / 337 Nm (AWD)'],['แบตเตอรี่','71.4 kWh Lithium-Ion'],['ระยะทาง (WLTC)','520 km (FWD) / 460 km (AWD)']],
+    dim:[['ยาว × กว้าง × สูง','4,690 × 1,860 × 1,650 mm'],['ระยะฐานล้อ','2,850 mm'],['ความสูงจากพื้น','210 mm'],['น้ำหนักรถ','2,005 kg'],['ขนาดล้อ','235/50R20']],
+    safety:['Toyota Safety Sense 3.0','Pre-Collision + Cyclist','Lane Keeping Assist','Blind Spot + RCTA','8 SRS Airbags','Electric Stability Control','Pedestrian Detection Night'],
+    features:['12.3" + 7" Dual Screen','Wireless Apple CarPlay / Android Auto','3-Zone Auto Climate','เบาะหนัง + Memory','Panoramic Roof','DC Fast Charge (150 kW)','Vehicle-to-Load (V2L)']
+  },
+  hilux:{
+    engine:[['เครื่องยนต์','2GD-FTV 2.4L Turbo Diesel'],['กำลัง','150 hp @ 3,400 rpm'],['แรงบิด','400 Nm @ 1,400-2,800 rpm'],['ระบบขับเคลื่อน','4WD Hi/Lo + Diff Lock'],['เกียร์','6-Speed Automatic']],
+    dim:[['ยาว × กว้าง × สูง','5,330 × 1,855 × 1,815 mm'],['ระยะฐานล้อ','3,085 mm'],['ความสูงจากพื้น','277 mm'],['น้ำหนักบรรทุก','1,000 kg (1 ton)'],['ขนาดล้อ','265/60R18 All-Terrain']],
+    safety:['Toyota Safety Sense (TSS)','Pre-Collision System','Lane Departure Alert','6 SRS Airbags','ABS + EBD + VSC + TRC','Hill Assist + Trailer Sway','Rear Camera + Sensors'],
+    features:['9" Toyota Audio Multimedia','Apple CarPlay / Android Auto','เบาะหนังสังเคราะห์','Auto AC Dual Zone','Wireless Charging','Tough Bed Liner','Sport Bar + Canopy Ready']
+  },
+  gr86:{
+    engine:[['เครื่องยนต์','FA24 2.4L Boxer 4-Cyl'],['กำลัง','234 hp @ 7,000 rpm'],['แรงบิด','250 Nm @ 3,700 rpm'],['ระบบขับเคลื่อน','RWD'],['เกียร์','6-Speed Manual / Auto']],
+    dim:[['ยาว × กว้าง × สูง','4,265 × 1,775 × 1,310 mm'],['ระยะฐานล้อ','2,575 mm'],['ความสูงจากพื้น','130 mm'],['น้ำหนักรถ','1,270 kg'],['ขนาดล้อ','215/40R18 (Front/Rear)']],
+    safety:['Dual Front + Side Airbags','Curtain Shield Airbags','Vehicle Stability Control','ABS + EBD + Brake Assist','Rear Camera','Hill Hold Control','Sports ABS (Track Mode)'],
+    features:['8" Toyota Audio Multimedia','Apple CarPlay / Android Auto','GR Sport Bucket Seats','Alcantara Steering Wheel','LED Headlights','Brembo Brake Upgrade','Track Mode + Sport Mode']
+  }
+};
+
+// ══════ NAVIGATION ══════
+function go(id){
+  const cur=document.querySelector('.screen.active');
+  if(cur){navHistory.push(cur.id);cur.classList.remove('active');}
+  const next=document.getElementById(id);
+  if(next){
+    next.classList.add('active');
+    if(id==='s-mgr-dash')setTimeout(initChart,120);
+    if(id==='s-reports')setTimeout(initWeeklyChart,120);
+  }
+}
+
+// ══════ DEVICE / ROLE ══════
+function setDevice(d){document.getElementById('device').className='device '+d;document.getElementById('btn-phone').className='dev-btn'+(d==='phone'?' on':'');document.getElementById('btn-tablet').className='dev-btn'+(d==='tablet'?' on':'');}
+function switchRole(r){navHistory=[];document.getElementById('btn-sales').className='dev-btn'+(r==='sales'?' on':'');document.getElementById('btn-mgr').className='dev-btn'+(r==='mgr'?' on':'');go(r==='mgr'?'s-mgr-dash':'s-sales-dash');}
+function selRole(r,el){loginRoleVal=r;document.querySelectorAll('.role-opt').forEach(e=>e.classList.remove('on'));el.classList.add('on');}
+function doLogin(){navHistory=[];go(loginRoleVal==='mgr'?'s-mgr-dash':'s-sales-dash');}
+
+// ══════ CAR CATALOG — render list ══════
+// ══════ CAR CATALOG — render list ══════
+function renderCarList(){
+  const el=document.getElementById('car-list');
+  let html='';
+  for(const[id,c]of Object.entries(CARS)){
+    const availCls=c.avail==='In Stock'?'dot':'dot dot-orange';
+    const priceNum=parseInt(c.price.replace(/[฿,]/g,''));
+    html+=`<div class="car-item" data-cat="${c.cat}" data-id="${id}" data-price="${priceNum}" data-name="${c.name.toLowerCase()}" onclick="goCarDetail('${id}')">
+      <div class="car-thumb" style="background:${c.bg};">${c.img ? '<img src="'+c.img+'" alt="'+c.name+'">' : '<svg style="color:var(--p);width:100%;height:100%"><use href="#'+c.shape+'"/></svg>'}</div>
+      <div class="car-info"><div class="car-row"><div class="car-name">${c.name}</div><div class="car-prc">${c.price}</div></div>
+      <div class="car-cat">${c.type} · ${c.fuel}</div>
+      <div class="car-tags"><span class="ftag ${availCls}">${c.avail}</span><span class="ftag">${c.seats} seats</span><span class="ftag">${c.fuel}</span></div></div>
+      <div class="car-link">Details</div></div>`;
+  }
+  el.innerHTML=html;
+}
+
+// ══════ CAR DETAIL ══════
+let currentCar='corolla';
+function goCarDetail(id){
+  currentCar=id;
+  const c=CARS[id];
+  document.getElementById('det-name-h').textContent=c.name;
+  document.getElementById('det-model').textContent=c.name;
+  document.getElementById('det-type').textContent=c.type;
+  document.getElementById('det-price').textContent=c.price;
+  document.getElementById('det-specs').innerHTML=`
+    <div class="spec-cell"><span class="spec-ico"><svg width="18" height="18"><use href="#ic-fuel"/></svg></span><div><div class="spec-lbl">Fuel</div><div class="spec-val">${c.fuel}</div></div></div>
+    <div class="spec-cell"><span class="spec-ico"><svg width="18" height="18"><use href="#ic-seat"/></svg></span><div><div class="spec-lbl">Capacity</div><div class="spec-val">${c.seats} Seats</div></div></div>
+    <div class="spec-cell"><span class="spec-ico"><svg width="18" height="18"><use href="#ic-gear"/></svg></span><div><div class="spec-lbl">Gearbox</div><div class="spec-val">${c.gearbox}</div></div></div>
+    <div class="spec-cell"><span class="spec-ico"><svg width="18" height="18"><use href="#ic-power"/></svg></span><div><div class="spec-lbl">Power</div><div class="spec-val">${c.power}</div></div></div>`;
+  const dot=document.getElementById('det-avail-dot');dot.textContent=c.avail;dot.className='dot'+(c.avail==='In Stock'?'':' dot-orange');
+  document.getElementById('det-stock-sub').textContent=c.stock;
+  document.getElementById('dd-warranty').textContent=c.warranty;
+  document.getElementById('dd-eco').textContent=c.eco;
+  buildSpecAccordion(id);
+  buildGallery(c);
+  go('s-car-detail');
+}
+
+function buildGallery(c){
+  const main=document.getElementById('gallery-main');
+  const carEl=document.getElementById('gallery-car-svg');
+  // Replace SVG with img if car has images
+  if(c.imgs){
+    carEl.style.display='none';
+    let imgEl=document.getElementById('gallery-car-img');
+    if(!imgEl){
+      imgEl=document.createElement('img');
+      imgEl.id='gallery-car-img';
+      imgEl.className='gallery-car-img';
+      carEl.parentNode.insertBefore(imgEl,carEl.nextSibling);
+    }
+    imgEl.src=c.imgs.ext;
+    imgEl.alt=c.name;
+    imgEl.style.display='';
+    // Remove any video iframe
+    const oldVid=document.getElementById('gallery-video');
+    if(oldVid)oldVid.remove();
+  } else {
+    carEl.style.display='';
+    carEl.innerHTML=`<use href="#${c.shape}"/>`;
+    const imgEl=document.getElementById('gallery-car-img');
+    if(imgEl)imgEl.style.display='none';
+  }
+  main.style.background=GALLERY_VIEWS[0].bg;
+  document.getElementById('gallery-lbl').textContent='Exterior';
+  document.getElementById('gallery-cnt').textContent='1 / 5';
+  // Build strip
+  const strip=document.getElementById('gallery-strip');
+  let html='';
+  GALLERY_VIEWS.forEach((v,i)=>{
+    const isVid=v.id==='vid';
+    let thumbContent;
+    if(c.imgs && v.id!=='vid'){
+      thumbContent=`<img src="${c.imgs[v.id]||c.imgs.ext}" alt="${v.label}" style="width:100%;height:36px;object-fit:contain;">`;
+    } else {
+      const svgRef=v.svg==='shape'?c.shape:v.svg==='play'?'ic-play':v.svg;
+      thumbContent=`<svg width="42" height="28" style="color:${isVid?'rgba(255,255,255,.7)':'var(--p)'}"><use href="#${svgRef}"/></svg>`;
+    }
+    html+=`<div class="gthumb${i===0?' on':''}${isVid?' vid':''}" onclick="galSel(this,${i})">
+      ${thumbContent}
+      <div class="gthumb-lbl">${v.label}</div></div>`;
+  });
+  strip.innerHTML=html;
+}
+
+function galSel(el,idx){
+  document.querySelectorAll('.gthumb').forEach(e=>e.classList.remove('on'));
+  el.classList.add('on');
+  const v=GALLERY_VIEWS[idx];
+  const c=CARS[currentCar];
+  const main=document.getElementById('gallery-main');
+  main.style.background=v.bg;
+  document.getElementById('gallery-lbl').textContent=v.label;
+  document.getElementById('gallery-cnt').textContent=`${idx+1} / 5`;
+  
+  const svgEl=document.getElementById('gallery-car-svg');
+  const imgEl=document.getElementById('gallery-car-img');
+  let vidEl=document.getElementById('gallery-video');
+  
+  if(v.id==='vid' && c.video){
+    // Show YouTube video
+    if(svgEl)svgEl.style.display='none';
+    if(imgEl)imgEl.style.display='none';
+    if(!vidEl){
+      vidEl=document.createElement('iframe');
+      vidEl.id='gallery-video';
+      vidEl.className='gallery-video';
+      vidEl.allow='accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
+      vidEl.allowFullscreen=true;
+      main.appendChild(vidEl);
+    }
+    vidEl.src=`https://www.youtube.com/embed/${c.video}?rel=0&modestbranding=1`;
+    vidEl.style.display='';
+  } else if(c.imgs && c.imgs[v.id]){
+    // Show real image
+    if(svgEl)svgEl.style.display='none';
+    if(vidEl)vidEl.style.display='none';
+    if(imgEl){
+      imgEl.src=c.imgs[v.id];
+      imgEl.style.display='';
+    }
+  } else {
+    // Fallback to SVG
+    if(vidEl)vidEl.style.display='none';
+    if(imgEl)imgEl.style.display='none';
+    if(svgEl){
+      svgEl.style.display='';
+      const svgRef=v.svg==='shape'?c.shape:v.svg==='play'?'ic-play':v.svg;
+      svgEl.innerHTML=`<use href="#${svgRef}"/>`;
+      svgEl.style.color=v.id==='vid'?'rgba(255,255,255,.4)':'var(--p)';
+    }
+  }
+}
+
+// ══════ LEAD DETAIL ══════
+function goLeadDetail(id){
+  const l=LEADS[id];
+  if(!l)return;
+  const c=CARS[l.car]||{};
+  document.getElementById('ld-h-name').textContent=l.name;
+  document.getElementById('ld-name').textContent=l.name;
+  document.getElementById('ld-source').textContent=l.source;
+  const av=document.getElementById('ld-avatar');av.textContent=l.init;av.style.background=l.color;
+  const badgeMap={hot:'<span class="badge badge-hot"><svg width="10" height="10"><use href="#ic-flame"/></svg> HOT</span>',warm:'<span class="badge badge-warm">WARM</span>',cool:'<span class="badge badge-cool">COOL</span>',won:'<span class="badge badge-won">WON</span>'};
+  document.getElementById('ld-badge').innerHTML=badgeMap[l.level]||'';
+  const ci=document.getElementById('ld-car-item');
+  if(ci&&c.name){ci.innerHTML=`<div class="car-thumb" style="background:${c.bg||'#F0FDF4'};">${c.img?'<img src="'+c.img+'" style="width:100%;height:100%;object-fit:contain;">':'<svg style="color:var(--p);width:100%;height:100%"><use href="#'+c.shape+'"/></svg>'}</div><div class="car-info"><div class="car-name">${c.name}</div><div class="car-cat">${c.type} · ${c.price}</div></div><div class="car-link" onclick="goCarDetail('${l.car}')">Details</div>`;}
+  go('s-lead-detail');
+}
+
+// ══════ SPEC ACCORDION ══════
+function buildSpecAccordion(id){
+  const s=SPECS[id];if(!s)return;
+  // Engine
+  const eng=document.getElementById('spec-engine');
+  if(eng)eng.innerHTML=s.engine.map(r=>`<div class="spec-row"><span class="spec-row-lbl">${r[0]}</span><span class="spec-row-val">${r[1]}</span></div>`).join('');
+  // Dimensions
+  const dim=document.getElementById('spec-dim');
+  if(dim)dim.innerHTML=s.dim.map(r=>`<div class="spec-row"><span class="spec-row-lbl">${r[0]}</span><span class="spec-row-val">${r[1]}</span></div>`).join('');
+  // Safety
+  const safe=document.getElementById('spec-safety');
+  if(safe)safe.innerHTML=s.safety.map(f=>`<span class="spec-tag green">${f}</span>`).join('');
+  // Features
+  const feat=document.getElementById('spec-feat');
+  if(feat)feat.innerHTML=s.features.map(f=>`<span class="spec-tag">${f}</span>`).join('');
+  // Close all sections
+  document.querySelectorAll('.spec-section-body').forEach(b=>b.classList.remove('open'));
+  // Open engine by default
+  if(eng){eng.classList.add('open');const chev=document.getElementById('chev-engine');if(chev)chev.textContent='▲';}
+}
+function toggleSpec(hd){
+  const body=hd.nextElementSibling;
+  const isOpen=body.classList.contains('open');
+  const chev=hd.querySelector('.filter-chevron');
+  body.classList.toggle('open',!isOpen);
+  if(chev)chev.textContent=isOpen?'▼':'▲';
+}
+
+// ══════ BOOKING QR JOURNEY ══════
+let qrTimer=null;
+function goBookingConfirm(){
+  // Reset to step 1
+  document.querySelectorAll('.booking-step').forEach(s=>s.classList.remove('active'));
+  document.getElementById('bstep-1').classList.add('active');
+  go('s-booking');
+}
+function selPayMethod(m){
+  ['qr','transfer','card'].forEach(k=>{
+    const el=document.getElementById('pm-'+k);
+    if(el)el.classList.toggle('on',k===m);
+  });
+}
+function goBookingPayment(){
+  document.querySelectorAll('.booking-step').forEach(s=>s.classList.remove('active'));
+  document.getElementById('bstep-2').classList.add('active');
+  // Set QR image via Google Charts
+  const qrEl=document.getElementById('booking-qr-img');
+  if(qrEl)qrEl.src='https://chart.googleapis.com/chart?cht=qr&chs=200x200&chl=WRJ-2026-0384%20THB5000%20VORACHAKYONT&choe=UTF-8&chld=M|2';
+  // Start countdown timer
+  if(qrTimer)clearInterval(qrTimer);
+  let secs=14*60+59;
+  const cd=document.getElementById('qr-countdown');
+  qrTimer=setInterval(()=>{
+    secs--;
+    if(secs<=0){clearInterval(qrTimer);if(cd)cd.textContent='หมดอายุ';}
+    else{const m=Math.floor(secs/60);const s=secs%60;if(cd)cd.textContent=m+':'+(s<10?'0':'')+s;}
+  },1000);
+}
+function goBookingSuccess(){
+  if(qrTimer)clearInterval(qrTimer);
+  document.querySelectorAll('.booking-step').forEach(s=>s.classList.remove('active'));
+  document.getElementById('bstep-3').classList.add('active');
+}
+
+// ══════ BOOKING CONFIRM (legacy alias) ══════
+
+// ══════ 3-LEVEL CATALOG FILTER ══════
+let activeType='all', activeModel='all', activeBudget='all', activeSearch='';
+const BUDGET_RANGES={under800:v=>v<800000,'800to1300':v=>v>=800000&&v<=1300000,over1300:v=>v>1300000};
+
+function filterType(el,type){
+  activeType=type; activeModel='all';
+  document.querySelectorAll('#type-pills .fpill').forEach(e=>e.classList.remove('on'));el.classList.add('on');
+  // Update model pills visibility
+  document.querySelectorAll('#model-pills .fpill').forEach(e=>{
+    if(e.dataset.cat){e.style.display=(type==='all'||e.dataset.cat===type)?'':'none';}
+  });
+  // Reset model selection
+  document.querySelectorAll('#model-pills .fpill').forEach(e=>e.classList.remove('on'));
+  document.querySelector('#model-pills .fpill').classList.add('on');
+  applyFilters();
+}
+function filterModel(el,model){
+  activeModel=model;
+  document.querySelectorAll('#model-pills .fpill').forEach(e=>e.classList.remove('on'));el.classList.add('on');
+  applyFilters();
+}
+function filterBudget(el,budget){
+  activeBudget=budget;
+  document.querySelectorAll('#budget-pills .fpill').forEach(e=>e.classList.remove('on'));el.classList.add('on');
+  applyFilters();
+}
+function filterSearch(val){activeSearch=val.toLowerCase();applyFilters();}
+function applyFilters(){
+  document.querySelectorAll('#car-list .car-item').forEach(item=>{
+    const cat=item.dataset.cat||'';
+    const id=item.dataset.id||'';
+    const price=parseInt(item.dataset.price||'0');
+    const name=(item.dataset.name||'').toLowerCase();
+    const typeOk=activeType==='all'||cat===activeType;
+    const modelOk=activeModel==='all'||id===activeModel;
+    const budgetOk=activeBudget==='all'||(BUDGET_RANGES[activeBudget]&&BUDGET_RANGES[activeBudget](price));
+    const searchOk=!activeSearch||name.includes(activeSearch);
+    item.style.display=(typeOk&&modelOk&&budgetOk&&searchOk)?'flex':'none';
+  });
+}
+
+// ══════ COLOR PICKER ══════
+function pickColor(el,name){document.querySelectorAll('.cdot').forEach(e=>e.classList.remove('on'));el.classList.add('on');document.getElementById('det-color-name').textContent=name;}
+
+// ══════ A-CARD ══════
+function selPill(el){el.closest('.source-pills').querySelectorAll('.spill-btn').forEach(e=>e.classList.remove('on'));el.classList.add('on');}
+function selInt(level){['hot','warm','cool'].forEach(l=>{document.getElementById('ic-'+l).className='icard'+(l===level?' sel-'+l:'');});}
+function saveACard(){alert('บันทึก A-Card เรียบร้อย!\nLead saved & synced to Toyota NextGen.');}
+
+// ══════ CALCULATOR ══════
+function calcUpdate(){const down=parseInt(document.getElementById('down-slider').value);const downAmt=Math.round(LOAN_PRICE*down/100);const fin=LOAN_PRICE-downAmt;const r=0.0249/12;const monthly=Math.round(fin*r*Math.pow(1+r,loanTerm)/(Math.pow(1+r,loanTerm)-1));document.getElementById('monthly-display').textContent='฿'+monthly.toLocaleString();document.getElementById('down-display').innerHTML='฿'+downAmt.toLocaleString()+' <span style="font-size:11px;color:var(--t2);font-weight:500;">('+down+'%)</span>';document.getElementById('pay-desc').textContent='Corolla Altis 2026 · '+loanTerm+' เดือน · ดาวน์ '+down+'%';document.getElementById('bd-down').textContent='฿'+downAmt.toLocaleString();document.getElementById('bd-fin').textContent='฿'+fin.toLocaleString();document.getElementById('bd-term').textContent=loanTerm+' เดือน';}
+function selTerm(el,t){loanTerm=t;document.querySelectorAll('.term-btn').forEach(e=>e.classList.remove('on'));el.classList.add('on');calcUpdate();}
+
+// ══════ CHARTS ══════
+function initChart(){const ctx=document.getElementById('team-chart');if(!ctx)return;if(chartInst){chartInst.destroy();chartInst=null;}chartInst=new Chart(ctx,{type:'bar',data:{labels:['มาลี','สุดา','สมชาย','ประยุทธ','นภา'],datasets:[{label:'Units',data:[61,52,45,38,29],backgroundColor:['#1B7A3F','#1B7A3F','#1B7A3F','#D97706','#DC2626'],borderRadius:6,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,max:80,grid:{color:'#F1F5F9'},ticks:{font:{size:10},color:'#9CA3AF'}},x:{grid:{display:false},ticks:{font:{size:11,family:'Sarabun',weight:'700'},color:'#374151'}}}}});}
+function initWeeklyChart(){const ctx=document.getElementById('weekly-chart');if(!ctx)return;if(weeklyChartInst){weeklyChartInst.destroy();weeklyChartInst=null;}weeklyChartInst=new Chart(ctx,{type:'line',data:{labels:['W1','W2','W3','W4'],datasets:[{label:'Units',data:[48,62,71,64],borderColor:'#1B7A3F',backgroundColor:'rgba(27,122,63,.1)',fill:true,tension:.35,pointBackgroundColor:'#1B7A3F',pointRadius:5}]},options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,grid:{color:'#F1F5F9'},ticks:{font:{size:10},color:'#9CA3AF'}},x:{grid:{display:false},ticks:{font:{size:11,family:'Sarabun',weight:'700'},color:'#374151'}}}}});}
+
+// ══════ BRANCH FILTER ══════
+function branchSw(el){document.querySelectorAll('#branch-pills .fpill').forEach(e=>e.classList.remove('on'));el.classList.add('on');}
+
+// ══════ INIT ══════
+renderCarList();
+</script>
+</body>
+</html>

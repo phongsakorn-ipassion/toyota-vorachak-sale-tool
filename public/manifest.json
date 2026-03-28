@@ -1,0 +1,15 @@
+{
+  "name": "Toyota Sale Tool | วรจักร์ยนต์",
+  "short_name": "SaleTool",
+  "description": "Toyota Vorachakyont Dealer Sale Tool — ระบบจัดการการขายรถยนต์",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#1B7A3F",
+  "background_color": "#F5F7F5",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

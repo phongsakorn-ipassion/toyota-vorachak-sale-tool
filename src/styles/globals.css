@@ -1,0 +1,124 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    font-family: 'Sarabun', -apple-system, BlinkMacSystemFont, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background: #1a1a2e;
+    margin: 0;
+    padding: 0;
+  }
+  ::-webkit-scrollbar {
+    display: none;
+  }
+  * {
+    scrollbar-width: none;
+  }
+}
+
+@layer components {
+  .btn-p {
+    @apply bg-primary text-white rounded-pill font-bold w-full text-center text-[14px] transition-colors flex items-center justify-center gap-2;
+    padding: 15px 20px;
+  }
+  .btn-p:hover {
+    @apply bg-primary-dark;
+  }
+  .btn-p:active {
+    @apply bg-primary-dark scale-[0.98];
+  }
+  .btn-o {
+    @apply bg-bg text-t1 border border-border rounded-pill font-bold text-[14px] text-center transition-colors flex items-center justify-center gap-2;
+    padding: 15px 20px;
+  }
+  .btn-g {
+    @apply bg-transparent text-primary font-bold text-[14px] text-center;
+    border: 1.5px solid var(--p);
+    padding: 15px 20px;
+    border-radius: 999px;
+  }
+  .card-base {
+    @apply bg-card border border-border;
+    padding: 15px;
+    margin-bottom: 12px;
+    border-radius: 16px;
+  }
+  .pill-filter {
+    @apply rounded-pill font-bold border border-border text-t2 bg-white whitespace-nowrap cursor-pointer transition-all;
+    padding: 8px 16px;
+    font-size: 12px;
+  }
+  .pill-filter.on {
+    @apply bg-primary text-white border-primary;
+  }
+  .badge-hot {
+    @apply bg-red-50 text-hot rounded-pill text-[10px] font-bold inline-flex items-center;
+    padding: 3px 9px;
+    gap: 3px;
+  }
+  .badge-warm {
+    @apply bg-amber-50 text-warm rounded-pill text-[10px] font-bold inline-flex items-center;
+    padding: 3px 9px;
+    gap: 3px;
+  }
+  .badge-cool {
+    @apply bg-blue-50 text-cool rounded-pill text-[10px] font-bold inline-flex items-center;
+    padding: 3px 9px;
+    gap: 3px;
+  }
+  .badge-won {
+    @apply bg-emerald-50 text-won rounded-pill text-[10px] font-bold inline-flex items-center;
+    padding: 3px 9px;
+    gap: 3px;
+  }
+  .badge-avail {
+    @apply bg-emerald-50 text-avail rounded-pill text-[10px] font-bold;
+    padding: 3px 9px;
+  }
+  .badge-transit {
+    @apply bg-orange-50 text-transit rounded-pill text-[10px] font-bold;
+    padding: 3px 9px;
+  }
+
+  /* Section label */
+  .sec-lbl {
+    font-size: 10px;
+    font-weight: 800;
+    color: var(--t3);
+    letter-spacing: 1.1px;
+    text-transform: uppercase;
+    margin: 4px 0 10px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  /* Card header */
+  .card-hd {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+
+  /* Card title */
+  .card-title {
+    @apply text-sm font-extrabold text-t1 flex items-center;
+    gap: 6px;
+  }
+
+  /* Screen transition */
+  .screen-enter {
+    animation: screenIn 0.22s ease forwards;
+  }
+  @keyframes screenIn {
+    from { opacity: 0; transform: translateX(12px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+}

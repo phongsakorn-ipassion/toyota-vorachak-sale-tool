@@ -1,0 +1,42 @@
+name: toyota-sale-tool
+version: 1
+description: >
+  Toyota Vorachakyont (วรจักร์ยนต์) Dealer Sale Tool — PWA Demo App
+  ระบบ Sale Tool สำหรับ Toyota Dealer ครอบคลุม Car Catalog, Lead Management,
+  Booking/Payment QR, Manager Dashboard พร้อม iPad/Tablet + iPhone/Mobile responsive
+
+schema: spec-driven
+profile: expanded
+
+project:
+  client: Toyota Vorachakyont (วรจักร์ยนต์)
+  vendor: iPassion Co., Ltd.
+  type: demo
+  language: th-TH  # primary UI language
+  secondary_language: en  # technical terms & spec language
+
+tech_stack:
+  frontend: React 18
+  build: Vite 5
+  styling: Tailwind CSS 3
+  state: Zustand 4
+  routing: React Router 6 (HashRouter)
+  rich_text: CKEditor 5 v41
+  backend: Supabase JS 2
+  auth: Supabase Auth
+  database: PostgreSQL 15 (via Supabase)
+  ci_cd: GitHub Actions
+  hosting: GitHub Pages
+  pwa: true
+
+devices:
+  - type: phone
+    width: 390px
+    height: 844px
+    border_radius: 46px
+  - type: tablet
+    width: 768px
+    height: 960px
+    border_radius: 24px
+
+prototype_reference: ../Toyota-SaleTool-Prototype-v5.html
