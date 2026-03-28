@@ -54,6 +54,13 @@ export const useUiStore = create((set, get) => ({
       notifications: state.notifications.map((n) => ({ ...n, read: true })),
     })),
 
+  deleteNotification: (id) =>
+    set((state) => ({
+      notifications: state.notifications.filter((n) => n.id !== id),
+    })),
+
+  clearAllNotifications: () => set({ notifications: [] }),
+
   getUnreadCount: () => {
     return get().notifications.filter((n) => !n.read).length
   },

@@ -4,7 +4,7 @@ import { useBookingStore } from '../../stores/bookingStore'
 import useCountdown from '../../hooks/useCountdown'
 
 export default function BookingStep2() {
-  const { setStep } = useBookingStore()
+  const { setStep, saveBooking } = useBookingStore()
 
   // Generate reference number once
   const refNumber = useMemo(
@@ -22,6 +22,8 @@ export default function BookingStep2() {
   const [qrError, setQrError] = useState(false)
 
   const handleConfirmPayment = () => {
+    // Save booking to store (this also updates linked lead status if applicable)
+    saveBooking()
     setStep(3)
   }
 

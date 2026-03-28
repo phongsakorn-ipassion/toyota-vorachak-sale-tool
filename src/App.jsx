@@ -16,13 +16,7 @@ import PipelinePage from './pages/PipelinePage';
 import TargetsPage from './pages/TargetsPage';
 import ReportsPage from './pages/ReportsPage';
 import NotificationsPage from './pages/NotificationsPage';
-
-const ProfilePage = () => (
-  <div className="p-4 screen-enter">
-    <h1 className="text-lg font-bold text-t1">โปรไฟล์</h1>
-    <p className="text-t2 mt-2">Coming soon...</p>
-  </div>
-);
+import ProfilePage from './pages/ProfilePage';
 
 export default function App() {
   return (

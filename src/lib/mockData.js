@@ -2,6 +2,32 @@
 // Complete mock data extracted from Toyota-SaleTool-Prototype-v5.html
 // ============================================================================
 
+export const PIPELINE_STAGES = [
+  { id: 'new', label: 'ใหม่', color: '#3B82F6' },
+  { id: 'test_drive', label: 'ทดสอบรถ', color: '#F59E0B' },
+  { id: 'negotiation', label: 'เจรจา', color: '#8B5CF6' },
+  { id: 'won', label: 'ชนะ', color: '#10B981' },
+  { id: 'lost', label: 'แพ้', color: '#6B7280' },
+]
+
+export const LEAD_SOURCES = [
+  'Walk-in',
+  'LINE OA',
+  'Facebook Lead',
+  'Referral',
+  'Website',
+  'Phone Inquiry',
+  'Event / Exhibition',
+]
+
+export const INTEREST_LEVELS = [
+  { id: 'hot', label: 'ร้อน', color: '#DC2626' },
+  { id: 'warm', label: 'อุ่น', color: '#F59E0B' },
+  { id: 'cool', label: 'เย็น', color: '#3B82F6' },
+  { id: 'won', label: 'ชนะ', color: '#10B981' },
+  { id: 'lost', label: 'แพ้', color: '#6B7280' },
+]
+
 export const CARS = {
   corolla: {
     id: 'corolla', name: 'Corolla Altis 2026', type: 'Sedan', cat: 'sedan',
@@ -136,43 +162,119 @@ export const CARS_LIST = Object.values(CARS)
 export const LEADS = {
   duangjai: {
     id: 'duangjai', name: 'ดวงใจ ทองดี', init: 'ด', color: '#DC2626',
-    level: 'hot', source: 'Walk-in · สาขาลาดพร้าว', car: 'yaris',
+    level: 'hot', stage: 'negotiation', source: 'Walk-in · สาขาลาดพร้าว', car: 'yaris',
     phone: '081-234-5678', email: 'duangjai@email.com',
+    assignedTo: 'malee', branch: 'lp',
     createdAt: '2026-03-25T10:00:00',
     activities: [
-      { id: 'a1', type: 'call', title: 'โทรติดตามลูกค้า', content: 'ลูกค้าสนใจ Yaris Cross สี Burgundy — นัดทดสอบ วันเสาร์', time: '2026-03-27T14:30:00' },
-      { id: 'a2', type: 'note', title: 'บันทึกข้อมูล', content: 'ลูกค้ามีรถเก่าต้องการเทิร์น — ประเมินราคา ฿180,000', time: '2026-03-26T11:00:00' },
-      { id: 'a3', type: 'meeting', title: 'Walk-in สาขาลาดพร้าว', content: 'ลูกค้าเข้าชมโชว์รูม สนใจ Yaris Cross และ Corolla Altis', time: '2026-03-25T10:00:00' },
+      { id: 'a1', type: 'call', title: 'โทรติดตามลูกค้า', content: 'ลูกค้าสนใจ Yaris Cross สี Burgundy — นัดทดสอบ วันเสาร์', time: '2026-03-27T14:30:00', createdBy: 'malee' },
+      { id: 'a2', type: 'note', title: 'บันทึกข้อมูล', content: 'ลูกค้ามีรถเก่าต้องการเทิร์น — ประเมินราคา ฿180,000', time: '2026-03-26T11:00:00', createdBy: 'malee' },
+      { id: 'a3', type: 'meeting', title: 'Walk-in สาขาลาดพร้าว', content: 'ลูกค้าเข้าชมโชว์รูม สนใจ Yaris Cross และ Corolla Altis', time: '2026-03-25T10:00:00', createdBy: 'malee' },
     ],
   },
   prawit: {
     id: 'prawit', name: 'ประวิทย์ จันทร์แจ่ม', init: 'ป', color: '#8B5CF6',
-    level: 'warm', source: 'LINE OA', car: 'lc',
+    level: 'warm', stage: 'test_drive', source: 'LINE OA', car: 'lc',
     phone: '089-876-5432', email: 'prawit@email.com',
+    assignedTo: 'suda', branch: 'bn',
     createdAt: '2026-03-20T09:00:00',
     activities: [
-      { id: 'a4', type: 'call', title: 'โทรแจ้งราคาพิเศษ', content: 'เสนอแพ็กเกจดาวน์ 10% สำหรับ Land Cruiser', time: '2026-03-26T16:00:00' },
-      { id: 'a5', type: 'note', title: 'ข้อมูลเพิ่มเติม', content: 'ลูกค้าเป็นเจ้าของธุรกิจ ต้องการรถ SUV สำหรับครอบครัว', time: '2026-03-22T10:30:00' },
+      { id: 'a4', type: 'call', title: 'โทรแจ้งราคาพิเศษ', content: 'เสนอแพ็กเกจดาวน์ 10% สำหรับ Land Cruiser', time: '2026-03-26T16:00:00', createdBy: 'suda' },
+      { id: 'a5', type: 'note', title: 'ข้อมูลเพิ่มเติม', content: 'ลูกค้าเป็นเจ้าของธุรกิจ ต้องการรถ SUV สำหรับครอบครัว', time: '2026-03-22T10:30:00', createdBy: 'suda' },
+      { id: 'a10', type: 'status_change', title: 'เปลี่ยนสถานะเป็น ทดสอบรถ', content: 'ลูกค้านัดทดลองขับ Land Cruiser วันเสาร์', time: '2026-03-24T09:00:00', createdBy: 'suda' },
     ],
   },
   oranee: {
     id: 'oranee', name: 'อรณี สุขสม', init: 'อ', color: '#F59E0B',
-    level: 'warm', source: 'Facebook Lead', car: 'corolla',
+    level: 'warm', stage: 'new', source: 'Facebook Lead', car: 'corolla',
     phone: '062-345-6789', email: 'oranee@email.com',
+    assignedTo: 'somchai', branch: 'lp',
     createdAt: '2026-03-22T14:00:00',
     activities: [
-      { id: 'a6', type: 'meeting', title: 'นัดหมายที่โชว์รูม', content: 'นัดทดสอบ Corolla Altis วันอาทิตย์ เวลา 13:00', time: '2026-03-24T09:00:00' },
+      { id: 'a6', type: 'meeting', title: 'นัดหมายที่โชว์รูม', content: 'นัดทดสอบ Corolla Altis วันอาทิตย์ เวลา 13:00', time: '2026-03-24T09:00:00', createdBy: 'somchai' },
+      { id: 'a11', type: 'note', title: 'รับลีดจาก Facebook', content: 'ลูกค้ากรอกฟอร์มสนใจ Corolla Altis Hybrid', time: '2026-03-22T14:00:00', createdBy: 'somchai' },
     ],
   },
   jirawat: {
     id: 'jirawat', name: 'จิรวัฒน์ ศรีรัตน์', init: 'จ', color: '#10B981',
-    level: 'won', source: 'Referral', car: 'hilux',
+    level: 'won', stage: 'won', source: 'Referral', car: 'hilux',
     phone: '095-678-1234', email: 'jirawat@email.com',
+    assignedTo: 'malee', branch: 'lp',
     createdAt: '2026-03-15T11:00:00',
     activities: [
-      { id: 'a7', type: 'booking', title: 'จองรถสำเร็จ', content: 'ชำระเงินจอง ฿5,000 — Hilux Revo Double Cab', time: '2026-03-26T15:00:00' },
-      { id: 'a8', type: 'meeting', title: 'ทดสอบรถ', content: 'ทดสอบ Hilux Revo บนเส้นทางจริง', time: '2026-03-20T10:00:00' },
-      { id: 'a9', type: 'call', title: 'โทรนัดหมาย', content: 'นัดทดสอบรถ Hilux Revo', time: '2026-03-18T14:00:00' },
+      { id: 'a7', type: 'booking', title: 'จองรถสำเร็จ', content: 'ชำระเงินจอง ฿5,000 — Hilux Revo Double Cab', time: '2026-03-26T15:00:00', createdBy: 'malee' },
+      { id: 'a8', type: 'meeting', title: 'ทดสอบรถ', content: 'ทดสอบ Hilux Revo บนเส้นทางจริง', time: '2026-03-20T10:00:00', createdBy: 'malee' },
+      { id: 'a9', type: 'call', title: 'โทรนัดหมาย', content: 'นัดทดสอบรถ Hilux Revo', time: '2026-03-18T14:00:00', createdBy: 'malee' },
+    ],
+  },
+  somsak: {
+    id: 'somsak', name: 'สมศักดิ์ เพชรดี', init: 'ส', color: '#3B82F6',
+    level: 'hot', stage: 'negotiation', source: 'Walk-in · สาขาบางนา', car: 'bz4x',
+    phone: '083-111-2233', email: 'somsak.p@email.com',
+    assignedTo: 'suda', branch: 'bn',
+    createdAt: '2026-03-23T11:00:00',
+    activities: [
+      { id: 'a12', type: 'meeting', title: 'นัดคุยเรื่องไฟแนนซ์', content: 'ลูกค้าสนใจ bZ4X เจรจาเรื่องดาวน์และผ่อน', time: '2026-03-27T10:00:00', createdBy: 'suda' },
+      { id: 'a13', type: 'call', title: 'โทรแจ้งโปรโมชั่น EV', content: 'แจ้งส่วนลดภาษี EV และโปรชาร์จฟรี 1 ปี', time: '2026-03-25T14:00:00', createdBy: 'suda' },
+      { id: 'a14', type: 'note', title: 'Walk-in สาขาบางนา', content: 'ลูกค้าสนใจรถ EV เพื่อประหยัดค่าน้ำมัน', time: '2026-03-23T11:00:00', createdBy: 'suda' },
+    ],
+  },
+  kannika: {
+    id: 'kannika', name: 'กรรณิการ์ วงศ์ดี', init: 'ก', color: '#EC4899',
+    level: 'cool', stage: 'new', source: 'Website', car: 'yaris',
+    phone: '091-222-3344', email: 'kannika.w@email.com',
+    assignedTo: 'somchai', branch: 'lp',
+    createdAt: '2026-03-26T09:30:00',
+    activities: [
+      { id: 'a15', type: 'note', title: 'ลงทะเบียนจากเว็บไซต์', content: 'ลูกค้ากรอกฟอร์มขอใบเสนอราคา Yaris Cross', time: '2026-03-26T09:30:00', createdBy: 'somchai' },
+      { id: 'a16', type: 'call', title: 'โทรติดต่อครั้งแรก', content: 'ลูกค้ารับสาย สนใจแต่ยังไม่พร้อมซื้อ — ติดตามอีก 2 สัปดาห์', time: '2026-03-27T11:00:00', createdBy: 'somchai' },
+    ],
+  },
+  wichai: {
+    id: 'wichai', name: 'วิชัย มั่นคง', init: 'ว', color: '#6366F1',
+    level: 'warm', stage: 'test_drive', source: 'Referral', car: 'gr86',
+    phone: '086-333-4455', email: 'wichai.m@email.com',
+    assignedTo: 'prayut', branch: 'bn',
+    createdAt: '2026-03-18T15:00:00',
+    activities: [
+      { id: 'a17', type: 'meeting', title: 'ทดสอบรถ GR 86', content: 'ลูกค้าทดสอบ GR 86 ที่สนามซ้อม — ประทับใจสมรรถนะ', time: '2026-03-25T10:00:00', createdBy: 'prayut' },
+      { id: 'a18', type: 'call', title: 'โทรนัดทดสอบ', content: 'เพื่อนแนะนำมา สนใจรถสปอร์ต', time: '2026-03-20T16:00:00', createdBy: 'prayut' },
+      { id: 'a19', type: 'note', title: 'ข้อมูลลูกค้า', content: 'ลูกค้าอายุ 28 ปี มีรถ Civic อยู่ ต้องการเปลี่ยนเป็นรถสปอร์ต', time: '2026-03-18T15:00:00', createdBy: 'prayut' },
+    ],
+  },
+  nattaya: {
+    id: 'nattaya', name: 'ณัฐยา ใจดี', init: 'ณ', color: '#14B8A6',
+    level: 'hot', stage: 'test_drive', source: 'LINE OA', car: 'corolla',
+    phone: '064-444-5566', email: 'nattaya.j@email.com',
+    assignedTo: 'napa', branch: 'on',
+    createdAt: '2026-03-21T13:00:00',
+    activities: [
+      { id: 'a20', type: 'meeting', title: 'ทดสอบ Corolla Altis', content: 'ลูกค้าทดลองขับ Corolla Altis Hybrid — ชอบความนุ่มนวล', time: '2026-03-26T14:00:00', createdBy: 'napa' },
+      { id: 'a21', type: 'call', title: 'ส่งข้อมูลทาง LINE', content: 'ส่งโบรชัวร์และราคา Corolla Altis ทาง LINE', time: '2026-03-23T10:00:00', createdBy: 'napa' },
+      { id: 'a22', type: 'note', title: 'รับลีดจาก LINE OA', content: 'ลูกค้าทักมาสอบถาม Corolla Altis Hybrid ราคาและโปรโมชั่น', time: '2026-03-21T13:00:00', createdBy: 'napa' },
+    ],
+  },
+  parichat: {
+    id: 'parichat', name: 'ปาริชาติ แสงจันทร์', init: 'ป', color: '#A855F7',
+    level: 'lost', stage: 'lost', source: 'Facebook Lead', car: 'yaris',
+    phone: '097-555-6677', email: 'parichat.s@email.com',
+    assignedTo: 'somchai', branch: 'lp',
+    createdAt: '2026-03-10T10:00:00',
+    activities: [
+      { id: 'a23', type: 'status_change', title: 'ปิดลีด — ซื้อรถยี่ห้ออื่น', content: 'ลูกค้าตัดสินใจซื้อ Honda HR-V แทน เนื่องจากราคาถูกกว่า', time: '2026-03-24T16:00:00', createdBy: 'somchai' },
+      { id: 'a24', type: 'call', title: 'โทรเสนอราคาสุดท้าย', content: 'เสนอส่วนลดพิเศษ ฿30,000 แต่ลูกค้ายังลังเล', time: '2026-03-22T11:00:00', createdBy: 'somchai' },
+      { id: 'a25', type: 'meeting', title: 'Walk-in ดูรถ', content: 'ลูกค้าเข้ามาดู Yaris Cross — เปรียบเทียบกับ Honda HR-V', time: '2026-03-12T14:00:00', createdBy: 'somchai' },
+    ],
+  },
+  anuwat: {
+    id: 'anuwat', name: 'อนุวัฒน์ พลอยงาม', init: 'อ', color: '#F97316',
+    level: 'warm', stage: 'new', source: 'Phone Inquiry', car: 'hilux',
+    phone: '088-666-7788', email: 'anuwat.p@email.com',
+    assignedTo: 'prayut', branch: 'bn',
+    createdAt: '2026-03-27T08:30:00',
+    activities: [
+      { id: 'a26', type: 'call', title: 'รับสายสอบถาม', content: 'ลูกค้าโทรสอบถามราคา Hilux Revo 4WD และสต็อกที่มี', time: '2026-03-27T08:30:00', createdBy: 'prayut' },
+      { id: 'a27', type: 'note', title: 'บันทึกความต้องการ', content: 'ลูกค้าต้องการ Hilux Revo Double Cab 4WD สีดำ — ใช้งานเกษตร', time: '2026-03-27T09:00:00', createdBy: 'prayut' },
     ],
   },
 }
@@ -186,11 +288,11 @@ export const BRANCHES = [
 ]
 
 export const TEAM_MEMBERS = [
-  { id: 'malee', name: 'มาลี นวลสุข', init: 'ม', color: '#FF6B6B', units: 8, target: 10, leads: 12, conversion: 67 },
-  { id: 'suda', name: 'สุดา อิ่มสม', init: 'ส', color: '#FFD93D', units: 6, target: 10, leads: 10, conversion: 60 },
-  { id: 'somchai', name: 'สมชาย ชอบสัน', init: 'ส', color: '#4D96FF', units: 5, target: 10, leads: 14, conversion: 36 },
-  { id: 'prayut', name: 'ประยุทธ กิจวัฒน์', init: 'ป', color: '#6BCB77', units: 4, target: 10, leads: 8, conversion: 50 },
-  { id: 'napa', name: 'นภา รักษ์สม', init: 'น', color: '#9B59B6', units: 3, target: 10, leads: 6, conversion: 50 },
+  { id: 'malee', name: 'มาลี นวลสุข', init: 'ม', color: '#FF6B6B', units: 8, target: 10, leads: 12, conversion: 67, branch: 'lp' },
+  { id: 'suda', name: 'สุดา อิ่มสม', init: 'ส', color: '#FFD93D', units: 6, target: 10, leads: 10, conversion: 60, branch: 'bn' },
+  { id: 'somchai', name: 'สมชาย ชอบสัน', init: 'ส', color: '#4D96FF', units: 5, target: 10, leads: 14, conversion: 36, branch: 'lp' },
+  { id: 'prayut', name: 'ประยุทธ กิจวัฒน์', init: 'ป', color: '#6BCB77', units: 4, target: 10, leads: 8, conversion: 50, branch: 'bn' },
+  { id: 'napa', name: 'นภา รักษ์สม', init: 'น', color: '#9B59B6', units: 3, target: 10, leads: 6, conversion: 50, branch: 'on' },
 ]
 
 export const DASHBOARD_KPIS = {

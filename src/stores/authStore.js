@@ -61,6 +61,11 @@ export const useAuthStore = create((set, get) => ({
     })
   },
 
+  updateProfile: (updates) =>
+    set((state) => ({
+      user: state.user ? { ...state.user, ...updates } : state.user,
+    })),
+
   checkSession: async () => {
     if (!supabase) return
     try {

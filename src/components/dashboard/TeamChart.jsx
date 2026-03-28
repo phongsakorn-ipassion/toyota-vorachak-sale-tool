@@ -14,10 +14,10 @@ export default function TeamChart({ teamMembers }) {
   if (!teamMembers || teamMembers.length === 0) return null
 
   const sorted = [...teamMembers].sort((a, b) => b.units - a.units)
-  const maxUnits = Math.max(...sorted.map((m) => m.units))
+  const maxUnits = Math.max(...sorted.map((m) => m.units), 1)
 
   const colors = sorted.map((m) => {
-    const ratio = m.units / maxUnits
+    const ratio = m.target > 0 ? m.units / m.target : 0
     if (ratio >= 0.7) return '#1B7A3F'
     if (ratio >= 0.4) return '#D97706'
     return '#DC2626'
@@ -43,7 +43,7 @@ export default function TeamChart({ teamMembers }) {
     },
     scales: {
       y: {
-        max: 80,
+        max: Math.ceil(maxUnits * 1.3),
         grid: { color: '#f3f4f6' },
         ticks: { font: { size: 11 } },
       },

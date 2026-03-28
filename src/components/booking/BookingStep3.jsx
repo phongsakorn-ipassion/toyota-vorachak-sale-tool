@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react'
+import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import Icon from '../icons/Icon'
 import Card from '../ui/Card'
@@ -7,14 +7,10 @@ import { useBookingStore } from '../../stores/bookingStore'
 
 export default function BookingStep3() {
   const navigate = useNavigate()
-  const { getSelectedCar, reset } = useBookingStore()
+  const { getSelectedCar, reset, savedBooking } = useBookingStore()
 
   const car = getSelectedCar()
-
-  const refNumber = useMemo(
-    () => `WRJ-2026-${Math.floor(Math.random() * 9000 + 1000)}`,
-    []
-  )
+  const refNumber = savedBooking?.refNumber || savedBooking?.ref || `WRJ-2026-${Math.floor(Math.random() * 9000 + 1000)}`
 
   const handleBrowseMore = () => {
     reset()
@@ -45,11 +41,15 @@ export default function BookingStep3() {
         <div className="space-y-3">
           <div className="flex justify-between text-sm">
             <span className="text-t2">รถยนต์</span>
-            <span className="font-semibold text-t1">{car?.name || '-'}</span>
+            <span className="font-semibold text-t1">{car?.name || savedBooking?.carName || '-'}</span>
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-t2">เลขที่จอง</span>
             <span className="font-semibold text-t1">{refNumber}</span>
+          </div>
+          <div className="flex justify-between text-sm">
+            <span className="text-t2">ผู้จอง</span>
+            <span className="font-semibold text-t1">{savedBooking?.customerInfo?.name || savedBooking?.customerName || '-'}</span>
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-t2">ยอดชำระ</span>

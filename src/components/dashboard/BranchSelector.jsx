@@ -7,6 +7,11 @@ export default function BranchSelector() {
 
   return (
     <div className="flex gap-2 overflow-x-auto py-2">
+      <FilterPill
+        label="ทุกสาขา"
+        active={selectedBranch === 'all'}
+        onClick={() => setSelectedBranch('all')}
+      />
       {branches.map((b) => (
         <FilterPill
           key={b.id}

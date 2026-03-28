@@ -4,6 +4,7 @@ import Card from '../ui/Card'
 import Button from '../ui/Button'
 import { useBookingStore } from '../../stores/bookingStore'
 import { formatPrice } from '../../lib/formats'
+import { CARS_LIST } from '../../lib/mockData'
 
 const PAYMENT_METHODS = [
   { id: 'cash', label: 'สด' },
@@ -13,6 +14,8 @@ const PAYMENT_METHODS = [
 
 export default function BookingStep1() {
   const {
+    carId,
+    setCarId,
     customerInfo,
     setCustomerInfo,
     paymentMethod,
@@ -33,6 +36,7 @@ export default function BookingStep1() {
     const newErrors = {}
     if (!customerInfo.name.trim()) newErrors.name = 'กรุณากรอกชื่อ-นามสกุล'
     if (!customerInfo.phone.trim()) newErrors.phone = 'กรุณากรอกเบอร์โทรศัพท์'
+    if (!carId) newErrors.car = 'กรุณาเลือกรถ'
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors)
@@ -45,6 +49,26 @@ export default function BookingStep1() {
 
   return (
     <div className="p-4 space-y-5">
+      {/* Car Selection (if not pre-selected) */}
+      {!car && (
+        <div>
+          <h2 className="text-sm font-bold text-t1 mb-3">เลือกรถ</h2>
+          <select
+            value={carId || ''}
+            onChange={(e) => setCarId(e.target.value || null)}
+            className={`w-full border rounded-sm py-3 px-3.5 text-sm bg-white text-t1 focus:border-primary focus:outline-none transition-colors ${errors.car ? 'border-red-500' : 'border-border'}`}
+          >
+            <option value="">-- เลือกรุ่นรถ --</option>
+            {CARS_LIST.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name} ({c.priceLabel})
+              </option>
+            ))}
+          </select>
+          {errors.car && <p className="text-red-500 text-xs mt-1">{errors.car}</p>}
+        </div>
+      )}
+
       {/* Customer Info */}
       <div>
         <h2 className="text-sm font-bold text-t1 mb-3">ข้อมูลผู้จอง</h2>
