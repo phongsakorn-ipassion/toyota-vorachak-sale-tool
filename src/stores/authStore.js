@@ -111,6 +111,9 @@ export const useAuthStore = create(persist((set, get) => ({
     isDemo: state.isDemo,
   }),
   onRehydrateStorage: () => () => {
-    useAuthStore.setState({ _hasHydrated: true })
+    // Use queueMicrotask to ensure store is fully initialized
+    queueMicrotask(() => {
+      useAuthStore.setState({ _hasHydrated: true })
+    })
   },
 }))
