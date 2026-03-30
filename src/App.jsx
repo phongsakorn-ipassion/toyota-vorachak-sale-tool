@@ -18,6 +18,7 @@ import TargetsPage from './pages/TargetsPage';
 import ReportsPage from './pages/ReportsPage';
 import NotificationsPage from './pages/NotificationsPage';
 import ProfilePage from './pages/ProfilePage';
+import BookingViewPage from './pages/BookingViewPage';
 import { useAuthStore } from './stores/authStore';
 
 function SmartRedirect() {
@@ -43,6 +44,7 @@ export default function App() {
       <Toaster position="top-center" toastOptions={{ style: { fontFamily: "'Sarabun', sans-serif", fontSize: '13px' } }} />
       <Routes>
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/booking-view/:ref" element={<BookingViewPage />} />
         <Route path="/" element={<SmartRedirect />} />
 
         <Route element={<AppShell />}>

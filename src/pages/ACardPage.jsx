@@ -2,11 +2,12 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import Icon from '../components/icons/Icon';
-import { CARS, CARS_LIST, LEAD_SOURCES } from '../lib/mockData';
+import { CARS, CARS_LIST, LEAD_SOURCES, COLOR_OPTIONS } from '../lib/mockData';
 import { CAR_TYPES } from '../lib/constants';
 import { THAI_PROVINCES, SERVICE_CENTERS } from '../lib/thaiProvinces';
 import { useLeadStore } from '../stores/leadStore';
 import { useUiStore } from '../stores/uiStore';
+import { useDraftStore } from '../stores/draftStore';
 import ServiceCenterMap from '../components/map/ServiceCenterMap';
 import { useVisibilityRefresh } from '../hooks/useVisibilityRefresh';
 
@@ -25,6 +26,7 @@ export default function ACardPage() {
   const updateLead = useLeadStore((s) => s.updateLead);
   const getLeadById = useLeadStore((s) => s.getLeadById);
   const addNotification = useUiStore((s) => s.addNotification);
+  const draftStore = useDraftStore();
 
   // Customer info
   const [name, setName] = useState('');
@@ -38,6 +40,7 @@ export default function ACardPage() {
   const [interest, setInterest] = useState('hot');
   const [carType, setCarType] = useState('all');
   const [model, setModel] = useState('');
+  const [selectedColor, setSelectedColor] = useState('');
   // budget removed per 2.2.3.2
   const [notes, setNotes] = useState('');
   const [errors, setErrors] = useState({});
@@ -68,6 +71,7 @@ export default function ACardPage() {
         setSource(lead.source || 'Walk-in');
         setInterest(lead.level || 'hot');
         setModel(lead.car || '');
+        setSelectedColor(lead.selectedColor || '');
         // budget removed
         setNotes(lead.notes || '');
         setProvince(lead.province || '');
@@ -81,6 +85,27 @@ export default function ACardPage() {
       }
     }
   }, [editId]);
+
+  // Restore draft on mount (new lead only)
+  useEffect(() => {
+    if (!editId && draftStore.acardDraft) {
+      const d = draftStore.acardDraft;
+      setName(d.name || ''); setPhone(d.phone || ''); setEmail(d.email || '');
+      setLineId(d.lineId || ''); setSource(d.source || 'Walk-in'); setInterest(d.interest || 'hot');
+      setModel(d.model || ''); setSelectedColor(d.selectedColor || ''); setNotes(d.notes || '');
+      setProvince(d.province || ''); setServiceDate(d.serviceDate || ''); setServiceTime(d.serviceTime || '');
+      setSelectedCenter(d.selectedCenter || ''); setCarType(d.carType || 'all');
+    }
+  }, []);
+
+  // Save draft on changes (debounced, new lead only)
+  useEffect(() => {
+    if (editId) return;
+    const timer = setTimeout(() => {
+      draftStore.setAcardDraft({ name, phone, email, lineId, source, interest, model, selectedColor, province, serviceDate, serviceTime, selectedCenter, notes, carType });
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [name, phone, email, lineId, source, interest, model, selectedColor, province, serviceDate, serviceTime, selectedCenter, notes, carType]);
 
   // Filter service centers by province/postal
   const filteredCenters = useMemo(() => {
@@ -206,6 +231,7 @@ export default function ACardPage() {
       source,
       level: interest,
       car: model || undefined,
+      selectedColor: selectedColor || undefined,
       notes: notes.trim(),
       init: initChar,
       color,
@@ -226,6 +252,7 @@ export default function ACardPage() {
       navigate(`/lead/${editId}`);
     } else {
       addLead(leadData);
+      draftStore.clearAcardDraft();
       addNotification({ title: 'Lead ใหม่!', body: name.trim() + ' เพิ่มลงระบบเรียบร้อย', type: 'success' });
       navigate('/sales-dash');
     }
@@ -448,11 +475,24 @@ export default function ACardPage() {
               {/* Model */}
               <div className="mb-3">
                 <label className={labelCls}>รุ่น / Model *</label>
-                <select value={model} onChange={(e) => setModel(e.target.value)} className={`${inputCls} appearance-none cursor-pointer`} style={inputStyle}>
+                <select value={model} onChange={(e) => { setModel(e.target.value); setSelectedColor(''); }} className={`${inputCls} appearance-none cursor-pointer`} style={inputStyle}>
                   <option value="">เลือกรุ่นรถ</option>
                   {filteredModels.map(c => <option key={c.id} value={c.id}>{c.name} — {c.priceLabel}</option>)}
                 </select>
               </div>
+
+              {/* Color picker */}
+              {model && (
+                <div className="mb-3">
+                  <label className={labelCls}>เลือกสี / Choose Color</label>
+                  <div className="flex gap-[10px] flex-wrap">
+                    {COLOR_OPTIONS.map(c => (
+                      <button key={c.name} onClick={() => setSelectedColor(c.name)} className={`w-7 h-7 rounded-full cursor-pointer transition-all border-2 ${selectedColor === c.name ? 'border-primary scale-[1.2]' : 'border-gray-300'}`} style={{ background: c.hex }} title={c.name} />
+                    ))}
+                  </div>
+                  {selectedColor && <p className="text-[11px] text-t2 mt-1">{selectedColor}</p>}
+                </div>
+              )}
 
               {/* Budget removed per 2.2.3.2 */}
             </div>
@@ -478,6 +518,12 @@ export default function ACardPage() {
                       {selectedCar.avail}
                     </span>
                   </div>
+                  {selectedColor && (
+                    <div className="flex items-center gap-1.5 mt-[5px]">
+                      <span className="w-3 h-3 rounded-full border border-gray-300 flex-shrink-0" style={{ background: COLOR_OPTIONS.find(c => c.name === selectedColor)?.hex || '#ccc' }} />
+                      <span className="text-[10px] text-t2 font-medium">{selectedColor}</span>
+                    </div>
+                  )}
                   <p className="text-[10px] text-t3 mt-[3px]">{selectedCar.stock}</p>
                 </div>
               ) : selectedCar ? (
@@ -499,6 +545,12 @@ export default function ACardPage() {
                       {selectedCar.avail}
                     </span>
                   </div>
+                  {selectedColor && (
+                    <div className="flex items-center gap-1.5 mt-[5px]">
+                      <span className="w-3 h-3 rounded-full border border-gray-300 flex-shrink-0" style={{ background: COLOR_OPTIONS.find(c => c.name === selectedColor)?.hex || '#ccc' }} />
+                      <span className="text-[10px] text-t2 font-medium">{selectedColor}</span>
+                    </div>
+                  )}
                   <p className="text-[10px] text-t3 mt-[3px]">{selectedCar.stock}</p>
                 </div>
               ) : (

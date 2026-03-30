@@ -4,6 +4,7 @@ import { monthlyPayment } from '../lib/formats'
 import { CARS } from '../lib/mockData'
 import { useLeadStore } from './leadStore'
 import { stampRecord } from '../lib/concurrentCheck'
+import { pushBooking, syncBookings } from '../lib/dataSync'
 
 function generateBookingRef() {
   const now = new Date()
@@ -28,7 +29,10 @@ export const useBookingStore = create(persist((set, get) => ({
   paymentMethod: 'installment', // 'installment' | 'cash' | 'qr' | 'transfer' | 'credit'
   downPaymentPct: 20,
   loanTerm: 60, // months
+  loanTermMonths: 60, // alias for loanTerm
   interestRate: 2.79, // annual %
+  selectedColor: 'Pearl White',
+  deliveryDate: '',
 
   // ---------------------------------------------------------------------------
   // Bookings collection
@@ -67,6 +71,12 @@ export const useBookingStore = create(persist((set, get) => ({
 
   setInterestRate: (rate) => set({ interestRate: rate }),
 
+  setSelectedColor: (color) => set({ selectedColor: color }),
+
+  setDeliveryDate: (date) => set({ deliveryDate: date }),
+
+  setLoanTermMonths: (months) => set({ loanTermMonths: months, loanTerm: months }),
+
   reset: () =>
     set({
       step: 1,
@@ -80,7 +90,10 @@ export const useBookingStore = create(persist((set, get) => ({
       paymentMethod: 'installment',
       downPaymentPct: 20,
       loanTerm: 60,
+      loanTermMonths: 60,
       interestRate: 2.79,
+      selectedColor: 'Pearl White',
+      deliveryDate: '',
     }),
 
   // ---------------------------------------------------------------------------
@@ -167,9 +180,13 @@ export const useBookingStore = create(persist((set, get) => ({
       downPayment: state.getDownPayment(),
       loanAmount: state.getLoanAmount(),
       loanTerm: state.loanTerm,
+      loanTermMonths: state.loanTermMonths || state.loanTerm,
       interestRate: state.interestRate,
       monthlyPayment: state.getMonthlyPayment(),
       totalInterest: state.getTotalInterest(),
+      color: state.selectedColor,
+      selectedColor: state.selectedColor,
+      deliveryDate: state.deliveryDate,
       status: 'confirmed', // 'confirmed' | 'cancelled'
       createdAt: new Date().toISOString(),
       ...bookingData,
@@ -179,6 +196,9 @@ export const useBookingStore = create(persist((set, get) => ({
       bookings: [booking, ...s.bookings],
       savedBooking: booking,
     }))
+
+    // Push to Supabase if available
+    pushBooking(booking)
 
     // Update lead status if linked
     if (booking.leadId) {
@@ -210,6 +230,11 @@ export const useBookingStore = create(persist((set, get) => ({
         b.id === id || b.ref === id ? { ...b, status: 'cancelled', _updatedAt: Date.now() } : b
       ),
     })),
+
+  syncFromServer: async () => {
+    const merged = await syncBookings(get().bookings);
+    set({ bookings: merged });
+  },
 }), {
   name: 'toyota-bookings',
   partialize: (state) => ({

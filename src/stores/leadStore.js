@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { LEADS, LEADS_LIST } from '../lib/mockData'
 import { stampRecord, hasConflict, conflictMessage } from '../lib/concurrentCheck'
+import { pushLead, syncLeads } from '../lib/dataSync'
 
 export const useLeadStore = create(persist((set, get) => ({
   leads: LEADS_LIST,
@@ -33,20 +34,20 @@ export const useLeadStore = create(persist((set, get) => ({
   // CRUD
   // ---------------------------------------------------------------------------
 
-  addLead: (lead) =>
+  addLead: (lead) => {
+    const newLead = stampRecord({
+      id: `lead_${Date.now()}`,
+      createdAt: new Date().toISOString(),
+      activities: [],
+      stage: 'new',
+      level: 'warm',
+      ...lead,
+    });
     set((state) => ({
-      leads: [
-        stampRecord({
-          id: `lead_${Date.now()}`,
-          createdAt: new Date().toISOString(),
-          activities: [],
-          stage: 'new',
-          level: 'warm',
-          ...lead,
-        }),
-        ...state.leads,
-      ],
-    })),
+      leads: [newLead, ...state.leads],
+    }));
+    pushLead(newLead);
+  },
 
   updateLead: (id, data, _readAt) => {
     const state = get()
@@ -64,6 +65,7 @@ export const useLeadStore = create(persist((set, get) => ({
       selectedLead:
         state.selectedLead?.id === id ? updated : state.selectedLead,
     })
+    pushLead(updated);
     return { success: true }
   },
 
@@ -207,6 +209,11 @@ export const useLeadStore = create(persist((set, get) => ({
       }
     })
     return stats
+  },
+
+  syncFromServer: async () => {
+    const merged = await syncLeads(get().leads);
+    set({ leads: merged });
   },
 }), {
   name: 'toyota-leads',

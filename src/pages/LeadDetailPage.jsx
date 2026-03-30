@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import Icon from '../components/icons/Icon';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
-import { CARS } from '../lib/mockData';
+import { CARS, COLOR_OPTIONS } from '../lib/mockData';
 import { useLeadStore } from '../stores/leadStore';
 import { useBookingStore } from '../stores/bookingStore';
 import { useUiStore } from '../stores/uiStore';
@@ -366,6 +366,15 @@ export default function LeadDetailPage() {
                       <span className="text-t1 font-bold">{CARS[existingBooking.carId].name}</span>
                     </div>
                   )}
+                  {(existingBooking.color || lead.selectedColor) && (
+                    <div className="flex items-center justify-between text-[12px]">
+                      <span className="text-t3">สี</span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-3 h-3 rounded-full border border-gray-300 flex-shrink-0" style={{ background: COLOR_OPTIONS.find(c => c.name === (existingBooking.color || lead.selectedColor))?.hex || '#ccc' }} />
+                        <span className="text-t1 font-bold">{existingBooking.color || lead.selectedColor}</span>
+                      </div>
+                    </div>
+                  )}
                   <div className="flex items-center justify-between text-[12px]">
                     <span className="text-t3">วันที่จอง</span>
                     <span className="text-t1 font-bold">{existingBooking.date || existingBooking.createdAt || '-'}</span>
@@ -374,6 +383,12 @@ export default function LeadDetailPage() {
                     <span className="text-t3">สถานะ</span>
                     <span className="text-primary font-bold">{existingBooking.status || 'pending'}</span>
                   </div>
+                  <button
+                    onClick={() => navigate(`/booking-view/${existingBooking.refNumber || existingBooking.id}`)}
+                    className="w-full mt-2 px-4 py-2 bg-primary-light text-primary border border-primary-medium rounded-md text-[12px] font-bold cursor-pointer text-center"
+                  >
+                    ดูรายละเอียด
+                  </button>
                 </div>
               ) : (
                 <div className="text-center py-4">
@@ -397,13 +412,19 @@ export default function LeadDetailPage() {
           <div className="card-base">
             <div className="card-hd"><span className="card-title">รุ่นรถที่สนใจ</span></div>
             {car && (
-              <div onClick={() => navigate(`/car/${car.id}`)} className="flex items-center gap-3 p-3 bg-white rounded-lg border border-border cursor-pointer active:opacity-70">
+              <div onClick={() => navigate(`/car/${car.id}?readonly=true${lead.selectedColor ? `&color=${encodeURIComponent(lead.selectedColor)}` : ''}`)} className="flex items-center gap-3 p-3 bg-white rounded-lg border border-border cursor-pointer active:opacity-70">
                 <div className="w-[80px] h-[64px] rounded-md border border-border flex items-center justify-center flex-shrink-0 overflow-hidden p-1" style={{ background: car.bg }}>
                   <img src={car.img} alt={car.name} className="w-full h-full object-contain" onError={(e) => { e.target.style.display = 'none'; e.target.parentElement.innerHTML = '<div class="flex items-center justify-center w-full h-full text-t3"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 17h1m12 0h1M6 17H3V12l2.5-5h13L21 12v5h-3M6 17a2 2 0 104 0m4 0a2 2 0 104 0"/></svg></div>'; }} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-[14px] font-extrabold text-t1">{car.name}</p>
                   <p className="text-[11px] text-t2">{car.type} · {car.priceLabel}</p>
+                  {lead.selectedColor && (
+                    <div className="flex items-center gap-1.5 mt-1">
+                      <span className="w-3 h-3 rounded-full border border-gray-300 flex-shrink-0" style={{ background: COLOR_OPTIONS.find(c => c.name === lead.selectedColor)?.hex || '#ccc' }} />
+                      <span className="text-[10px] text-t2 font-medium">{lead.selectedColor}</span>
+                    </div>
+                  )}
                 </div>
                 <span className="text-primary flex-shrink-0">
                   <Icon name="chevronRight" size={16} />

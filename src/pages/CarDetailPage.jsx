@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import Icon from '../components/icons/Icon';
 import { CARS, GALLERY_VIEWS, COLOR_OPTIONS } from '../lib/mockData';
 import { useBookingStore } from '../stores/bookingStore';
@@ -11,9 +11,12 @@ export default function CarDetailPage() {
   useVisibilityRefresh(useCallback(() => forceUpdate(n => n + 1), []));
   const { id } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const isReadonly = searchParams.get('readonly') === 'true';
+  const colorParam = searchParams.get('color');
   const car = CARS[id];
   const [galleryIdx, setGalleryIdx] = useState(0);
-  const [color, setColor] = useState('Pearl White');
+  const [color, setColor] = useState(colorParam || 'Pearl White');
   const [openSpec, setOpenSpec] = useState('engine');
 
   const setCarId = useBookingStore((s) => s.setCarId);
@@ -179,10 +182,12 @@ export default function CarDetailPage() {
           </div>
 
           {/* CTA */}
-          <div className="flex gap-[10px] mt-1 mb-4">
-            <button onClick={handleCalc} className="flex-1 cursor-pointer flex items-center justify-center gap-2 py-3 rounded-md text-[13px] font-extrabold border border-primary text-primary bg-white hover:bg-green-50 transition-colors"><Icon name="calc" size={16} /> คำนวณผ่อน</button>
-            <button onClick={handleBook} className="btn-p flex-1 cursor-pointer"><Icon name="book" size={16} /> Book Now</button>
-          </div>
+          {!isReadonly && (
+            <div className="flex gap-[10px] mt-1 mb-4">
+              <button onClick={handleCalc} className="rounded-xl border-2 border-primary text-primary bg-white py-3 px-4 font-bold flex-1 flex items-center justify-center gap-2 cursor-pointer text-[13px] hover:bg-green-50 transition-colors"><Icon name="calc" size={16} /> คำนวณผ่อน</button>
+              <button onClick={handleBook} className="rounded-xl bg-primary text-white py-3 px-4 font-bold flex-1 flex items-center justify-center gap-2 cursor-pointer text-[13px] hover:bg-primary/90 transition-colors"><Icon name="book" size={16} /> จองรถ / Book Now</button>
+            </div>
+          )}
         </div>
       </div>
     </div>
