@@ -1,12 +1,14 @@
 import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
 import { DEMO_USERS } from '../lib/mockData'
 import { supabase } from '../lib/supabase'
 
-export const useAuthStore = create((set, get) => ({
+export const useAuthStore = create(persist((set, get) => ({
   user: null,
   role: null, // 'sales' | 'mgr'
   isLoggedIn: false,
   isDemo: false,
+  _hasHydrated: false,
 
   login: (role) => {
     const user = DEMO_USERS[role]
@@ -99,5 +101,16 @@ export const useAuthStore = create((set, get) => ({
     } catch (err) {
       console.error('Session check failed:', err.message)
     }
+  },
+}), {
+  name: 'toyota-auth',
+  partialize: (state) => ({
+    user: state.user,
+    role: state.role,
+    isLoggedIn: state.isLoggedIn,
+    isDemo: state.isDemo,
+  }),
+  onRehydrateStorage: () => () => {
+    useAuthStore.setState({ _hasHydrated: true })
   },
 }))

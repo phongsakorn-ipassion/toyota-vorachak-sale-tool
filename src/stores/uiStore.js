@@ -1,7 +1,8 @@
 import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
 import { NOTIFICATIONS } from '../lib/mockData'
 
-export const useUiStore = create((set, get) => ({
+export const useUiStore = create(persist((set, get) => ({
   device: 'phone', // 'phone' | 'tablet' | 'desktop'
   navHistory: [],
   activeTab: 'home',
@@ -63,5 +64,16 @@ export const useUiStore = create((set, get) => ({
 
   getUnreadCount: () => {
     return get().notifications.filter((n) => !n.read).length
+  },
+}), {
+  name: 'toyota-ui',
+  partialize: (state) => ({
+    notifications: state.notifications,
+  }),
+  onRehydrateStorage: () => (state) => {
+    // If no persisted notifications, seed from mock data
+    if (state && (!state.notifications || state.notifications.length === 0)) {
+      state.notifications = NOTIFICATIONS
+    }
   },
 }))

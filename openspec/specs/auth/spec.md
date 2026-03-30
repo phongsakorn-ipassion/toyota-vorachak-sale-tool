@@ -163,4 +163,25 @@ AND restores user/role state if valid session found
 
 ---
 
+## IMPLEMENTED: Sprint 2 — Persist & Hydration
+
+### Persist Middleware
+- Auth store uses `zustand/middleware/persist` with localStorage key `toyota-auth`
+- Persists: user, role, isLoggedIn, isDemo
+- On page refresh, auth state is restored from localStorage
+- No redirect to /login if user is already authenticated
+
+### Hydration-Aware Routing
+- ProtectedRoute waits for store hydration before redirecting
+- Prevents flash of login page on refresh
+- Smart restore: user lands on their current page, not forced to dashboard
+
+### Role Switcher (Sprint 3)
+- Available in app header for quick role switching
+- Calls `authStore.login(newRole)` to load the opposite demo user
+- Navigates to the new role's dashboard
+- BottomNav tabs update reactively
+
+---
+
 **End of Auth Specification**

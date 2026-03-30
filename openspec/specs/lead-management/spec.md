@@ -242,4 +242,38 @@ Available sources for A-Card form:
 
 ---
 
+## IMPLEMENTED: Sprint 2-4 Enhancements
+
+### Lost Lead Status
+- Lead levels now include 'lost' in addition to hot/warm/cool/won
+- Won and Lost are permanent statuses with confirm dialog + required note
+- Filter pills include Lost for filtering
+
+### Lead List Action Shortcuts
+- Swipe or tap action buttons on list cards for quick call/LINE/note
+- Direct actions without navigating to detail page
+
+### Confirm Dialogs for Status Change
+- Changing to Won or Lost requires confirmation dialog
+- Optional note field in confirm dialog
+- Activity auto-logged on status change with note
+
+### Timeline CRUD
+- Edit existing activities (editActivity in store)
+- Delete activities (deleteActivity in store)
+- Activities stamped with _updatedAt for concurrent check
+
+### Service Center Selection
+- Service center map with Leaflet integration
+- Province/postal code search
+- Geolocation for nearest service center
+
+### Concurrent Check System
+- Leads stamped with `_updatedAt` on create/update
+- `updateLead` checks `_readAt` vs `_updatedAt` to detect conflicts
+- Returns `{ conflict: true, message }` on concurrent modification
+- ConflictNotification UI component for user feedback
+
+---
+
 **End of Lead Management Specification**

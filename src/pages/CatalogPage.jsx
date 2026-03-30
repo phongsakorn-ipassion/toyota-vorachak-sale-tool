@@ -29,6 +29,9 @@ export default function CatalogPage() {
     });
   }, [activeType, activeModel, activeBudget, search]);
 
+  const selectCls = "w-full py-2.5 px-3 bg-white border border-border rounded-md text-[12px] text-t1 outline-none focus:border-primary appearance-none cursor-pointer";
+  const selectStyle = { fontFamily: "'Sarabun', sans-serif" };
+
   return (
     <div className="screen-enter flex flex-col h-full">
       {/* Header */}
@@ -42,44 +45,60 @@ export default function CatalogPage() {
         {/* Search */}
         <div className="relative mb-3">
           <span className="absolute left-[13px] top-1/2 -translate-y-1/2 text-t3"><Icon name="search" size={16} /></span>
-          <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="ค้นหารุ่นรถ / Search models..." className="w-full py-3 pl-[38px] pr-3 bg-white border border-border rounded-md text-[13px] text-t1 outline-none focus:border-primary" style={{ fontFamily: "'Sarabun', sans-serif" }} />
+          <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="ค้นหารุ่นรถ / Search models..." className="w-full py-3 pl-[38px] pr-3 bg-white border border-border rounded-md text-[13px] text-t1 outline-none focus:border-primary" style={selectStyle} />
         </div>
 
-        {/* Level 1: Type */}
-        <div className="mb-[10px]">
-          <div className="text-[10px] font-bold text-t3 uppercase tracking-wider mb-[6px] flex items-center gap-1">
-            <Icon name="car" size={12} className="opacity-60" /> ประเภทรถ / Type
+        {/* Filter dropdowns */}
+        <div className="grid grid-cols-3 gap-2 mb-4">
+          {/* Type */}
+          <div>
+            <div className="text-[10px] font-bold text-t3 uppercase tracking-wider mb-[6px] flex items-center gap-1">
+              <Icon name="car" size={12} className="opacity-60" /> ประเภทรถ / Type
+            </div>
+            <select
+              value={activeType}
+              onChange={e => { setActiveType(e.target.value); setActiveModel('all'); }}
+              className={selectCls}
+              style={selectStyle}
+            >
+              {CAR_TYPES.map(t => (
+                <option key={t.id} value={t.id}>{t.label}</option>
+              ))}
+            </select>
           </div>
-          <div className="flex gap-2 overflow-x-auto pb-1" style={{ WebkitOverflowScrolling: 'touch' }}>
-            {CAR_TYPES.map(t => (
-              <button key={t.id} onClick={() => { setActiveType(t.id); setActiveModel('all'); }} className={`pill-filter flex items-center gap-1 ${activeType === t.id ? 'on' : ''}`}>
-                {t.icon && <Icon name={t.icon} size={12} />} {t.label}
-              </button>
-            ))}
-          </div>
-        </div>
 
-        {/* Level 2: Model */}
-        <div className="mb-[10px]">
-          <div className="text-[10px] font-bold text-t3 uppercase tracking-wider mb-[6px] flex items-center gap-1">
-            รุ่นรถ / Model
+          {/* Model */}
+          <div>
+            <div className="text-[10px] font-bold text-t3 uppercase tracking-wider mb-[6px] flex items-center gap-1">
+              รุ่นรถ / Model
+            </div>
+            <select
+              value={activeModel}
+              onChange={e => setActiveModel(e.target.value)}
+              className={selectCls}
+              style={selectStyle}
+            >
+              {visibleModels.map(m => (
+                <option key={m.id} value={m.id}>{m.label}</option>
+              ))}
+            </select>
           </div>
-          <div className="flex gap-2 overflow-x-auto pb-1" style={{ WebkitOverflowScrolling: 'touch' }}>
-            {visibleModels.map(m => (
-              <button key={m.id} onClick={() => setActiveModel(m.id)} className={`pill-filter ${activeModel === m.id ? 'on' : ''}`}>{m.label}</button>
-            ))}
-          </div>
-        </div>
 
-        {/* Level 3: Budget */}
-        <div className="mb-4">
-          <div className="text-[10px] font-bold text-t3 uppercase tracking-wider mb-[6px] flex items-center gap-1">
-            งบประมาณ / Budget
-          </div>
-          <div className="flex gap-2 overflow-x-auto pb-1" style={{ WebkitOverflowScrolling: 'touch' }}>
-            {BUDGET_RANGES.map(b => (
-              <button key={b.id} onClick={() => setActiveBudget(b.id)} className={`pill-filter ${activeBudget === b.id ? 'on' : ''}`}>{b.label}</button>
-            ))}
+          {/* Budget */}
+          <div>
+            <div className="text-[10px] font-bold text-t3 uppercase tracking-wider mb-[6px] flex items-center gap-1">
+              งบประมาณ / Budget
+            </div>
+            <select
+              value={activeBudget}
+              onChange={e => setActiveBudget(e.target.value)}
+              className={selectCls}
+              style={selectStyle}
+            >
+              {BUDGET_RANGES.map(b => (
+                <option key={b.id} value={b.id}>{b.label}</option>
+              ))}
+            </select>
           </div>
         </div>
 
@@ -92,7 +111,7 @@ export default function CatalogPage() {
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between mb-[2px]">
                 <span className="text-[14px] font-extrabold text-t1">{car.name}</span>
-                <span className="text-[13px] font-extrabold text-t1 whitespace-nowrap">{car.priceLabel} <span className="text-[10px] text-t2 font-medium">฿</span></span>
+                <span className="text-[13px] font-extrabold text-t1 whitespace-nowrap">{car.priceLabel} <span className="text-[10px] text-t2 font-medium"></span></span>
               </div>
               <p className="text-[11px] text-t2 mb-[7px]">{car.type} · {car.fuel}</p>
               <div className="flex gap-[5px] flex-wrap">
@@ -104,7 +123,9 @@ export default function CatalogPage() {
                 <span className="inline-flex items-center gap-1 px-[9px] py-[2px] rounded-[20px] text-[11px] font-semibold text-t2 bg-bg border border-border"><Icon name="fuel" size={10} /> {car.fuel}</span>
               </div>
             </div>
-            <span className="text-[12px] font-bold text-primary flex-shrink-0 self-center">Details</span>
+            <button className="w-8 h-8 rounded-full flex items-center justify-center bg-bg border border-border text-primary flex-shrink-0 hover:bg-green-50 transition-colors cursor-pointer" onClick={(e) => { e.stopPropagation(); navigate(`/car/${car.id}`); }}>
+              <Icon name="chevronRight" size={16} />
+            </button>
           </div>
         ))}
       </div>

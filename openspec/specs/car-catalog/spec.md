@@ -742,7 +742,24 @@ The following items are **out of scope** for v1.0 and deferred to future release
 
 ---
 
-**Spec Version:** 1.0  
-**Last Updated:** 2026-03-28  
-**Status:** Ready for Development
+## IMPLEMENTED: Sprint 3-4 Enhancements
+
+### Dropdown Filters (Sprint 3)
+- Type and Budget filters changed from horizontal pills to dropdown selects
+- Title Case labels for filter options
+- Cleaner UI on mobile with less horizontal scrolling
+
+### Inline Calculator (Sprint 4)
+- CarDetailPage now embeds an InlineCalculator component below CTA buttons
+- "คำนวณผ่อน" button scrolls to calculator section instead of navigating to /calc
+- Calculator uses flat-rate formula matching Toyota dealership style
+- 2-column layout on md+, stacked on mobile
+- Left panel: interest rate input, down payment radio pills, loan term slider
+- Right panel: monthly amount result card with breakdown grid
+
+---
+
+**Spec Version:** 2.0
+**Last Updated:** 2026-03-30
+**Status:** Implemented
 

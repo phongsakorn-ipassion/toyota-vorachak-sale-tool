@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Icon from '../components/icons/Icon';
+import InlineCalculator from '../components/car/InlineCalculator';
 import { CARS, GALLERY_VIEWS, COLOR_OPTIONS } from '../lib/mockData';
 import { useBookingStore } from '../stores/bookingStore';
 import { useCarStore } from '../stores/carStore';
@@ -32,8 +33,8 @@ export default function CarDetailPage() {
   };
 
   const handleCalc = () => {
-    setCarId(id);
-    navigate('/calc');
+    const el = document.getElementById('calculator');
+    if (el) el.scrollIntoView({ behavior: 'smooth' });
   };
 
   return (
@@ -179,6 +180,12 @@ export default function CarDetailPage() {
           <div className="flex gap-[10px] mt-1 mb-4">
             <button onClick={handleCalc} className="btn-g flex-1 cursor-pointer flex items-center justify-center gap-2"><Icon name="calc" size={16} /> คำนวณผ่อน</button>
             <button onClick={handleBook} className="btn-p flex-1 cursor-pointer"><Icon name="book" size={16} /> Book Now</button>
+          </div>
+
+          {/* Inline Calculator */}
+          <div id="calculator" className="card-base">
+            <div className="card-hd"><span className="card-title">คำนวณสินเชื่อ / Calculate Installment</span></div>
+            <InlineCalculator carPrice={car.price} carName={car.name} />
           </div>
         </div>
       </div>

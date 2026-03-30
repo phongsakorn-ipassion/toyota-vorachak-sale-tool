@@ -168,4 +168,18 @@ Navigation architecture for Toyota Dealer Sale Tool PWA using React Router v6 wi
 
 ---
 
+## IMPLEMENTED: Sprint 3 Enhancements
+
+### Bottom Nav Restructure
+- Sales Tab 4 changed from "ผ่อน" (/calc) to "Profile" (/profile)
+- Calculator is now embedded inline in CarDetailPage (no separate /calc nav tab)
+- /calc route still exists for direct access but is not in the bottom nav
+
+### Role Switcher in Header
+- App header now includes a role switcher component
+- Allows switching between Sales and Manager roles without navigating to Profile
+- Updates bottom nav tabs and redirects to appropriate dashboard
+
+---
+
 **End of Navigation Specification**

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import PageHeader from '../components/layout/PageHeader';
 import Icon from '../components/icons/Icon';
 import { useLeadStore } from '../stores/leadStore';
+import { useBookingStore } from '../stores/bookingStore';
 import { CARS } from '../lib/mockData';
 
 const FILTER_OPTIONS = [
@@ -11,6 +12,7 @@ const FILTER_OPTIONS = [
   { key: 'warm', label: 'Warm' },
   { key: 'cool', label: 'Cool' },
   { key: 'won', label: 'Won' },
+  { key: 'lost', label: 'Lost' },
 ];
 
 const LEVEL_STYLES = {
@@ -39,8 +41,30 @@ export default function LeadListPage() {
   const searchTerm = useLeadStore((s) => s.searchTerm);
   const setSearch = useLeadStore((s) => s.setSearch);
   const getFilteredLeads = useLeadStore((s) => s.getFilteredLeads);
+  const addActivity = useLeadStore((s) => s.addActivity);
+  const setCarId = useBookingStore((s) => s.setCarId);
+  const setLeadId = useBookingStore((s) => s.setLeadId);
 
   const leads = getFilteredLeads();
+
+  const handleCall = (e, lead) => {
+    e.stopPropagation();
+    window.location.href = 'tel:' + lead.phone;
+    addActivity(lead.id, { type: 'call', title: 'โทรหาลูกค้า', description: 'โทรติดตาม ' + lead.name });
+  };
+
+  const handleLine = (e, lead) => {
+    e.stopPropagation();
+    window.open('https://line.me/R/', '_blank');
+    addActivity(lead.id, { type: 'line', title: 'ส่ง LINE', description: 'ส่งข้อความ LINE ถึง ' + lead.name });
+  };
+
+  const handleBook = (e, lead) => {
+    e.stopPropagation();
+    if (lead.car) setCarId(lead.car);
+    setLeadId(lead.id);
+    navigate('/booking');
+  };
 
   return (
     <div className="screen-enter flex flex-col h-full">
@@ -111,6 +135,7 @@ export default function LeadListPage() {
               const color = lead.color || getAvatarColor(lead.name);
               const initial = lead.init || lead.name?.charAt(0) || '?';
               const carName = lead.car ? (CARS[lead.car]?.name || lead.car) : '';
+              const hasNotes = lead.activities?.some(a => a.type === 'note');
 
               return (
                 <button
@@ -130,7 +155,17 @@ export default function LeadListPage() {
                   {/* Info */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-sm font-bold text-t1 truncate">{lead.name}</span>
+                      <span className="text-sm font-bold text-t1 truncate flex items-center gap-1">
+                        {lead.name}
+                        {hasNotes && (
+                          <span
+                            className="text-primary"
+                            onClick={(e) => { e.stopPropagation(); navigate(`/lead/${lead.id}`); }}
+                          >
+                            <Icon name="document" size={12} />
+                          </span>
+                        )}
+                      </span>
                       <span className={`shrink-0 px-2 py-0.5 rounded-full text-[10px] font-bold ${style.bg} ${style.text}`}>
                         {style.label}
                       </span>
@@ -153,9 +188,26 @@ export default function LeadListPage() {
                     </div>
                   </div>
 
-                  {/* Chevron */}
-                  <div className="shrink-0 text-t3">
-                    <Icon name="chevronRight" size={16} />
+                  {/* Quick action buttons */}
+                  <div className="flex items-center gap-1 shrink-0">
+                    <span
+                      onClick={(e) => handleCall(e, lead)}
+                      className="w-7 h-7 rounded-full flex items-center justify-center bg-green-50 text-green-600 active:opacity-60 cursor-pointer"
+                    >
+                      <Icon name="phone" size={12} />
+                    </span>
+                    <span
+                      onClick={(e) => handleLine(e, lead)}
+                      className="w-7 h-7 rounded-full flex items-center justify-center bg-emerald-50 text-emerald-600 active:opacity-60 cursor-pointer"
+                    >
+                      <Icon name="chat" size={12} />
+                    </span>
+                    <span
+                      onClick={(e) => handleBook(e, lead)}
+                      className="w-7 h-7 rounded-full flex items-center justify-center bg-blue-50 text-blue-600 active:opacity-60 cursor-pointer"
+                    >
+                      <Icon name="book" size={12} />
+                    </span>
                   </div>
                 </button>
               );

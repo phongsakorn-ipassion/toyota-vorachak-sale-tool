@@ -9,7 +9,7 @@ const SALES_TABS = [
   { label: 'หน้าหลัก', path: '/sales-dash', icon: 'home' },
   { label: 'Leads', path: '/leads', icon: 'users', badge: true },
   { label: 'รุ่นรถ', path: '/catalog', icon: 'car' },
-  { label: 'ผ่อน', path: '/calc', icon: 'calc' },
+  { label: 'Profile', path: '/profile', icon: 'user' },
 ];
 
 // Prototype: Manager has 4 tabs: Dashboard / Pipeline / Targets / Reports

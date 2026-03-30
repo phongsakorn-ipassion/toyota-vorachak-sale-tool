@@ -176,4 +176,19 @@ if ('serviceWorker' in navigator) {
 
 ---
 
+## IMPLEMENTED: Sprint 2 — localStorage Persistence
+
+### Zustand Persist Middleware
+- All major stores use `zustand/middleware/persist` with localStorage
+- Store keys: `toyota-auth`, `toyota-leads`, `toyota-bookings`, `toyota-cars`
+- `partialize` used to persist only essential state slices
+- `onRehydrateStorage` callback re-seeds mock data if persisted state is empty
+
+### Visibility Refresh Hook
+- App re-checks auth state on `visibilitychange` event
+- Prevents stale state after background/foreground transitions
+- Smart page restore: user returns to their last page, not redirected to login
+
+---
+
 **End of PWA Specification**

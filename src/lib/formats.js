@@ -23,3 +23,12 @@ export function parseThaiPrice(str) {
   if (typeof str === 'number') return str
   return parseFloat(str.replace(/[^0-9.]/g, ''))
 }
+
+export function flatRateMonthly(principal, annualRatePercent, months) {
+  if (!principal || !months) return 0
+  const rate = (annualRatePercent || 0) / 100
+  const years = months / 12
+  const totalInterest = principal * rate * years
+  const totalLoan = principal + totalInterest
+  return Math.ceil(totalLoan / months)
+}

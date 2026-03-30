@@ -1,5 +1,6 @@
 import React from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
 import AppShell from './components/layout/AppShell';
 import ProtectedRoute from './components/ProtectedRoute';
 import LoginPage from './pages/LoginPage';
@@ -17,13 +18,35 @@ import TargetsPage from './pages/TargetsPage';
 import ReportsPage from './pages/ReportsPage';
 import NotificationsPage from './pages/NotificationsPage';
 import ProfilePage from './pages/ProfilePage';
+import { useAuthStore } from './stores/authStore';
+
+function SmartRedirect() {
+  const isLoggedIn = useAuthStore((s) => s.isLoggedIn);
+  const role = useAuthStore((s) => s.role);
+  const hasHydrated = useAuthStore((s) => s._hasHydrated);
+
+  if (!hasHydrated) {
+    return null; // Wait for hydration
+  }
+
+  if (isLoggedIn) {
+    const dest = role === 'mgr' ? '/mgr-dash' : '/sales-dash';
+    return <Navigate to={dest} replace />;
+  }
+
+  return <Navigate to="/login" replace />;
+}
 
 export default function App() {
   return (
     <HashRouter>
+      <Toaster position="top-center" toastOptions={{ style: { fontFamily: "'Sarabun', sans-serif", fontSize: '13px' } }} />
       <Routes>
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/" element={<Navigate to="/login" replace />} />
+        <Route path="/" element={<SmartRedirect />} />
+
+        {/* Redirect /calc to /catalog */}
+        <Route path="/calc" element={<Navigate to="/catalog" replace />} />
 
         <Route element={<AppShell />}>
           {/* Sales + Manager shared */}
@@ -31,7 +54,6 @@ export default function App() {
             <Route path="/sales-dash" element={<SalesDashboard />} />
             <Route path="/catalog" element={<CatalogPage />} />
             <Route path="/car/:id" element={<CarDetailPage />} />
-            <Route path="/calc" element={<PaymentCalcPage />} />
             <Route path="/leads" element={<LeadListPage />} />
             <Route path="/lead/:id" element={<LeadDetailPage />} />
             <Route path="/acard" element={<ACardPage />} />

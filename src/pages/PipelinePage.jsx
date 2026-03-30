@@ -11,9 +11,10 @@ const COLUMN_CONFIG = {
   warm: { label: 'WARM', color: '#D97706', bg: '#FFFBEB', border: '#FDE68A' },
   cool: { label: 'COOL', color: '#2563EB', bg: '#EFF6FF', border: '#BFDBFE' },
   won: { label: 'WON', color: '#16A34A', bg: '#F0FDF4', border: '#BBF7D0' },
+  lost: { label: 'LOST', color: '#6B7280', bg: '#F3F4F6', border: '#D1D5DB' },
 };
 
-const LEVELS = ['hot', 'warm', 'cool', 'won'];
+const LEVELS = ['hot', 'warm', 'cool', 'won', 'lost'];
 
 export default function PipelinePage() {
   const navigate = useNavigate();
@@ -27,7 +28,7 @@ export default function PipelinePage() {
 
   // Group leads by level
   const columns = useMemo(() => {
-    const grouped = { hot: [], warm: [], cool: [], won: [] };
+    const grouped = { hot: [], warm: [], cool: [], won: [], lost: [] };
     leads.forEach((l) => {
       if (grouped[l.level]) grouped[l.level].push(l);
     });

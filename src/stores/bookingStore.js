@@ -1,7 +1,9 @@
 import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
 import { monthlyPayment } from '../lib/formats'
 import { CARS } from '../lib/mockData'
 import { useLeadStore } from './leadStore'
+import { stampRecord } from '../lib/concurrentCheck'
 
 function generateBookingRef() {
   const now = new Date()
@@ -11,7 +13,7 @@ function generateBookingRef() {
   return `BK-${yyyy}${mm}-${rand}`
 }
 
-export const useBookingStore = create((set, get) => ({
+export const useBookingStore = create(persist((set, get) => ({
   // ---------------------------------------------------------------------------
   // Wizard / calculator state
   // ---------------------------------------------------------------------------
@@ -133,11 +135,23 @@ export const useBookingStore = create((set, get) => ({
   saveBooking: (bookingData = {}) => {
     const state = get()
     const car = state.carId ? CARS[state.carId] : null
+
+    // Stock check: verify the car is still available before booking
+    if (car) {
+      const existingBookingsForCar = state.bookings.filter(
+        (b) => b.carId === state.carId && b.status === 'confirmed'
+      )
+      // If car has a numeric stock value and all are booked, reject
+      if (car.stockCount !== undefined && existingBookingsForCar.length >= car.stockCount) {
+        return { conflict: true, message: 'สต็อครถถูกจองโดยผู้ใช้อื่น' }
+      }
+    }
+
     const name = state.customerName || state.customerInfo.name
     const phone = state.customerPhone || state.customerInfo.phone
     const email = state.customerEmail || state.customerInfo.email
 
-    const booking = {
+    const booking = stampRecord({
       id: `booking_${Date.now()}`,
       ref: generateBookingRef(),
       carId: state.carId,
@@ -159,7 +173,7 @@ export const useBookingStore = create((set, get) => ({
       status: 'confirmed', // 'confirmed' | 'cancelled'
       createdAt: new Date().toISOString(),
       ...bookingData,
-    }
+    })
 
     set((s) => ({
       bookings: [booking, ...s.bookings],
@@ -196,4 +210,11 @@ export const useBookingStore = create((set, get) => ({
         b.id === id || b.ref === id ? { ...b, status: 'cancelled' } : b
       ),
     })),
+}), {
+  name: 'toyota-bookings',
+  partialize: (state) => ({
+    bookings: state.bookings,
+    carId: state.carId,
+    leadId: state.leadId,
+  }),
 }))

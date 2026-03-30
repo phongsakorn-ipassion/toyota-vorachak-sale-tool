@@ -1,7 +1,8 @@
 import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
 import { CARS, CARS_LIST } from '../lib/mockData'
 
-export const useCarStore = create((set, get) => ({
+export const useCarStore = create(persist((set, get) => ({
   cars: CARS_LIST,
   selectedCar: null,
   filters: {
@@ -81,4 +82,10 @@ export const useCarStore = create((set, get) => ({
 
     return result
   },
+}), {
+  name: 'toyota-cars',
+  partialize: (state) => ({
+    selectedCar: state.selectedCar,
+    filters: state.filters,
+  }),
 }))

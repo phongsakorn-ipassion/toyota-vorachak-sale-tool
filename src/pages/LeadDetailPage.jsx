@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Icon from '../components/icons/Icon';
+import ConfirmDialog from '../components/ui/ConfirmDialog';
 import { CARS } from '../lib/mockData';
 import { useLeadStore } from '../stores/leadStore';
 import { useBookingStore } from '../stores/bookingStore';
@@ -13,11 +14,21 @@ export default function LeadDetailPage() {
   const getLeadById = useLeadStore((s) => s.getLeadById);
   const changeLevel = useLeadStore((s) => s.changeLevel);
   const addActivity = useLeadStore((s) => s.addActivity);
+  const editActivity = useLeadStore((s) => s.editActivity);
+  const deleteActivity = useLeadStore((s) => s.deleteActivity);
   const setCarId = useBookingStore((s) => s.setCarId);
   const setLeadId = useBookingStore((s) => s.setLeadId);
   const addNotification = useUiStore((s) => s.addNotification);
 
   const [noteText, setNoteText] = useState('');
+
+  // Confirm dialog state
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmConfig, setConfirmConfig] = useState({});
+
+  // Activity editing state
+  const [editingActivityId, setEditingActivityId] = useState(null);
+  const [editingText, setEditingText] = useState('');
 
   // Re-read lead from store on every render to get latest activities/level
   const lead = getLeadById(id);
@@ -25,8 +36,11 @@ export default function LeadDetailPage() {
   if (!lead) return <div className="p-4 text-t2">Lead not found</div>;
 
   const car = CARS[lead.car];
+  const isTerminal = lead.level === 'won' || lead.level === 'lost';
   const badgeClass = `badge-${lead.level}`;
-  const badgeLabel = lead.level === 'won' ? 'Won' : lead.level === 'hot' ? 'HOT' : lead.level === 'warm' ? 'Warm' : 'Cool';
+  const badgeLabel = {
+    won: 'Won', lost: 'Lost', hot: 'HOT', warm: 'Warm', cool: 'Cool'
+  }[lead.level] || lead.level;
 
   const handleCall = () => {
     window.location.href = 'tel:' + lead.phone;
@@ -48,15 +62,93 @@ export default function LeadDetailPage() {
     navigate('/booking');
   };
 
-  const handleChangeLevel = (newLevel) => {
-    changeLevel(lead.id, newLevel);
-    addNotification({ title: 'เปลี่ยนสถานะ', body: lead.name + ' เป็น ' + newLevel.toUpperCase(), type: 'info' });
+  // --- Level change with confirmation ---
+  const handleLevelClick = (newLevel) => {
+    if (isTerminal) return; // Cannot change from won/lost
+
+    if (newLevel === 'won') {
+      setConfirmConfig({
+        title: 'ยืนยันเปลี่ยนสถานะ',
+        message: 'เมื่อเปลี่ยนเป็น Won จะไม่สามารถเปลี่ยนกลับได้',
+        showNotes: true,
+        requireNotes: false,
+        confirmLabel: 'ยืนยัน Won',
+        confirmColor: '#16A34A',
+        onConfirm: (note) => {
+          changeLevel(lead.id, 'won', note || undefined);
+          addNotification({ title: 'เปลี่ยนสถานะ', body: lead.name + ' เป็น WON', type: 'info' });
+          setConfirmOpen(false);
+        },
+      });
+      setConfirmOpen(true);
+    } else if (newLevel === 'lost') {
+      setConfirmConfig({
+        title: 'ยืนยันเปลี่ยนสถานะ',
+        message: 'เมื่อเปลี่ยนเป็น Lost จะไม่สามารถเปลี่ยนกลับได้',
+        showNotes: true,
+        requireNotes: true,
+        confirmLabel: 'ยืนยัน Lost',
+        confirmColor: '#6B7280',
+        onConfirm: (note) => {
+          changeLevel(lead.id, 'lost', note);
+          addNotification({ title: 'เปลี่ยนสถานะ', body: lead.name + ' เป็น LOST', type: 'info' });
+          setConfirmOpen(false);
+        },
+      });
+      setConfirmOpen(true);
+    } else {
+      // hot/warm/cool — simple confirm with optional note
+      setConfirmConfig({
+        title: 'ยืนยันเปลี่ยนสถานะ',
+        message: `เปลี่ยนสถานะเป็น ${newLevel.toUpperCase()}`,
+        showNotes: true,
+        requireNotes: false,
+        confirmLabel: 'ยืนยัน',
+        confirmColor: '#2563EB',
+        onConfirm: (note) => {
+          changeLevel(lead.id, newLevel, note || undefined);
+          addNotification({ title: 'เปลี่ยนสถานะ', body: lead.name + ' เป็น ' + newLevel.toUpperCase(), type: 'info' });
+          setConfirmOpen(false);
+        },
+      });
+      setConfirmOpen(true);
+    }
   };
 
   const handleAddNote = () => {
     if (!noteText.trim()) return;
     addActivity(lead.id, { type: 'note', title: 'บันทึก', description: noteText.trim() });
     setNoteText('');
+  };
+
+  // --- Activity CRUD ---
+  const handleEditActivity = (act) => {
+    setEditingActivityId(act.id);
+    setEditingText(act.description || act.content || '');
+  };
+
+  const handleSaveEditActivity = (actId) => {
+    if (editingText.trim()) {
+      editActivity(lead.id, actId, { description: editingText.trim() });
+    }
+    setEditingActivityId(null);
+    setEditingText('');
+  };
+
+  const handleDeleteActivity = (act) => {
+    setConfirmConfig({
+      title: 'ยืนยันลบกิจกรรมนี้?',
+      message: act.title || act.type,
+      showNotes: false,
+      requireNotes: false,
+      confirmLabel: 'ลบ',
+      confirmColor: '#DC2626',
+      onConfirm: () => {
+        deleteActivity(lead.id, act.id);
+        setConfirmOpen(false);
+      },
+    });
+    setConfirmOpen(true);
   };
 
   // Sort activities by time, newest first
@@ -68,6 +160,8 @@ export default function LeadDetailPage() {
       case 'line': return 'chat';
       case 'note': return 'edit';
       case 'booking': return 'book';
+      case 'won': return 'trophy';
+      case 'lost': return 'flag';
       default: return 'check';
     }
   };
@@ -84,6 +178,7 @@ export default function LeadDetailPage() {
     { id: 'warm', label: 'WARM', color: '#D97706', bg: '#FFFBEB' },
     { id: 'cool', label: 'COOL', color: '#2563EB', bg: '#EFF6FF' },
     { id: 'won', label: 'WON', color: '#16A34A', bg: '#F0FDF4' },
+    { id: 'lost', label: 'LOST', color: '#6B7280', bg: '#F3F4F6' },
   ];
 
   return (
@@ -105,32 +200,76 @@ export default function LeadDetailPage() {
           <span className={badgeClass}>{badgeLabel}</span>
         </div>
 
+        {/* Customer Info Card */}
+        <div className="bg-white px-4 py-3 border-b border-border">
+          <div className="grid grid-cols-1 gap-2">
+            <div className="flex items-center gap-2 text-[12px]">
+              <span className="text-t3 w-10">ชื่อ</span>
+              <span className="text-t1 font-bold">{lead.name}</span>
+            </div>
+            {lead.phone && (
+              <div className="flex items-center gap-2 text-[12px]">
+                <span className="text-t3 w-10">โทร</span>
+                <a href={`tel:${lead.phone}`} className="text-primary font-bold">{lead.phone}</a>
+              </div>
+            )}
+            {lead.email && (
+              <div className="flex items-center gap-2 text-[12px]">
+                <span className="text-t3 w-10">อีเมล</span>
+                <span className="text-t1">{lead.email}</span>
+              </div>
+            )}
+            {lead.lineId && (
+              <div className="flex items-center gap-2 text-[12px]">
+                <span className="text-t3 w-10">LINE</span>
+                <span className="text-t1">{lead.lineId}</span>
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* Level change pills */}
         <div className="bg-white px-4 py-2 border-b border-border flex gap-2 overflow-x-auto">
-          {levelButtons.map((lb) => (
-            <button
-              key={lb.id}
-              onClick={() => handleChangeLevel(lb.id)}
-              className="px-3 py-[3px] rounded-full text-[10px] font-bold border transition-all cursor-pointer flex-shrink-0"
-              style={{
-                borderColor: lead.level === lb.id ? lb.color : '#E5E7EB',
-                background: lead.level === lb.id ? lb.bg : '#fff',
-                color: lead.level === lb.id ? lb.color : '#6B7280',
-              }}
-            >
-              {lb.label}
-            </button>
-          ))}
+          {isTerminal ? (
+            // Terminal state: show permanent badge only
+            <div className="flex items-center gap-2">
+              <span
+                className="px-3 py-[3px] rounded-full text-[10px] font-bold border flex-shrink-0"
+                style={{
+                  borderColor: levelButtons.find(lb => lb.id === lead.level)?.color || '#6B7280',
+                  background: levelButtons.find(lb => lb.id === lead.level)?.bg || '#F3F4F6',
+                  color: levelButtons.find(lb => lb.id === lead.level)?.color || '#6B7280',
+                }}
+              >
+                {badgeLabel} (ถาวร)
+              </span>
+            </div>
+          ) : (
+            levelButtons.map((lb) => (
+              <button
+                key={lb.id}
+                onClick={() => handleLevelClick(lb.id)}
+                className="px-3 py-[3px] rounded-full text-[10px] font-bold border transition-all cursor-pointer flex-shrink-0"
+                style={{
+                  borderColor: lead.level === lb.id ? lb.color : '#E5E7EB',
+                  background: lead.level === lb.id ? lb.bg : '#fff',
+                  color: lead.level === lb.id ? lb.color : '#6B7280',
+                }}
+              >
+                {lb.label}
+              </button>
+            ))
+          )}
         </div>
 
         <div className="px-4 pt-4">
-          {/* Quick Actions */}
+          {/* Quick Actions — reordered: โทร / LINE / จอง / แก้ไข */}
           <div className="grid grid-cols-4 gap-2 mb-[14px]">
             {[
               { icon: 'phone', label: 'โทร', action: handleCall },
               { icon: 'chat', label: 'LINE', action: handleLine },
-              { icon: 'edit', label: 'แก้ไข', action: handleEdit },
               { icon: 'book', label: 'จอง', action: handleBook },
+              { icon: 'edit', label: 'แก้ไข', action: handleEdit },
             ].map(a => (
               <button key={a.label} onClick={a.action} className="flex flex-col items-center gap-1 p-3 bg-white border border-border rounded-md cursor-pointer active:opacity-70 transition-opacity">
                 <span className="text-primary"><Icon name={a.icon} size={18} /></span>
@@ -151,7 +290,9 @@ export default function LeadDetailPage() {
                   <p className="text-[14px] font-extrabold text-t1">{car.name}</p>
                   <p className="text-[11px] text-t2">{car.type} · {car.priceLabel}</p>
                 </div>
-                <span className="text-[12px] font-bold text-primary flex-shrink-0">Details</span>
+                <span className="text-primary flex-shrink-0">
+                  <Icon name="chevronRight" size={16} />
+                </span>
               </div>
             )}
           </div>
@@ -165,11 +306,55 @@ export default function LeadDetailPage() {
                   <Icon name={activityIcon(act.type)} size={12} />
                 </span>
                 <div className="flex-1">
-                  <p className="text-[12px] font-bold text-t1">{act.title || act.type}</p>
-                  {act.description && <p className="text-[11px] text-t2 mt-[1px]">{act.description}</p>}
-                  {act.content && <p className="text-[11px] text-t2 mt-[1px]">{act.content}</p>}
-                  <p className="text-[10px] text-t3 mt-[2px]">{formatTime(act.time)}</p>
+                  {editingActivityId === act.id ? (
+                    <div className="flex gap-1">
+                      <input
+                        type="text"
+                        value={editingText}
+                        onChange={(e) => setEditingText(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === 'Enter') handleSaveEditActivity(act.id); }}
+                        className="flex-1 py-1 px-2 bg-bg border border-border rounded text-[11px] text-t1 outline-none focus:border-primary"
+                        autoFocus
+                      />
+                      <button
+                        onClick={() => handleSaveEditActivity(act.id)}
+                        className="text-primary px-1"
+                      >
+                        <Icon name="check" size={12} />
+                      </button>
+                      <button
+                        onClick={() => { setEditingActivityId(null); setEditingText(''); }}
+                        className="text-t3 px-1"
+                      >
+                        <Icon name="close" size={12} />
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      <p className="text-[12px] font-bold text-t1">{act.title || act.type}</p>
+                      {act.description && <p className="text-[11px] text-t2 mt-[1px]">{act.description}</p>}
+                      {act.content && <p className="text-[11px] text-t2 mt-[1px]">{act.content}</p>}
+                      <p className="text-[10px] text-t3 mt-[2px]">{formatTime(act.time)}</p>
+                    </>
+                  )}
                 </div>
+                {/* Edit / Delete buttons */}
+                {editingActivityId !== act.id && (
+                  <div className="flex items-start gap-1 flex-shrink-0 mt-[2px]">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleEditActivity(act); }}
+                      className="w-5 h-5 rounded flex items-center justify-center text-t3 hover:text-primary cursor-pointer"
+                    >
+                      <Icon name="edit" size={10} />
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleDeleteActivity(act); }}
+                      className="w-5 h-5 rounded flex items-center justify-center text-t3 hover:text-red-500 cursor-pointer"
+                    >
+                      <Icon name="trash" size={10} />
+                    </button>
+                  </div>
+                )}
               </div>
             )) : (
               <p className="text-[12px] text-t3 py-2">ยังไม่มีกิจกรรม</p>
@@ -186,7 +371,11 @@ export default function LeadDetailPage() {
                 className="flex-1 py-2 px-3 bg-bg border border-border rounded-md text-[12px] text-t1 outline-none focus:border-primary"
                 style={{ fontFamily: "'Sarabun', sans-serif" }}
               />
-              <button onClick={handleAddNote} className="px-3 py-2 bg-primary text-white rounded-md text-[11px] font-bold cursor-pointer">
+              <button
+                onClick={handleAddNote}
+                disabled={!noteText.trim()}
+                className="px-3 py-2 bg-primary text-white rounded-md text-[11px] font-bold cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+              >
                 <Icon name="check" size={14} />
               </button>
             </div>
@@ -201,6 +390,20 @@ export default function LeadDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Confirm Dialog */}
+      <ConfirmDialog
+        isOpen={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        onConfirm={confirmConfig.onConfirm || (() => setConfirmOpen(false))}
+        title={confirmConfig.title}
+        message={confirmConfig.message}
+        confirmLabel={confirmConfig.confirmLabel}
+        cancelLabel="ยกเลิก"
+        showNotes={confirmConfig.showNotes}
+        requireNotes={confirmConfig.requireNotes}
+        confirmColor={confirmConfig.confirmColor}
+      />
     </div>
   );
 }

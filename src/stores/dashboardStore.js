@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
 import {
   BRANCHES,
   DASHBOARD_KPIS,
@@ -8,7 +9,7 @@ import {
   CARS,
 } from '../lib/mockData'
 
-export const useDashboardStore = create((set, get) => ({
+export const useDashboardStore = create(persist((set, get) => ({
   selectedBranch: 'all',
   kpis: DASHBOARD_KPIS,
   teamMembers: TEAM_MEMBERS,
@@ -123,4 +124,10 @@ export const useDashboardStore = create((set, get) => ({
       leadsPerRep,
     }
   },
+}), {
+  name: 'toyota-dashboard',
+  partialize: (state) => ({
+    selectedBranch: state.selectedBranch,
+    teamMembers: state.teamMembers,
+  }),
 }))

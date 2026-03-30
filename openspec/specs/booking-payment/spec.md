@@ -185,4 +185,32 @@ Booking = {
 
 ---
 
+## IMPLEMENTED: Sprint 4 — Inline Calculator & Concurrent Stock Check
+
+### Inline Calculator on Car Detail Page
+- Embedded directly in CarDetailPage below CTA buttons
+- Uses flat-rate calculation (not amortization):
+  ```
+  financeAmount = carPrice - (carPrice * downPct / 100)
+  totalInterest = financeAmount * (rate / 100) * (months / 12)
+  monthly = Math.ceil((financeAmount + totalInterest) / months)
+  ```
+- Interest rate: text input with % suffix, default 2.49%
+- Down payment: radio pill buttons (5/10/15/20/25%), default 15%
+- Loan term: range slider 12-84 months, step 12, with tick labels
+- Result card: monthly amount in green, breakdown grid, disclaimer
+- Self-contained with local state (no store dependency)
+
+### Constants
+- `DOWN_PAYMENT_OPTIONS`: [5, 10, 15, 20, 25]
+- `LOAN_TERM_RANGE`: { min: 12, max: 84, step: 12, default: 48 }
+- `LOAN_TERMS`: [12, 24, 36, 48, 60, 72, 84]
+
+### Concurrent Stock Check
+- `saveBooking()` now checks existing confirmed bookings for the same car
+- If car `stockCount` is exceeded, returns `{ conflict: true, message: 'สต็อครถถูกจองโดยผู้ใช้อื่น' }`
+- All bookings stamped with `_updatedAt` timestamp via `stampRecord()`
+
+---
+
 **End of Booking-Payment Specification**

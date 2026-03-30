@@ -156,16 +156,42 @@
 - [x] 13.5 Set base path in vite.config.js for GitHub Pages
 - [x] 13.6 Verify deployed app is accessible
 
-## 14. Testing & QA
-- [ ] 14.1 Test full flow on iPhone Safari (login > catalog > booking > dashboard)
-- [ ] 14.2 Test full flow on iPad Safari (tablet layout)
-- [ ] 14.3 Test all filter combinations on catalog page
-- [ ] 14.4 Test car detail gallery with all 5 views
-- [ ] 14.5 Test payment calculator with various down payment/term combinations
-- [ ] 14.6 Test Chart.js rendering on mobile (team chart, weekly chart)
-- [ ] 14.7 Test cross-browser (Chrome desktop, Firefox, Safari)
-- [ ] 14.8 Run Lighthouse PWA audit (target 90+ score)
-- [ ] 14.9 Verify all navigation flows and back button behavior
-- [ ] 14.10 Test auth flow (login, logout, role switching, session persistence)
-- [ ] 14.11 Test offline mode with service worker
-- [ ] 14.12 Test form validation and error messages
+## 14. Sprint 2 — Persistence, Lead Enhancements, Service Center
+- [x] 14.1 State persistence with Zustand persist middleware (auth, leads, bookings, cars)
+- [x] 14.2 Smart page restore on refresh (no redirect to login)
+- [x] 14.3 Lost lead status (permanent Won/Lost)
+- [x] 14.4 Lead list action shortcuts
+- [x] 14.5 Lead detail confirm dialogs for status change
+- [x] 14.6 Timeline CRUD (edit/delete activities)
+- [x] 14.7 Service center map with Leaflet
+- [x] 14.8 Province/postal code search for service center
+- [x] 14.9 Geolocation for service center
+
+## 15. Sprint 3 — Navigation & Catalog Enhancements
+- [x] 15.1 Role switcher in app header
+- [x] 15.2 Bottom nav restructure (removed calc, added Profile)
+- [x] 15.3 Catalog dropdown filters (Type, Budget as dropdowns with Title Case labels)
+
+## 16. Sprint 4 — Inline Calculator, Concurrent Check, OpenSpec
+- [x] 16.1 Inline calculator in CarDetailPage (flat-rate, Toyota style)
+- [x] 16.2 Concurrent check system (stampRecord, hasConflict, conflictMessage)
+- [x] 16.3 Lead store concurrent timestamps on addLead/updateLead/changeLevel
+- [x] 16.4 Booking store concurrent timestamps and stock check on saveBooking
+- [x] 16.5 ConflictNotification UI component
+- [x] 16.6 Updated constants (DOWN_PAYMENT_OPTIONS, LOAN_TERM_RANGE, broader LOAN_TERMS)
+- [x] 16.7 flatRateMonthly calculation utility in formats.js
+- [x] 16.8 OpenSpec documents updated to reflect full feature set
+
+## 17. Testing & QA
+- [ ] 17.1 Test full flow on iPhone Safari (login > catalog > booking > dashboard)
+- [ ] 17.2 Test full flow on iPad Safari (tablet layout)
+- [ ] 17.3 Test all filter combinations on catalog page
+- [ ] 17.4 Test car detail gallery with all 5 views
+- [ ] 17.5 Test payment calculator with various down payment/term combinations
+- [ ] 17.6 Test Chart.js rendering on mobile (team chart, weekly chart)
+- [ ] 17.7 Test cross-browser (Chrome desktop, Firefox, Safari)
+- [ ] 17.8 Run Lighthouse PWA audit (target 90+ score)
+- [ ] 17.9 Verify all navigation flows and back button behavior
+- [ ] 17.10 Test auth flow (login, logout, role switching, session persistence)
+- [ ] 17.11 Test offline mode with service worker
+- [ ] 17.12 Test form validation and error messages

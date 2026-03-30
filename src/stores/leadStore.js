@@ -1,7 +1,9 @@
 import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
 import { LEADS, LEADS_LIST } from '../lib/mockData'
+import { stampRecord, hasConflict, conflictMessage } from '../lib/concurrentCheck'
 
-export const useLeadStore = create((set, get) => ({
+export const useLeadStore = create(persist((set, get) => ({
   leads: LEADS_LIST,
   selectedLead: null,
   filterLevel: 'all', // 'all' | 'hot' | 'warm' | 'cool' | 'won' | 'lost'
@@ -34,26 +36,36 @@ export const useLeadStore = create((set, get) => ({
   addLead: (lead) =>
     set((state) => ({
       leads: [
-        {
+        stampRecord({
           id: `lead_${Date.now()}`,
           createdAt: new Date().toISOString(),
           activities: [],
           stage: 'new',
           level: 'warm',
           ...lead,
-        },
+        }),
         ...state.leads,
       ],
     })),
 
-  updateLead: (id, data) =>
-    set((state) => ({
-      leads: state.leads.map((l) => (l.id === id ? { ...l, ...data } : l)),
+  updateLead: (id, data, _readAt) => {
+    const state = get()
+    const existing = state.leads.find((l) => l.id === id)
+    if (!existing) return { notFound: true }
+
+    // Concurrent check: if caller provides _readAt, verify no conflict
+    if (_readAt && hasConflict(_readAt, existing._updatedAt)) {
+      return { conflict: true, message: conflictMessage('ลีด') }
+    }
+
+    const updated = stampRecord({ ...existing, ...data })
+    set({
+      leads: state.leads.map((l) => (l.id === id ? updated : l)),
       selectedLead:
-        state.selectedLead?.id === id
-          ? { ...state.selectedLead, ...data }
-          : state.selectedLead,
-    })),
+        state.selectedLead?.id === id ? updated : state.selectedLead,
+    })
+    return { success: true }
+  },
 
   deleteLead: (id) =>
     set((state) => ({
@@ -65,8 +77,25 @@ export const useLeadStore = create((set, get) => ({
   // Specific field mutations
   // ---------------------------------------------------------------------------
 
-  changeLevel: (id, newLevel) => {
-    get().updateLead(id, { level: newLevel })
+  changeLevel: (id, newLevel, note) => {
+    get().updateLead(id, { level: newLevel, _updatedAt: Date.now() })
+    // Auto-add activity for won/lost transitions
+    if (newLevel === 'won' || newLevel === 'lost') {
+      const levelLabel = newLevel === 'won' ? 'Won — ปิดการขาย' : 'Lost — สูญเสีย'
+      get().addActivity(id, {
+        type: newLevel,
+        title: `เปลี่ยนสถานะเป็น ${levelLabel}`,
+        description: note || `สถานะถูกเปลี่ยนเป็น ${levelLabel}`,
+        createdBy: 'system',
+      })
+    } else if (note) {
+      get().addActivity(id, {
+        type: 'note',
+        title: 'หมายเหตุการเปลี่ยนสถานะ',
+        description: note,
+        createdBy: 'system',
+      })
+    }
   },
 
   changeStage: (id, newStage) => {
@@ -108,6 +137,20 @@ export const useLeadStore = create((set, get) => ({
           : state.selectedLead
       return { leads: updatedLeads, selectedLead: updatedSelected }
     }),
+
+  editActivity: (leadId, activityId, updates) => set((state) => ({
+    leads: state.leads.map(l => l.id === leadId ? {
+      ...l,
+      activities: (l.activities || []).map(a => a.id === activityId ? { ...a, ...updates, _updatedAt: Date.now() } : a)
+    } : l)
+  })),
+
+  deleteActivity: (leadId, activityId) => set((state) => ({
+    leads: state.leads.map(l => l.id === leadId ? {
+      ...l,
+      activities: (l.activities || []).filter(a => a.id !== activityId)
+    } : l)
+  })),
 
   // ---------------------------------------------------------------------------
   // Getters / computed
@@ -162,5 +205,14 @@ export const useLeadStore = create((set, get) => ({
       }
     })
     return stats
+  },
+}), {
+  name: 'toyota-leads',
+  partialize: (state) => ({ leads: state.leads }),
+  onRehydrateStorage: () => (state) => {
+    // If no persisted leads or empty array, seed from mock data
+    if (state && (!state.leads || state.leads.length === 0)) {
+      state.leads = LEADS_LIST
+    }
   },
 }))
