@@ -158,23 +158,18 @@ export default function LeadListPage() {
 
                   {/* Info */}
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-sm font-bold text-t1 truncate flex items-center gap-1">
-                        {lead.name}
-                        {hasNotes && (
-                          <span
-                            className="text-primary"
-                            onClick={(e) => { e.stopPropagation(); navigate(`/lead/${lead.id}`); }}
-                          >
-                            <Icon name="document" size={12} />
-                          </span>
-                        )}
-                      </span>
-                      <span className={`shrink-0 px-2 py-0.5 rounded-full text-[10px] font-bold ${style.bg} ${style.text}`}>
-                        {style.label}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between mt-0.5">
+                    <span className="text-sm font-bold text-t1 truncate flex items-center gap-1">
+                      {lead.name}
+                      {hasNotes && (
+                        <span
+                          className="text-primary"
+                          onClick={(e) => { e.stopPropagation(); navigate(`/lead/${lead.id}`); }}
+                        >
+                          <Icon name="document" size={12} />
+                        </span>
+                      )}
+                    </span>
+                    <div className="flex items-center mt-0.5">
                       <span className="text-xs text-t3 truncate">
                         {carName && (
                           <>
@@ -192,8 +187,11 @@ export default function LeadListPage() {
                     </div>
                   </div>
 
-                  {/* Quick action buttons */}
-                  <div className="flex items-center gap-1 shrink-0">
+                  {/* Badge + Quick action buttons in same row */}
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${style.bg} ${style.text}`}>
+                      {style.label}
+                    </span>
                     <span
                       onClick={(e) => handleCall(e, lead)}
                       className="w-7 h-7 rounded-full flex items-center justify-center bg-green-50 text-green-600 active:opacity-60 cursor-pointer"

@@ -77,6 +77,11 @@
     padding: 3px 9px;
     gap: 3px;
   }
+  .badge-lost {
+    @apply bg-gray-100 text-gray-500 rounded-pill text-[10px] font-bold inline-flex items-center;
+    padding: 3px 9px;
+    gap: 3px;
+  }
   .badge-avail {
     @apply bg-emerald-50 text-avail rounded-pill text-[10px] font-bold;
     padding: 3px 9px;

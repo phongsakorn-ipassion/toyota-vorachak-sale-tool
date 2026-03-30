@@ -8,6 +8,7 @@ export const useUiStore = create(persist((set, get) => ({
   activeTab: 'home',
   sidebarOpen: false,
   notifications: NOTIFICATIONS,
+  notificationsEnabled: false,
 
   setDevice: (device) => set({ device }),
 
@@ -30,18 +31,26 @@ export const useUiStore = create(persist((set, get) => ({
   toggleSidebar: () =>
     set((state) => ({ sidebarOpen: !state.sidebarOpen })),
 
-  addNotification: (notification) =>
-    set((state) => ({
-      notifications: [
-        {
-          id: `n${Date.now()}`,
-          read: false,
-          time: new Date().toISOString(),
-          ...notification,
-        },
-        ...state.notifications,
-      ],
-    })),
+  setNotificationsEnabled: (enabled) => set({ notificationsEnabled: enabled }),
+
+  addNotification: (notification) => {
+    const state = get()
+    const newNotification = {
+      id: `n${Date.now()}`,
+      read: false,
+      time: new Date().toISOString(),
+      ...notification,
+    }
+
+    // Trigger system notification if enabled
+    if (state.notificationsEnabled && typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+      new Notification(notification.title || 'Toyota Sale Tool', { body: notification.body || '' })
+    }
+
+    set({
+      notifications: [newNotification, ...state.notifications],
+    })
+  },
 
   markRead: (id) =>
     set((state) => ({
@@ -69,6 +78,7 @@ export const useUiStore = create(persist((set, get) => ({
   name: 'toyota-ui',
   partialize: (state) => ({
     notifications: state.notifications,
+    notificationsEnabled: state.notificationsEnabled,
   }),
   onRehydrateStorage: () => (state) => {
     // If no persisted notifications, seed from mock data

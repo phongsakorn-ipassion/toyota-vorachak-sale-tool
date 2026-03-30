@@ -45,13 +45,11 @@ export default function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/" element={<SmartRedirect />} />
 
-        {/* Redirect /calc to /catalog */}
-        <Route path="/calc" element={<Navigate to="/catalog" replace />} />
-
         <Route element={<AppShell />}>
           {/* Sales + Manager shared */}
           <Route element={<ProtectedRoute allowedRoles={['sales', 'mgr']} />}>
             <Route path="/sales-dash" element={<SalesDashboard />} />
+            <Route path="/calc" element={<PaymentCalcPage />} />
             <Route path="/catalog" element={<CatalogPage />} />
             <Route path="/car/:id" element={<CarDetailPage />} />
             <Route path="/leads" element={<LeadListPage />} />

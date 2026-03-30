@@ -5,19 +5,21 @@ import Icon from '../components/icons/Icon'
 import { useAuthStore } from '../stores/authStore'
 import { useLeadStore } from '../stores/leadStore'
 import { useBookingStore } from '../stores/bookingStore'
+import { useUiStore } from '../stores/uiStore'
 import { useVisibilityRefresh } from '../hooks/useVisibilityRefresh'
 
 export default function ProfilePage() {
   const [, forceUpdate] = useState(0)
   useVisibilityRefresh(useCallback(() => forceUpdate(n => n + 1), []))
   const navigate = useNavigate()
-  const { user, role, logout, updateProfile, login } = useAuthStore()
+  const { user, role, logout, updateProfile } = useAuthStore()
   const { leads } = useLeadStore()
   const { bookings } = useBookingStore()
+  const notificationsEnabled = useUiStore((s) => s.notificationsEnabled)
+  const setNotificationsEnabled = useUiStore((s) => s.setNotificationsEnabled)
 
   const [editing, setEditing] = useState(false)
   const [editName, setEditName] = useState(user?.name || '')
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true)
 
   if (!user) {
     return (
@@ -37,6 +39,7 @@ export default function ProfilePage() {
   const roleBadgeColor = role === 'mgr' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'
   const initial = user.init || user.name?.charAt(0) || 'U'
   const branchName = 'วรจักร์ยนต์ สาขาลาดพร้าว'
+  const managerName = 'วิชัย ผู้จัดการ'
 
   function handleSave() {
     updateProfile({ name: editName })
@@ -48,10 +51,17 @@ export default function ProfilePage() {
     setEditing(false)
   }
 
-  function handleSwitchRole(newRole) {
-    if (newRole === role) return
-    login(newRole)
-    navigate(newRole === 'mgr' ? '/mgr-dash' : '/sales-dash')
+  async function handleToggleNotifications() {
+    const newValue = !notificationsEnabled
+    if (newValue && typeof Notification !== 'undefined') {
+      // Request permission on first enable
+      const permission = await Notification.requestPermission()
+      if (permission !== 'granted') {
+        // Permission denied, don't enable
+        return
+      }
+    }
+    setNotificationsEnabled(newValue)
   }
 
   async function handleLogout() {
@@ -82,6 +92,9 @@ export default function ProfilePage() {
             {roleLabel}
           </span>
           <p className="text-xs text-t3 mt-1">{branchName}</p>
+          {role === 'sales' && (
+            <p className="text-xs text-t3 mt-0.5">ผู้จัดการ: {managerName}</p>
+          )}
           {!editing ? (
             <button
               onClick={() => setEditing(true)}
@@ -100,69 +113,6 @@ export default function ProfilePage() {
               </button>
             </div>
           )}
-        </div>
-
-        {/* Role switching */}
-        <div className="card-base">
-          <h3 className="text-sm font-bold text-t1 mb-3 flex items-center gap-1.5">
-            <Icon name="rotate" size={14} className="text-primary" />
-            สลับบทบาท
-          </h3>
-          <div className="grid grid-cols-2 gap-3">
-            {/* Sales card */}
-            <button
-              onClick={() => handleSwitchRole('sales')}
-              className={`rounded-xl p-3.5 text-center transition-all cursor-pointer border-2 ${
-                role === 'sales'
-                  ? 'border-primary bg-primary/5'
-                  : 'border-border bg-white hover:bg-gray-50'
-              }`}
-            >
-              <div className={`w-10 h-10 rounded-full mx-auto mb-2 flex items-center justify-center ${
-                role === 'sales' ? 'bg-primary text-white' : 'bg-gray-100 text-t3'
-              }`}>
-                <Icon name="user" size={20} />
-              </div>
-              <div className={`text-sm font-bold ${role === 'sales' ? 'text-primary' : 'text-t2'}`}>
-                พนักงานขาย
-              </div>
-              <div className="text-[10px] text-t3 mt-0.5">Sales</div>
-              {role === 'sales' && (
-                <div className="mt-1.5">
-                  <span className="text-[9px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
-                    ใช้งานอยู่
-                  </span>
-                </div>
-              )}
-            </button>
-
-            {/* Manager card */}
-            <button
-              onClick={() => handleSwitchRole('mgr')}
-              className={`rounded-xl p-3.5 text-center transition-all cursor-pointer border-2 ${
-                role === 'mgr'
-                  ? 'border-primary bg-primary/5'
-                  : 'border-border bg-white hover:bg-gray-50'
-              }`}
-            >
-              <div className={`w-10 h-10 rounded-full mx-auto mb-2 flex items-center justify-center ${
-                role === 'mgr' ? 'bg-primary text-white' : 'bg-gray-100 text-t3'
-              }`}>
-                <Icon name="chart" size={20} />
-              </div>
-              <div className={`text-sm font-bold ${role === 'mgr' ? 'text-primary' : 'text-t2'}`}>
-                ผู้จัดการ
-              </div>
-              <div className="text-[10px] text-t3 mt-0.5">Manager</div>
-              {role === 'mgr' && (
-                <div className="mt-1.5">
-                  <span className="text-[9px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
-                    ใช้งานอยู่
-                  </span>
-                </div>
-              )}
-            </button>
-          </div>
         </div>
 
         {/* Stats card */}
@@ -207,30 +157,17 @@ export default function ProfilePage() {
                 <span className="text-sm text-t1">การแจ้งเตือน</span>
               </div>
               <button
-                onClick={() => setNotificationsEnabled(!notificationsEnabled)}
-                className={`w-11 h-6 rounded-full transition-colors relative ${
+                onClick={handleToggleNotifications}
+                className={`w-10 h-5 rounded-full transition-all relative flex-shrink-0 ${
                   notificationsEnabled ? 'bg-primary' : 'bg-gray-300'
                 }`}
               >
                 <span
-                  className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${
-                    notificationsEnabled ? 'translate-x-[22px]' : 'translate-x-0.5'
+                  className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all ${
+                    notificationsEnabled ? 'left-[22px]' : 'left-0.5'
                   }`}
                 />
               </button>
-            </div>
-
-            {/* Language */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-full bg-emerald-50 flex items-center justify-center">
-                  <span className="text-xs font-bold text-emerald-500">TH</span>
-                </div>
-                <span className="text-sm text-t1">ภาษา</span>
-              </div>
-              <span className="text-xs text-t3 font-bold bg-gray-100 px-2.5 py-1 rounded-lg">
-                ไทย
-              </span>
             </div>
           </div>
         </div>

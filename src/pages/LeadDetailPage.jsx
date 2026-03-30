@@ -28,9 +28,11 @@ export default function LeadDetailPage() {
   const deleteActivity = useLeadStore((s) => s.deleteActivity);
   const setCarId = useBookingStore((s) => s.setCarId);
   const setLeadId = useBookingStore((s) => s.setLeadId);
+  const getBookings = useBookingStore((s) => s.getBookings);
   const addNotification = useUiStore((s) => s.addNotification);
 
   const [noteText, setNoteText] = useState('');
+  const [showBookingInfo, setShowBookingInfo] = useState(false);
 
   // Confirm dialog state
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -39,6 +41,9 @@ export default function LeadDetailPage() {
   // Activity editing state
   const [editingActivityId, setEditingActivityId] = useState(null);
   const [editingText, setEditingText] = useState('');
+
+  // Won/Lost note expand state
+  const [showStatusNote, setShowStatusNote] = useState(false);
 
   // Re-read lead from store on every render to get latest activities/level
   const lead = getLeadById(id);
@@ -55,6 +60,18 @@ export default function LeadDetailPage() {
     won: 'Won', lost: 'Lost', hot: 'HOT', warm: 'Warm', cool: 'Cool'
   }[lead.level] || lead.level;
 
+  // Find status change note for won/lost
+  const statusChangeActivity = isTerminal
+    ? (lead.activities || []).find(a =>
+        a.type === 'won' || a.type === 'lost' ||
+        (a.type === 'status' && (a.description || a.content || '').length > 0)
+      )
+    : null;
+  const statusNote = statusChangeActivity?.description || statusChangeActivity?.content || '';
+
+  // Find existing booking for this lead
+  const existingBooking = (getBookings() || []).find(b => b.leadId === lead.id);
+
   const handleCall = () => {
     window.location.href = 'tel:' + lead.phone;
     addActivity(lead.id, { type: 'call', title: 'โทรหาลูกค้า', description: 'โทรติดตาม ' + lead.name });
@@ -70,9 +87,7 @@ export default function LeadDetailPage() {
   };
 
   const handleBook = () => {
-    if (lead.car) setCarId(lead.car);
-    setLeadId(lead.id);
-    navigate('/booking');
+    setShowBookingInfo(!showBookingInfo);
   };
 
   // --- Level change with confirmation ---
@@ -277,18 +292,29 @@ export default function LeadDetailPage() {
         {/* Level change pills */}
         <div className="bg-white px-4 py-2 border-b border-border flex gap-2 overflow-x-auto">
           {isTerminal ? (
-            // Terminal state: show permanent badge only
-            <div className="flex items-center gap-2">
-              <span
-                className="px-3 py-[3px] rounded-full text-[10px] font-bold border flex-shrink-0"
-                style={{
-                  borderColor: levelButtons.find(lb => lb.id === lead.level)?.color || '#6B7280',
-                  background: levelButtons.find(lb => lb.id === lead.level)?.bg || '#F3F4F6',
-                  color: levelButtons.find(lb => lb.id === lead.level)?.color || '#6B7280',
-                }}
-              >
-                {badgeLabel} (ถาวร)
-              </span>
+            // Terminal state: show permanent badge using same badge-* class as list
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center gap-2">
+                <span className={badgeClass}>{badgeLabel} (ถาวร)</span>
+              </div>
+              {/* 2.3.2: Show status change note for won/lost */}
+              {statusNote && (
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setShowStatusNote(!showStatusNote)}
+                    className="flex items-center gap-1 text-[10px] text-t3 hover:text-t1 cursor-pointer"
+                  >
+                    <Icon name="edit" size={10} />
+                    <span>{showStatusNote ? 'ซ่อนบันทึก' : 'ดูบันทึก'}</span>
+                    <Icon name="chevronDown" size={10} className={`transition-transform ${showStatusNote ? 'rotate-180' : ''}`} />
+                  </button>
+                </div>
+              )}
+              {showStatusNote && statusNote && (
+                <div className="bg-bg border border-border rounded-md p-2">
+                  <p className="text-[11px] text-t2">{statusNote}</p>
+                </div>
+              )}
             </div>
           ) : (
             levelButtons.map((lb) => (
@@ -324,13 +350,56 @@ export default function LeadDetailPage() {
             ))}
           </div>
 
-          {/* Car Interest */}
+          {/* 2.3.4.1: Booking Info Section (shown when จอง is clicked) */}
+          {showBookingInfo && (
+            <div className="card-base">
+              <div className="card-hd"><span className="card-title">ข้อมูลการจอง</span></div>
+              {existingBooking ? (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-[12px]">
+                    <span className="text-t3">เลขที่จอง</span>
+                    <span className="text-t1 font-bold">{existingBooking.refNumber || existingBooking.id}</span>
+                  </div>
+                  {existingBooking.carId && CARS[existingBooking.carId] && (
+                    <div className="flex items-center justify-between text-[12px]">
+                      <span className="text-t3">รุ่นรถ</span>
+                      <span className="text-t1 font-bold">{CARS[existingBooking.carId].name}</span>
+                    </div>
+                  )}
+                  <div className="flex items-center justify-between text-[12px]">
+                    <span className="text-t3">วันที่จอง</span>
+                    <span className="text-t1 font-bold">{existingBooking.date || existingBooking.createdAt || '-'}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-[12px]">
+                    <span className="text-t3">สถานะ</span>
+                    <span className="text-primary font-bold">{existingBooking.status || 'pending'}</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-4">
+                  <p className="text-[12px] text-t3 mb-3">ยังไม่มีข้อมูลการจอง</p>
+                  <button
+                    onClick={() => {
+                      if (lead.car) setCarId(lead.car);
+                      setLeadId(lead.id);
+                      navigate('/booking');
+                    }}
+                    className="px-4 py-2 bg-primary text-white rounded-md text-[12px] font-bold cursor-pointer"
+                  >
+                    สร้างการจอง
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Car Interest — 2.2.4.1: chevron icon only, no text */}
           <div className="card-base">
             <div className="card-hd"><span className="card-title">รุ่นรถที่สนใจ</span></div>
             {car && (
               <div onClick={() => navigate(`/car/${car.id}`)} className="flex items-center gap-3 p-3 bg-white rounded-lg border border-border cursor-pointer active:opacity-70">
                 <div className="w-[80px] h-[64px] rounded-md border border-border flex items-center justify-center flex-shrink-0 overflow-hidden p-1" style={{ background: car.bg }}>
-                  <img src={car.img} alt={car.name} className="w-full h-full object-contain" />
+                  <img src={car.img} alt={car.name} className="w-full h-full object-contain" onError={(e) => { e.target.style.display = 'none'; e.target.parentElement.innerHTML = '<div class="flex items-center justify-center w-full h-full text-t3"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 17h1m12 0h1M6 17H3V12l2.5-5h13L21 12v5h-3M6 17a2 2 0 104 0m4 0a2 2 0 104 0"/></svg></div>'; }} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-[14px] font-extrabold text-t1">{car.name}</p>
@@ -384,20 +453,20 @@ export default function LeadDetailPage() {
                     </>
                   )}
                 </div>
-                {/* Edit / Delete buttons */}
+                {/* Edit / Delete buttons — 2.3.3.1+2: larger 28x28 touch targets, X icon for delete */}
                 {editingActivityId !== act.id && (
                   <div className="flex items-start gap-1 flex-shrink-0 mt-[2px]">
                     <button
                       onClick={(e) => { e.stopPropagation(); handleEditActivity(act); }}
-                      className="w-5 h-5 rounded flex items-center justify-center text-t3 hover:text-primary cursor-pointer"
+                      className="w-7 h-7 rounded flex items-center justify-center text-t3 hover:text-primary cursor-pointer"
                     >
-                      <Icon name="edit" size={10} />
+                      <Icon name="edit" size={14} />
                     </button>
                     <button
                       onClick={(e) => { e.stopPropagation(); handleDeleteActivity(act); }}
-                      className="w-5 h-5 rounded flex items-center justify-center text-t3 hover:text-red-500 cursor-pointer"
+                      className="w-7 h-7 rounded flex items-center justify-center text-t3 hover:text-red-500 cursor-pointer"
                     >
-                      <Icon name="trash" size={10} />
+                      <Icon name="close" size={16} />
                     </button>
                   </div>
                 )}

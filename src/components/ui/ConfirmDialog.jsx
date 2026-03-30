@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Icon from '../icons/Icon';
 
 export default function ConfirmDialog({
   isOpen,
@@ -11,6 +12,7 @@ export default function ConfirmDialog({
   showNotes = false,
   requireNotes = false,
   confirmColor = '#DC2626',
+  titleIcon = null,
 }) {
   const [notes, setNotes] = useState('');
 
@@ -21,6 +23,10 @@ export default function ConfirmDialog({
   if (!isOpen) return null;
 
   const isConfirmDisabled = requireNotes && !notes.trim();
+
+  // Default icon based on confirmColor (red = alert, otherwise check)
+  const resolvedIcon = titleIcon || (confirmColor === '#DC2626' ? 'alert' : 'check');
+  const iconColor = confirmColor === '#DC2626' ? 'text-red-500' : 'text-primary';
 
   return (
     <div
@@ -36,7 +42,10 @@ export default function ConfirmDialog({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="px-5 pt-5 pb-4">
-          <h3 className="text-[15px] font-extrabold text-t1 mb-1">{title}</h3>
+          <h3 className="text-[15px] font-extrabold text-t1 mb-1 flex items-center gap-2">
+            <Icon name={resolvedIcon} size={18} className={iconColor} />
+            {title}
+          </h3>
           {message && (
             <p className="text-[12px] text-t2 leading-relaxed">{message}</p>
           )}
@@ -56,16 +65,18 @@ export default function ConfirmDialog({
         <div className="flex border-t border-border">
           <button
             onClick={onClose}
-            className="flex-1 py-3 text-[13px] font-bold text-t2 border-r border-border active:bg-gray-50 cursor-pointer"
+            className="flex-1 py-3 text-[13px] font-bold text-t2 border-r border-border active:bg-gray-50 cursor-pointer flex items-center justify-center gap-1.5"
           >
+            <Icon name="close" size={14} />
             {cancelLabel}
           </button>
           <button
             onClick={() => onConfirm(notes.trim())}
             disabled={isConfirmDisabled}
-            className="flex-1 py-3 text-[13px] font-bold active:opacity-70 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+            className="flex-1 py-3 text-[13px] font-bold active:opacity-70 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
             style={{ color: isConfirmDisabled ? '#9CA3AF' : confirmColor }}
           >
+            <Icon name="check" size={14} />
             {confirmLabel}
           </button>
         </div>

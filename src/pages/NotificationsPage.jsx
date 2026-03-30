@@ -10,8 +10,6 @@ export default function NotificationsPage() {
   const navigate = useNavigate();
   const notifications = useUiStore((s) => s.notifications);
   const markRead = useUiStore((s) => s.markRead);
-  const markAllRead = useUiStore((s) => s.markAllRead);
-  const deleteNotification = useUiStore((s) => s.deleteNotification);
 
   // Group notifications by date
   const grouped = useMemo(() => {
@@ -48,19 +46,26 @@ export default function NotificationsPage() {
   const handleNotificationClick = (n) => {
     markRead(n.id);
     // Deep-link navigation based on type
-    if (n.type === 'hot' || n.type === 'warn') {
+    if (n.leadId) {
+      navigate(`/lead/${n.leadId}`);
+    } else if (n.type === 'hot' || n.type === 'warn') {
       navigate('/pipeline');
     } else if (n.type === 'success') {
       navigate('/pipeline');
+    } else if (n.type === 'booking') {
+      navigate('/booking');
+    } else if (n.type === 'target') {
+      navigate('/targets');
     } else {
-      // Default: stay or go to dashboard
+      // Default: go to dashboard
+      navigate('/sales-dash');
     }
   };
 
   const renderNotification = (n) => (
     <div
       key={n.id}
-      className="bg-white rounded-lg border border-border p-[14px] mb-3 cursor-pointer transition-opacity"
+      className="bg-white rounded-lg border border-border p-[14px] mb-3 cursor-pointer transition-opacity active:opacity-70"
       style={{
         borderLeft: `3px solid ${n.borderColor}`,
         opacity: n.read ? 0.6 : 1,
@@ -74,12 +79,6 @@ export default function NotificationsPage() {
           <p className="text-[12px] text-t2 mt-1 leading-relaxed">{n.body}</p>
           <p className="text-[10px] text-t3 mt-2">{n.time}</p>
         </div>
-        <button
-          onClick={(e) => { e.stopPropagation(); deleteNotification(n.id); }}
-          className="text-t3 hover:text-hot cursor-pointer flex-shrink-0 text-[14px] leading-none"
-        >
-          ×
-        </button>
       </div>
     </div>
   );
@@ -91,9 +90,6 @@ export default function NotificationsPage() {
       <div className="bg-white px-4 py-[13px] flex items-center gap-[11px] border-b border-border flex-shrink-0">
         <button onClick={() => navigate(-1)} className="w-9 h-9 rounded-full flex items-center justify-center bg-bg border border-border text-t1 cursor-pointer"><Icon name="back" size={18} /></button>
         <div className="flex-1"><h2 className="text-[15px] font-extrabold text-t1">การแจ้งเตือน</h2><p className="text-[11px] text-t2 mt-[1px]">Notifications</p></div>
-        {hasNotifications && (
-          <button onClick={markAllRead} className="text-[12px] font-bold text-primary cursor-pointer">อ่านทั้งหมด</button>
-        )}
       </div>
 
       <div className="flex-1 overflow-y-auto px-4 pt-4 pb-24" style={{ WebkitOverflowScrolling: 'touch' }}>

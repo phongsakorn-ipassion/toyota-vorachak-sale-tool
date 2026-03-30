@@ -38,7 +38,7 @@ export default function ACardPage() {
   const [interest, setInterest] = useState('hot');
   const [carType, setCarType] = useState('all');
   const [model, setModel] = useState('');
-  const [budget, setBudget] = useState('ต่ำกว่า 500K');
+  // budget removed per 2.2.3.2
   const [notes, setNotes] = useState('');
   const [errors, setErrors] = useState({});
 
@@ -68,7 +68,7 @@ export default function ACardPage() {
         setSource(lead.source || 'Walk-in');
         setInterest(lead.level || 'hot');
         setModel(lead.car || '');
-        setBudget(lead.budget || 'ต่ำกว่า 500K');
+        // budget removed
         setNotes(lead.notes || '');
         setProvince(lead.province || '');
         setServiceDate(lead.serviceDate || '');
@@ -206,7 +206,6 @@ export default function ACardPage() {
       source,
       level: interest,
       car: model || undefined,
-      budget,
       notes: notes.trim(),
       init: initChar,
       color,
@@ -384,16 +383,16 @@ export default function ACardPage() {
             )}
           </div>
 
-          {/* Date + Time row */}
-          <div className="flex gap-3 mb-3">
-            <div className="flex-1">
+          {/* Date + Time row — stacked on mobile, side-by-side on md+ */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+            <div>
               <label className={labelCls}>วันที่จะเข้ารับบริการ / Date *</label>
               <div className="relative">
                 <span className="absolute left-[13px] top-1/2 -translate-y-1/2 text-t3"><Icon name="calendar" size={15} /></span>
                 <input type="date" value={serviceDate} onChange={(e) => setServiceDate(e.target.value)} className="w-full py-3 pl-[38px] pr-3 bg-white border border-border rounded-md text-[13px] text-t1 outline-none focus:border-primary" style={inputStyle} />
               </div>
             </div>
-            <div className="flex-1">
+            <div>
               <label className={labelCls}>เวลาที่สะดวก / Time *</label>
               <div className="relative">
                 <span className="absolute left-[13px] top-1/2 -translate-y-1/2 text-t3"><Icon name="clock" size={15} /></span>
@@ -455,27 +454,23 @@ export default function ACardPage() {
                 </select>
               </div>
 
-              {/* Budget */}
-              <div className="mb-3 md:mb-0">
-                <label className={labelCls}>งบประมาณ / Budget</label>
-                <select value={budget} onChange={(e) => setBudget(e.target.value)} className={`${inputCls} appearance-none cursor-pointer`} style={inputStyle}>
-                  <option>ต่ำกว่า 500K</option>
-                  <option>500K-1M</option>
-                  <option>1M-2M</option>
-                  <option>มากกว่า 2M</option>
-                </select>
-              </div>
+              {/* Budget removed per 2.2.3.2 */}
             </div>
 
             {/* Right: car preview card */}
             <div className="md:w-1/2 mt-3 md:mt-0">
               {selectedCar && selectedCar.avail === 'In Stock' ? (
-                <div className="p-3 bg-white rounded-lg border border-border">
+                <div className="p-3 bg-white rounded-lg border border-border cursor-pointer active:opacity-70" onClick={() => navigate('/car/' + model)}>
                   <div className="w-full h-[140px] rounded-md flex items-center justify-center overflow-hidden mb-2" style={{ background: selectedCar.bg }}>
-                    <img src={selectedCar.img} alt={selectedCar.name} className="max-w-full max-h-full object-contain" style={{ filter: 'drop-shadow(0 2px 8px rgba(0,0,0,.1))' }} />
+                    <img src={selectedCar.img} alt={selectedCar.name} className="max-w-full max-h-full object-contain" style={{ filter: 'drop-shadow(0 2px 8px rgba(0,0,0,.1))' }} onError={(e) => { e.target.style.display = 'none'; }} />
                   </div>
-                  <div className="text-[14px] font-extrabold text-t1">{selectedCar.name}</div>
-                  <div className="text-[13px] font-extrabold text-primary mt-[2px]">{selectedCar.priceLabel}</div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <div className="text-[14px] font-extrabold text-t1">{selectedCar.name}</div>
+                      <div className="text-[13px] font-extrabold text-primary mt-[2px]">{selectedCar.priceLabel}</div>
+                    </div>
+                    <span className="text-primary flex-shrink-0"><Icon name="chevronRight" size={16} /></span>
+                  </div>
                   <div className="flex items-center gap-2 mt-[5px]">
                     <span className="text-[11px] text-t2">{selectedCar.type} · {selectedCar.fuel}</span>
                     <span className="inline-flex items-center gap-1 text-[10px] font-bold text-avail">
@@ -486,12 +481,17 @@ export default function ACardPage() {
                   <p className="text-[10px] text-t3 mt-[3px]">{selectedCar.stock}</p>
                 </div>
               ) : selectedCar ? (
-                <div className="p-3 bg-white rounded-lg border border-border">
+                <div className="p-3 bg-white rounded-lg border border-border cursor-pointer active:opacity-70" onClick={() => navigate('/car/' + model)}>
                   <div className="w-full h-[140px] rounded-md flex items-center justify-center overflow-hidden mb-2" style={{ background: selectedCar.bg }}>
-                    <img src={selectedCar.img} alt={selectedCar.name} className="max-w-full max-h-full object-contain opacity-60" style={{ filter: 'drop-shadow(0 2px 8px rgba(0,0,0,.1))' }} />
+                    <img src={selectedCar.img} alt={selectedCar.name} className="max-w-full max-h-full object-contain opacity-60" style={{ filter: 'drop-shadow(0 2px 8px rgba(0,0,0,.1))' }} onError={(e) => { e.target.style.display = 'none'; }} />
                   </div>
-                  <div className="text-[14px] font-extrabold text-t1">{selectedCar.name}</div>
-                  <div className="text-[13px] font-extrabold text-t2 mt-[2px]">{selectedCar.priceLabel}</div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <div className="text-[14px] font-extrabold text-t1">{selectedCar.name}</div>
+                      <div className="text-[13px] font-extrabold text-t2 mt-[2px]">{selectedCar.priceLabel}</div>
+                    </div>
+                    <span className="text-t3 flex-shrink-0"><Icon name="chevronRight" size={16} /></span>
+                  </div>
                   <div className="flex items-center gap-2 mt-[5px]">
                     <span className="text-[11px] text-t2">{selectedCar.type} · {selectedCar.fuel}</span>
                     <span className="inline-flex items-center gap-1 text-[10px] font-bold text-transit">

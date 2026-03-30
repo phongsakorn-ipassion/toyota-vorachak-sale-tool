@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Icon from '../components/icons/Icon';
-import InlineCalculator from '../components/car/InlineCalculator';
 import { CARS, GALLERY_VIEWS, COLOR_OPTIONS } from '../lib/mockData';
 import { useBookingStore } from '../stores/bookingStore';
 import { useCarStore } from '../stores/carStore';
@@ -36,8 +35,8 @@ export default function CarDetailPage() {
   };
 
   const handleCalc = () => {
-    const el = document.getElementById('calculator');
-    if (el) el.scrollIntoView({ behavior: 'smooth' });
+    setCarId(id);
+    navigate('/calc');
   };
 
   return (
@@ -56,7 +55,7 @@ export default function CarDetailPage() {
             {isVideo ? (
               <iframe src={`https://www.youtube.com/embed/${car.video}?autoplay=0`} className="w-full h-full border-none" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
             ) : (
-              <img src={car.imgs?.[currentView.id] || car.img} alt={currentView.label} className="w-[85%] max-w-[340px] h-auto object-contain transition-opacity" style={{ filter: 'drop-shadow(0 8px 24px rgba(0,0,0,.15))' }} />
+              <img src={car.imgs?.[currentView.id] || car.img} alt={currentView.label} className="w-[85%] max-w-[340px] h-auto object-contain transition-opacity" style={{ filter: 'drop-shadow(0 8px 24px rgba(0,0,0,.15))' }} onError={(e) => { e.target.style.opacity = '0.3'; e.target.src = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="200" height="120" viewBox="0 0 200 120"><rect width="200" height="120" fill="#f3f4f6" rx="8"/><text x="100" y="65" text-anchor="middle" fill="#9ca3af" font-size="14" font-family="sans-serif">Image not available</text></svg>'); }} />
             )}
           </div>
           {!isVideo && (
@@ -181,14 +180,8 @@ export default function CarDetailPage() {
 
           {/* CTA */}
           <div className="flex gap-[10px] mt-1 mb-4">
-            <button onClick={handleCalc} className="btn-g flex-1 cursor-pointer flex items-center justify-center gap-2"><Icon name="calc" size={16} /> คำนวณผ่อน</button>
+            <button onClick={handleCalc} className="flex-1 cursor-pointer flex items-center justify-center gap-2 py-3 rounded-md text-[13px] font-extrabold border border-primary text-primary bg-white hover:bg-green-50 transition-colors"><Icon name="calc" size={16} /> คำนวณผ่อน</button>
             <button onClick={handleBook} className="btn-p flex-1 cursor-pointer"><Icon name="book" size={16} /> Book Now</button>
-          </div>
-
-          {/* Inline Calculator */}
-          <div id="calculator" className="card-base">
-            <div className="card-hd"><span className="card-title">คำนวณสินเชื่อ / Calculate Installment</span></div>
-            <InlineCalculator carPrice={car.price} carName={car.name} />
           </div>
         </div>
       </div>
