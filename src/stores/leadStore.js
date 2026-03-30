@@ -77,8 +77,9 @@ export const useLeadStore = create(persist((set, get) => ({
   // Specific field mutations
   // ---------------------------------------------------------------------------
 
-  changeLevel: (id, newLevel, note) => {
-    get().updateLead(id, { level: newLevel, _updatedAt: Date.now() })
+  changeLevel: (id, newLevel, note, _readAt) => {
+    const result = get().updateLead(id, { level: newLevel }, _readAt)
+    if (result?.conflict) return result
     // Auto-add activity for won/lost transitions
     if (newLevel === 'won' || newLevel === 'lost') {
       const levelLabel = newLevel === 'won' ? 'Won — ปิดการขาย' : 'Lost — สูญเสีย'
@@ -96,14 +97,15 @@ export const useLeadStore = create(persist((set, get) => ({
         createdBy: 'system',
       })
     }
+    return result
   },
 
-  changeStage: (id, newStage) => {
-    get().updateLead(id, { stage: newStage })
+  changeStage: (id, newStage, _readAt) => {
+    return get().updateLead(id, { stage: newStage }, _readAt)
   },
 
-  assignLead: (id, salesId) => {
-    get().updateLead(id, { assignedTo: salesId })
+  assignLead: (id, salesId, _readAt) => {
+    return get().updateLead(id, { assignedTo: salesId }, _readAt)
   },
 
   // ---------------------------------------------------------------------------

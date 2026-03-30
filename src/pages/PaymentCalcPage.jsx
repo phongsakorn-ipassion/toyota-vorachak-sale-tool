@@ -1,11 +1,14 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Icon from '../components/icons/Icon';
 import { CARS } from '../lib/mockData';
 import { LOAN_TERMS, DEFAULT_INTEREST_RATE } from '../lib/constants';
 import { useBookingStore } from '../stores/bookingStore';
+import { useVisibilityRefresh } from '../hooks/useVisibilityRefresh';
 
 export default function PaymentCalcPage() {
+  const [, forceUpdate] = useState(0);
+  useVisibilityRefresh(useCallback(() => forceUpdate(n => n + 1), []));
   const navigate = useNavigate();
 
   const bkCarId = useBookingStore((s) => s.carId);

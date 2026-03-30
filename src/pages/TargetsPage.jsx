@@ -1,12 +1,15 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Icon from '../components/icons/Icon';
 import { useDashboardStore } from '../stores/dashboardStore';
 import { useLeadStore } from '../stores/leadStore';
 import { useAuthStore } from '../stores/authStore';
 import { BRANCH_TARGETS } from '../lib/mockData';
+import { useVisibilityRefresh } from '../hooks/useVisibilityRefresh';
 
 export default function TargetsPage() {
+  const [, forceUpdate] = useState(0);
+  useVisibilityRefresh(useCallback(() => forceUpdate(n => n + 1), []));
   const navigate = useNavigate();
   const role = useAuthStore((s) => s.role);
   const teamMembers = useDashboardStore((s) => s.teamMembers);

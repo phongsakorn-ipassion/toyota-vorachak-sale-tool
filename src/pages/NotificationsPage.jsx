@@ -1,9 +1,12 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Icon from '../components/icons/Icon';
 import { useUiStore } from '../stores/uiStore';
+import { useVisibilityRefresh } from '../hooks/useVisibilityRefresh';
 
 export default function NotificationsPage() {
+  const [, forceUpdate] = useState(0);
+  useVisibilityRefresh(useCallback(() => forceUpdate(n => n + 1), []));
   const navigate = useNavigate();
   const notifications = useUiStore((s) => s.notifications);
   const markRead = useUiStore((s) => s.markRead);

@@ -1,15 +1,18 @@
-import React, { useMemo, useEffect, useRef } from 'react';
+import React, { useMemo, useEffect, useRef, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Icon from '../components/icons/Icon';
 import { useLeadStore } from '../stores/leadStore';
 import { useBookingStore } from '../stores/bookingStore';
 import { CARS, WEEKLY_DATA } from '../lib/mockData';
 import { formatCurrency, formatNumber } from '../lib/formats';
+import { useVisibilityRefresh } from '../hooks/useVisibilityRefresh';
 import { Chart, LineElement, PointElement, CategoryScale, LinearScale, LineController, Filler } from 'chart.js';
 
 Chart.register(LineElement, PointElement, CategoryScale, LinearScale, LineController, Filler);
 
 export default function ReportsPage() {
+  const [, forceUpdate] = useState(0);
+  useVisibilityRefresh(useCallback(() => forceUpdate(n => n + 1), []));
   const navigate = useNavigate();
   const leads = useLeadStore((s) => s.leads);
   const getLeadStats = useLeadStore((s) => s.getLeadStats);

@@ -1,10 +1,13 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Icon from '../components/icons/Icon';
 import { CARS, CARS_LIST, MODEL_FILTERS } from '../lib/mockData';
 import { CAR_TYPES, BUDGET_RANGES } from '../lib/constants';
+import { useVisibilityRefresh } from '../hooks/useVisibilityRefresh';
 
 export default function CatalogPage() {
+  const [, forceUpdate] = useState(0);
+  useVisibilityRefresh(useCallback(() => forceUpdate(n => n + 1), []));
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [activeType, setActiveType] = useState('all');

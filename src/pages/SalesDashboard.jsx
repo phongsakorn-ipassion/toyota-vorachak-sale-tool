@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
 import { useLeadStore } from '../stores/leadStore';
@@ -7,8 +7,11 @@ import { useUiStore } from '../stores/uiStore';
 import { CARS } from '../lib/mockData';
 import { formatNumber, formatCurrency } from '../lib/formats';
 import Icon from '../components/icons/Icon';
+import { useVisibilityRefresh } from '../hooks/useVisibilityRefresh';
 
 export default function SalesDashboard() {
+  const [, forceUpdate] = useState(0);
+  useVisibilityRefresh(useCallback(() => forceUpdate(n => n + 1), []));
   const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
   const leads = useLeadStore((s) => s.leads);

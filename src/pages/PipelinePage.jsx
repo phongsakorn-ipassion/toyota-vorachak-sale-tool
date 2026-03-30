@@ -1,10 +1,12 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import Icon from '../components/icons/Icon';
 import { useLeadStore } from '../stores/leadStore';
 import { useUiStore } from '../stores/uiStore';
 import { CARS } from '../lib/mockData';
 import { formatCurrency } from '../lib/formats';
+import { useVisibilityRefresh } from '../hooks/useVisibilityRefresh';
 
 const COLUMN_CONFIG = {
   hot: { label: 'HOT', color: '#DC2626', bg: '#FEF2F2', border: '#FECACA' },
@@ -17,6 +19,11 @@ const COLUMN_CONFIG = {
 const LEVELS = ['hot', 'warm', 'cool', 'won', 'lost'];
 
 export default function PipelinePage() {
+  const [, forceUpdate] = useState(0);
+  useVisibilityRefresh(useCallback(() => forceUpdate(n => n + 1), []));
+
+  const readTimestamps = useRef({});
+
   const navigate = useNavigate();
   const leads = useLeadStore((s) => s.leads);
   const getLeadStats = useLeadStore((s) => s.getLeadStats);
@@ -31,6 +38,8 @@ export default function PipelinePage() {
     const grouped = { hot: [], warm: [], cool: [], won: [], lost: [] };
     leads.forEach((l) => {
       if (grouped[l.level]) grouped[l.level].push(l);
+      // Capture read timestamp for each lead
+      if (!readTimestamps.current[l.id]) readTimestamps.current[l.id] = Date.now();
     });
     return LEVELS.map((level) => ({
       ...COLUMN_CONFIG[level],
@@ -45,7 +54,19 @@ export default function PipelinePage() {
   }, [leads]);
 
   const handleMove = (leadId, newLevel) => {
-    changeLevel(leadId, newLevel);
+    const _readAt = readTimestamps.current[leadId] || Date.now();
+    const result = changeLevel(leadId, newLevel, undefined, _readAt);
+    if (result?.conflict) {
+      toast((t) => (
+        <div className="flex items-center gap-3">
+          <span className="text-sm">{result.message}</span>
+          <button onClick={() => { forceUpdate(n => n + 1); toast.dismiss(t.id); }} className="text-xs px-2 py-1 bg-primary text-white rounded whitespace-nowrap">โหลดใหม่</button>
+        </div>
+      ), { duration: 5000, icon: '\u26A0\uFE0F' });
+      setMoveMenuId(null);
+      return;
+    }
+    readTimestamps.current[leadId] = Date.now();
     const lead = leads.find((l) => l.id === leadId);
     addNotification({
       type: 'info',

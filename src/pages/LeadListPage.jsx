@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PageHeader from '../components/layout/PageHeader';
 import Icon from '../components/icons/Icon';
 import { useLeadStore } from '../stores/leadStore';
 import { useBookingStore } from '../stores/bookingStore';
 import { CARS } from '../lib/mockData';
+import { useVisibilityRefresh } from '../hooks/useVisibilityRefresh';
 
 const FILTER_OPTIONS = [
   { key: 'all', label: 'ทั้งหมด' },
@@ -35,6 +36,9 @@ function getAvatarColor(name) {
 }
 
 export default function LeadListPage() {
+  const [, forceUpdate] = useState(0);
+  useVisibilityRefresh(useCallback(() => forceUpdate(n => n + 1), []));
+
   const navigate = useNavigate();
   const filterLevel = useLeadStore((s) => s.filterLevel);
   const setFilterLevel = useLeadStore((s) => s.setFilterLevel);

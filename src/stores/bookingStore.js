@@ -207,7 +207,7 @@ export const useBookingStore = create(persist((set, get) => ({
   cancelBooking: (id) =>
     set((state) => ({
       bookings: state.bookings.map((b) =>
-        b.id === id || b.ref === id ? { ...b, status: 'cancelled' } : b
+        b.id === id || b.ref === id ? { ...b, status: 'cancelled', _updatedAt: Date.now() } : b
       ),
     })),
 }), {

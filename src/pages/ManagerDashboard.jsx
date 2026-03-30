@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect, useRef } from 'react';
+import React, { useMemo, useEffect, useRef, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
 import { useDashboardStore } from '../stores/dashboardStore';
@@ -6,11 +6,14 @@ import { useLeadStore } from '../stores/leadStore';
 import { useBookingStore } from '../stores/bookingStore';
 import { useUiStore } from '../stores/uiStore';
 import Icon from '../components/icons/Icon';
+import { useVisibilityRefresh } from '../hooks/useVisibilityRefresh';
 import { Chart, BarElement, CategoryScale, LinearScale, BarController } from 'chart.js';
 
 Chart.register(BarElement, CategoryScale, LinearScale, BarController);
 
 export default function ManagerDashboard() {
+  const [, forceUpdate] = useState(0);
+  useVisibilityRefresh(useCallback(() => forceUpdate(n => n + 1), []));
   const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
   const selectedBranch = useDashboardStore((s) => s.selectedBranch);

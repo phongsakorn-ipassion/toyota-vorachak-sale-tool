@@ -1,12 +1,15 @@
-import React, { useState } from 'react'
+import React, { useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import PageHeader from '../components/layout/PageHeader'
 import Icon from '../components/icons/Icon'
 import { useAuthStore } from '../stores/authStore'
 import { useLeadStore } from '../stores/leadStore'
 import { useBookingStore } from '../stores/bookingStore'
+import { useVisibilityRefresh } from '../hooks/useVisibilityRefresh'
 
 export default function ProfilePage() {
+  const [, forceUpdate] = useState(0)
+  useVisibilityRefresh(useCallback(() => forceUpdate(n => n + 1), []))
   const navigate = useNavigate()
   const { user, role, logout, updateProfile, login } = useAuthStore()
   const { leads } = useLeadStore()

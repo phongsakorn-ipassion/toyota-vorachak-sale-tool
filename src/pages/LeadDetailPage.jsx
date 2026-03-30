@@ -1,18 +1,28 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import Icon from '../components/icons/Icon';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import { CARS } from '../lib/mockData';
 import { useLeadStore } from '../stores/leadStore';
 import { useBookingStore } from '../stores/bookingStore';
 import { useUiStore } from '../stores/uiStore';
+import { useVisibilityRefresh } from '../hooks/useVisibilityRefresh';
 
 export default function LeadDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
 
+  const [, forceUpdate] = useState(0);
+  useVisibilityRefresh(useCallback(() => forceUpdate(n => n + 1), []));
+
+  // Concurrent check: capture read timestamp
+  const readTimestamp = useRef(Date.now());
+  useEffect(() => { readTimestamp.current = Date.now(); }, [id]);
+
   const getLeadById = useLeadStore((s) => s.getLeadById);
   const changeLevel = useLeadStore((s) => s.changeLevel);
+  const updateLead = useLeadStore((s) => s.updateLead);
   const addActivity = useLeadStore((s) => s.addActivity);
   const editActivity = useLeadStore((s) => s.editActivity);
   const deleteActivity = useLeadStore((s) => s.deleteActivity);
@@ -32,6 +42,9 @@ export default function LeadDetailPage() {
 
   // Re-read lead from store on every render to get latest activities/level
   const lead = getLeadById(id);
+
+  // Update read timestamp whenever lead data changes
+  useEffect(() => { if (lead) readTimestamp.current = Date.now(); }, [lead?._updatedAt]);
 
   if (!lead) return <div className="p-4 text-t2">Lead not found</div>;
 
@@ -75,8 +88,19 @@ export default function LeadDetailPage() {
         confirmLabel: 'ยืนยัน Won',
         confirmColor: '#16A34A',
         onConfirm: (note) => {
-          changeLevel(lead.id, 'won', note || undefined);
+          const result = changeLevel(lead.id, 'won', note || undefined, readTimestamp.current);
+          if (result?.conflict) {
+            toast((t) => (
+              <div className="flex items-center gap-3">
+                <span className="text-sm">{result.message}</span>
+                <button onClick={() => { readTimestamp.current = Date.now(); forceUpdate(n => n + 1); toast.dismiss(t.id); }} className="text-xs px-2 py-1 bg-primary text-white rounded whitespace-nowrap">โหลดใหม่</button>
+              </div>
+            ), { duration: 5000, icon: '\u26A0\uFE0F' });
+            setConfirmOpen(false);
+            return;
+          }
           addNotification({ title: 'เปลี่ยนสถานะ', body: lead.name + ' เป็น WON', type: 'info' });
+          readTimestamp.current = Date.now();
           setConfirmOpen(false);
         },
       });
@@ -90,8 +114,19 @@ export default function LeadDetailPage() {
         confirmLabel: 'ยืนยัน Lost',
         confirmColor: '#6B7280',
         onConfirm: (note) => {
-          changeLevel(lead.id, 'lost', note);
+          const result = changeLevel(lead.id, 'lost', note, readTimestamp.current);
+          if (result?.conflict) {
+            toast((t) => (
+              <div className="flex items-center gap-3">
+                <span className="text-sm">{result.message}</span>
+                <button onClick={() => { readTimestamp.current = Date.now(); forceUpdate(n => n + 1); toast.dismiss(t.id); }} className="text-xs px-2 py-1 bg-primary text-white rounded whitespace-nowrap">โหลดใหม่</button>
+              </div>
+            ), { duration: 5000, icon: '\u26A0\uFE0F' });
+            setConfirmOpen(false);
+            return;
+          }
           addNotification({ title: 'เปลี่ยนสถานะ', body: lead.name + ' เป็น LOST', type: 'info' });
+          readTimestamp.current = Date.now();
           setConfirmOpen(false);
         },
       });
@@ -106,8 +141,19 @@ export default function LeadDetailPage() {
         confirmLabel: 'ยืนยัน',
         confirmColor: '#2563EB',
         onConfirm: (note) => {
-          changeLevel(lead.id, newLevel, note || undefined);
+          const result = changeLevel(lead.id, newLevel, note || undefined, readTimestamp.current);
+          if (result?.conflict) {
+            toast((t) => (
+              <div className="flex items-center gap-3">
+                <span className="text-sm">{result.message}</span>
+                <button onClick={() => { readTimestamp.current = Date.now(); forceUpdate(n => n + 1); toast.dismiss(t.id); }} className="text-xs px-2 py-1 bg-primary text-white rounded whitespace-nowrap">โหลดใหม่</button>
+              </div>
+            ), { duration: 5000, icon: '\u26A0\uFE0F' });
+            setConfirmOpen(false);
+            return;
+          }
           addNotification({ title: 'เปลี่ยนสถานะ', body: lead.name + ' เป็น ' + newLevel.toUpperCase(), type: 'info' });
+          readTimestamp.current = Date.now();
           setConfirmOpen(false);
         },
       });

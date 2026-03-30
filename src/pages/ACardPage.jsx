@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import Icon from '../components/icons/Icon';
@@ -8,8 +8,15 @@ import { THAI_PROVINCES, SERVICE_CENTERS } from '../lib/thaiProvinces';
 import { useLeadStore } from '../stores/leadStore';
 import { useUiStore } from '../stores/uiStore';
 import ServiceCenterMap from '../components/map/ServiceCenterMap';
+import { useVisibilityRefresh } from '../hooks/useVisibilityRefresh';
 
 export default function ACardPage() {
+  const [, forceUpdate] = useState(0);
+  useVisibilityRefresh(useCallback(() => forceUpdate(n => n + 1), []));
+
+  // Concurrent check: capture read timestamp when loading a lead for edit
+  const readTimestamp = useRef(null);
+
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const editId = searchParams.get('edit');
@@ -51,6 +58,7 @@ export default function ACardPage() {
   // Load lead data for edit mode
   useEffect(() => {
     if (editId) {
+      readTimestamp.current = Date.now();
       const lead = getLeadById(editId);
       if (lead) {
         setName(lead.name || '');
@@ -205,7 +213,16 @@ export default function ACardPage() {
     };
 
     if (editId) {
-      updateLead(editId, leadData);
+      const result = updateLead(editId, leadData, readTimestamp.current);
+      if (result?.conflict) {
+        toast((t) => (
+          <div className="flex items-center gap-3">
+            <span className="text-sm">{result.message}</span>
+            <button onClick={() => { readTimestamp.current = Date.now(); forceUpdate(n => n + 1); toast.dismiss(t.id); }} className="text-xs px-2 py-1 bg-primary text-white rounded whitespace-nowrap">โหลดใหม่</button>
+          </div>
+        ), { duration: 5000, icon: '\u26A0\uFE0F' });
+        return;
+      }
       addNotification({ title: 'แก้ไข Lead สำเร็จ', body: name.trim() + ' อัปเดตข้อมูลเรียบร้อย', type: 'success' });
       navigate(`/lead/${editId}`);
     } else {

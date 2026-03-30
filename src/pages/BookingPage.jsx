@@ -1,12 +1,16 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import Icon from '../components/icons/Icon';
 import { CARS } from '../lib/mockData';
 import { useBookingStore } from '../stores/bookingStore';
 import { useLeadStore } from '../stores/leadStore';
 import { useUiStore } from '../stores/uiStore';
+import { useVisibilityRefresh } from '../hooks/useVisibilityRefresh';
 
 export default function BookingPage() {
+  const [, forceUpdate] = useState(0);
+  useVisibilityRefresh(useCallback(() => forceUpdate(n => n + 1), []));
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [payMethod, setPayMethod] = useState('qr');
@@ -66,7 +70,16 @@ export default function BookingPage() {
   const goStep3 = () => {
     if (timerRef.current) clearInterval(timerRef.current);
     // Save the booking — this also updates lead to 'won'
-    const booking = saveBooking();
+    const result = saveBooking();
+    if (result?.conflict) {
+      toast((t) => (
+        <div className="flex items-center gap-3">
+          <span className="text-sm">{result.message}</span>
+          <button onClick={() => { navigate(-1); toast.dismiss(t.id); }} className="text-xs px-2 py-1 bg-primary text-white rounded whitespace-nowrap">กลับ</button>
+        </div>
+      ), { duration: 5000, icon: '\u26A0\uFE0F' });
+      return;
+    }
     addNotification({ title: 'จองสำเร็จ!', body: car.name + ' จองเรียบร้อย', type: 'booking' });
     setStep(3);
   };

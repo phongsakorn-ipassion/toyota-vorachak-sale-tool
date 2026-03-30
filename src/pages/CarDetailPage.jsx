@@ -1,12 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Icon from '../components/icons/Icon';
 import InlineCalculator from '../components/car/InlineCalculator';
 import { CARS, GALLERY_VIEWS, COLOR_OPTIONS } from '../lib/mockData';
 import { useBookingStore } from '../stores/bookingStore';
 import { useCarStore } from '../stores/carStore';
+import { useVisibilityRefresh } from '../hooks/useVisibilityRefresh';
 
 export default function CarDetailPage() {
+  const [, forceUpdate] = useState(0);
+  useVisibilityRefresh(useCallback(() => forceUpdate(n => n + 1), []));
   const { id } = useParams();
   const navigate = useNavigate();
   const car = CARS[id];
