@@ -21,6 +21,7 @@ export default function CarDetailPage() {
   const [showLightbox, setShowLightbox] = useState(false);
 
   const setCarId = useBookingStore((s) => s.setCarId);
+  const setLeadId = useBookingStore((s) => s.setLeadId);
   const selectCar = useCarStore((s) => s.selectCar);
 
   useEffect(() => {
@@ -35,6 +36,7 @@ export default function CarDetailPage() {
 
   const handleBook = () => {
     setCarId(id);
+    setLeadId(null);
     navigate('/booking');
   };
 

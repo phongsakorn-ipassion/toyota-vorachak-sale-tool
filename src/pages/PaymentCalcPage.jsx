@@ -17,6 +17,7 @@ export default function PaymentCalcPage() {
   const setDownPayment = useBookingStore((s) => s.setDownPayment);
   const setInterestRate = useBookingStore((s) => s.setInterestRate);
   const setLoanTermMonths = useBookingStore((s) => s.setLoanTermMonths);
+  const setLeadId = useBookingStore((s) => s.setLeadId);
 
   const car = bkCarId ? CARS[bkCarId] : CARS.corolla;
 
@@ -30,6 +31,7 @@ export default function PaymentCalcPage() {
 
   const handleBookNow = () => {
     if (!bkCarId) setCarIdStore(car.id);
+    setLeadId(null);
     navigate('/booking');
   };
 
