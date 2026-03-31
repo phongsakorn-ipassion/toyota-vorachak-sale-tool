@@ -502,7 +502,7 @@ export default function ACardPage() {
               {selectedCar && selectedCar.avail === 'In Stock' ? (
                 <div className="p-3 bg-white rounded-lg border border-border cursor-pointer active:opacity-70" onClick={() => navigate('/car/' + model)}>
                   <div className="w-full h-[140px] rounded-md flex items-center justify-center overflow-hidden mb-2" style={{ background: selectedCar.bg }}>
-                    <img src={selectedCar.img} alt={selectedCar.name} className="max-w-full max-h-full object-contain" style={{ filter: 'drop-shadow(0 2px 8px rgba(0,0,0,.1))' }} onError={(e) => { e.target.style.display = 'none'; }} />
+                    <img src={selectedCar.img} alt={selectedCar.name} className="max-w-full max-h-full object-cover" style={{ filter: 'drop-shadow(0 2px 8px rgba(0,0,0,.1))' }} onError={(e) => { e.target.style.display = 'none'; }} />
                   </div>
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
@@ -529,7 +529,7 @@ export default function ACardPage() {
               ) : selectedCar ? (
                 <div className="p-3 bg-white rounded-lg border border-border cursor-pointer active:opacity-70" onClick={() => navigate('/car/' + model)}>
                   <div className="w-full h-[140px] rounded-md flex items-center justify-center overflow-hidden mb-2" style={{ background: selectedCar.bg }}>
-                    <img src={selectedCar.img} alt={selectedCar.name} className="max-w-full max-h-full object-contain opacity-60" style={{ filter: 'drop-shadow(0 2px 8px rgba(0,0,0,.1))' }} onError={(e) => { e.target.style.display = 'none'; }} />
+                    <img src={selectedCar.img} alt={selectedCar.name} className="max-w-full max-h-full object-cover opacity-60" style={{ filter: 'drop-shadow(0 2px 8px rgba(0,0,0,.1))' }} onError={(e) => { e.target.style.display = 'none'; }} />
                   </div>
                   <div className="flex items-center justify-between">
                     <div className="flex-1">

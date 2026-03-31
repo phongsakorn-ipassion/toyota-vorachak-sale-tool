@@ -58,7 +58,7 @@ export default function CarDetailPage() {
             {isVideo ? (
               <iframe src={`https://www.youtube.com/embed/${car.video}?autoplay=0`} className="w-full h-full border-none" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
             ) : (
-              <img src={car.imgs?.[currentView.id] || car.img} alt={currentView.label} className="w-[85%] max-w-[340px] h-auto object-contain transition-opacity" style={{ filter: 'drop-shadow(0 8px 24px rgba(0,0,0,.15))' }} onError={(e) => { e.target.style.opacity = '0.3'; e.target.src = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="200" height="120" viewBox="0 0 200 120"><rect width="200" height="120" fill="#f3f4f6" rx="8"/><text x="100" y="65" text-anchor="middle" fill="#9ca3af" font-size="14" font-family="sans-serif">Image not available</text></svg>'); }} />
+              <img src={car.imgs?.[currentView.id] || car.img} alt={currentView.label} className="w-[85%] max-w-[340px] h-auto object-cover transition-opacity" style={{ filter: 'drop-shadow(0 8px 24px rgba(0,0,0,.15))' }} onError={(e) => { e.target.style.opacity = '0.3'; e.target.src = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="200" height="120" viewBox="0 0 200 120"><rect width="200" height="120" fill="#f3f4f6" rx="8"/><text x="100" y="65" text-anchor="middle" fill="#9ca3af" font-size="14" font-family="sans-serif">Image not available</text></svg>'); }} />
             )}
           </div>
           {!isVideo && (

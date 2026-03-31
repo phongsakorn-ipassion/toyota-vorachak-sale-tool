@@ -645,7 +645,7 @@ export default function BookingPage() {
                         <img
                           src={car.img}
                           alt={car.name}
-                          className="w-full h-full object-contain"
+                          className="w-full h-full object-cover"
                           onError={(e) => { e.target.style.display = 'none'; }}
                         />
                       </div>

@@ -38,7 +38,7 @@ export default function CarGallery({ car }) {
           <img
             src={car.imgs[activeView]}
             alt={`${car.name} - ${activeView}`}
-            className="w-[85%] max-w-[340px] h-auto object-contain drop-shadow-lg"
+            className="w-[85%] max-w-[340px] h-auto object-cover drop-shadow-lg"
             onError={() => handleImgError(activeView)}
           />
         )}

@@ -202,7 +202,7 @@ export default function SalesDashboard() {
               <img
                 src={featCar.img}
                 alt={featCar.name}
-                className="w-[65%] max-w-[220px] object-contain"
+                className="w-[65%] max-w-[220px] object-cover"
                 style={{ filter: 'drop-shadow(0 6px 20px rgba(0,0,0,.12))' }}
                 onError={(e) => handleImgError(e, featCar.name)}
               />
