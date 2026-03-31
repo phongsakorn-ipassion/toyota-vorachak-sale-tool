@@ -150,7 +150,7 @@ export default function PipelinePage() {
                         </p>
                       )}
                       <div className="flex justify-between">
-                        <span className="text-[10px] text-t3">{card.assignedTo || ''}</span>
+                        <span className="text-[10px] text-t3 flex items-center gap-1"><Icon name="user" size={9} /> {card.assignedTo || 'มาลี ร.'}</span>
                         <span className="text-[10px] font-bold text-primary">{car ? formatCurrency(car.price) : ''}</span>
                       </div>
                     </div>

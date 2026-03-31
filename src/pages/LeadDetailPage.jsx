@@ -398,6 +398,25 @@ export default function LeadDetailPage() {
           </div>
         </div>
 
+        {/* Salesperson in charge */}
+        <div className="bg-white px-4 py-3 border-b border-border">
+          <div className="text-[11px] font-bold text-t3 mb-2">พนักงานขายที่ดูแล</div>
+          <div className="grid grid-cols-1 gap-2">
+            <div className="flex items-center gap-2 text-[12px]">
+              <span className="text-t3 w-10">ชื่อ</span>
+              <span className="text-t1 font-bold">มาลี รักดี</span>
+            </div>
+            <div className="flex items-center gap-2 text-[12px]">
+              <span className="text-t3 w-10">โทร</span>
+              <a href="tel:081-234-5678" className="text-primary font-bold">081-234-5678</a>
+            </div>
+            <div className="flex items-center gap-2 text-[12px]">
+              <span className="text-t3 w-10">อีเมล</span>
+              <span className="text-t1">malee@vorachak.co.th</span>
+            </div>
+          </div>
+        </div>
+
         {/* Status management section — different for test drive vs purchase */}
         {isTestDrive ? (
           /* Test drive status management */
