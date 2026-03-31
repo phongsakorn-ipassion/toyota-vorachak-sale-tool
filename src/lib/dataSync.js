@@ -260,6 +260,15 @@ export function remoteToBooking(remote) {
 // NOTIFICATION MAPPERS
 // ============================================================================
 
+function safeTimestamp(val) {
+  if (!val) return new Date().toISOString();
+  // If it's already a valid ISO string, use it
+  const d = new Date(val);
+  if (!isNaN(d.getTime())) return d.toISOString();
+  // Thai relative time or other non-parseable — use current time
+  return new Date().toISOString();
+}
+
 export function notificationToRemote(notif) {
   return {
     id: notif.id,
@@ -268,8 +277,8 @@ export function notificationToRemote(notif) {
     body: notif.body || '',
     type: notif.type || 'info',
     read: notif.read || false,
-    created_at: notif.time || notif.createdAt || new Date().toISOString(),
-    updated_at: new Date(notif._updatedAt || Date.now()).toISOString(),
+    created_at: safeTimestamp(notif.time || notif.createdAt),
+    updated_at: safeTimestamp(notif._updatedAt ? new Date(notif._updatedAt).toISOString() : null),
   };
 }
 
