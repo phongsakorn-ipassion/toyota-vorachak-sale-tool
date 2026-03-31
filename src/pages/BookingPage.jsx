@@ -11,6 +11,7 @@ import { useUiStore } from '../stores/uiStore';
 import { useDraftStore } from '../stores/draftStore';
 import { useVisibilityRefresh } from '../hooks/useVisibilityRefresh';
 import { SERVICE_CENTERS, THAI_PROVINCES } from '../lib/thaiProvinces';
+import ServiceCenterMap from '../components/map/ServiceCenterMap';
 
 function defaultDeliveryDate() {
   const d = new Date();
@@ -75,6 +76,53 @@ export default function BookingPage() {
 
   // Share modal
   const [showShareModal, setShowShareModal] = useState(false);
+
+  // Service center search/map state
+  const [scPostalSearch, setScPostalSearch] = useState('');
+  const [scPostalOpen, setScPostalOpen] = useState(false);
+  const [scProvinceSearch, setScProvinceSearch] = useState('');
+  const [scProvinceOpen, setScProvinceOpen] = useState(false);
+  const [scLocating, setScLocating] = useState(false);
+  const [scUserLocation, setScUserLocation] = useState(null);
+
+  const allPostalCodes = useMemo(() => {
+    const codes = [];
+    THAI_PROVINCES.forEach(p => (p.postalCodes || []).forEach(c => codes.push({ code: c, province: p.name })));
+    return codes;
+  }, []);
+
+  const scFilteredPostal = useMemo(() => {
+    if (!scPostalSearch) return [];
+    return allPostalCodes.filter(p => p.code.startsWith(scPostalSearch)).slice(0, 10);
+  }, [scPostalSearch, allPostalCodes]);
+
+  const scFilteredProvinces = useMemo(() => {
+    if (!scProvinceSearch) return THAI_PROVINCES.slice(0, 10);
+    const q = scProvinceSearch.toLowerCase();
+    return THAI_PROVINCES.filter(p => p.name.includes(q) || p.nameEn.toLowerCase().includes(q)).slice(0, 10);
+  }, [scProvinceSearch]);
+
+  const scFilteredCenters = useMemo(() => {
+    let centers = SERVICE_CENTERS;
+    if (scProvinceSearch) {
+      centers = centers.filter(c => c.province?.includes(scProvinceSearch));
+    }
+    if (scPostalSearch && scPostalSearch.length >= 3) {
+      const matchedProvince = allPostalCodes.find(p => p.code === scPostalSearch)?.province;
+      if (matchedProvince) centers = centers.filter(c => c.province?.includes(matchedProvince));
+    }
+    return centers.length > 0 ? centers : SERVICE_CENTERS;
+  }, [scPostalSearch, scProvinceSearch, allPostalCodes]);
+
+  const handleUseLocation = () => {
+    if (!navigator.geolocation) { toast.error('เบราว์เซอร์ไม่รองรับการระบุตำแหน่ง'); return; }
+    setScLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => { setScUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }); setScLocating(false); },
+      () => { toast.error('ไม่สามารถเข้าถึงตำแหน่งได้'); setScLocating(false); },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
 
   const lead = leadId ? getLeadById(leadId) : null;
   const car = carId ? CARS[carId] : (lead?.car ? CARS[lead.car] : CARS.corolla);
@@ -396,39 +444,95 @@ export default function BookingPage() {
             ) : (
               /* Direct booking — full customer form matching ACardPage structure */
               <>
-                {/* 1. Service Center Selection */}
+                {/* 1. Service Center Selection — with map, search, geolocation */}
                 <div className="card-base">
-                  <div className="card-hd"><span className="card-title">ศูนย์บริการ <span className="text-red-500">*</span></span></div>
-                  <div className="space-y-2 py-2">
-                    {SERVICE_CENTERS.map((center) => (
-                      <button
-                        key={center.id}
-                        onClick={() => updateForm({ selectedCenter: center.id })}
-                        className={`w-full text-left border-2 rounded-[10px] p-3 cursor-pointer transition-all ${
-                          formData.selectedCenter === center.id
-                            ? 'border-primary bg-emerald-50'
-                            : 'border-border bg-white hover:border-primary/40'
-                        }`}
-                      >
-                        <div className="flex items-start gap-3">
-                          <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-[2px] ${
-                            formData.selectedCenter === center.id ? 'bg-primary text-white' : 'bg-primary-light text-primary'
-                          }`}>
-                            <Icon name="pin" size={14} />
+                  <div className="card-hd"><span className="card-title">เลือกศูนย์บริการ / Select Service Center <span className="text-red-500">*</span></span></div>
+                  <div className="md:flex md:gap-4">
+                    {/* Left: filters + list */}
+                    <div className="md:w-1/2">
+                      {/* Postal code search */}
+                      <div className="mb-3 relative">
+                        <label className="text-[10px] font-extrabold text-t2 tracking-wider uppercase mb-[5px] block">รหัสไปรษณีย์ / Postal Code</label>
+                        <input
+                          type="text"
+                          placeholder="ค้นหาด้วยรหัสไปรษณีย์..."
+                          value={scPostalSearch}
+                          onChange={(e) => { setScPostalSearch(e.target.value); setScPostalOpen(true); }}
+                          onFocus={() => scPostalSearch && setScPostalOpen(true)}
+                          onBlur={() => setTimeout(() => setScPostalOpen(false), 200)}
+                          className="w-full h-[42px] bg-bg border border-border rounded-md px-3 text-[13px] text-t1 outline-none focus:border-primary"
+                        />
+                        {scPostalOpen && scFilteredPostal.length > 0 && (
+                          <div className="absolute z-20 left-0 right-0 mt-1 bg-white border border-border rounded-md shadow-lg max-h-40 overflow-y-auto">
+                            {scFilteredPostal.map((item, i) => (
+                              <button key={i} className="w-full text-left px-3 py-2 text-[12px] hover:bg-green-50 cursor-pointer" onMouseDown={() => { setScPostalSearch(item.code); setScPostalOpen(false); }}>
+                                {item.code} — {item.province}
+                              </button>
+                            ))}
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <p className={`text-[12px] font-bold ${formData.selectedCenter === center.id ? 'text-primary' : 'text-t1'}`}>{center.name}</p>
-                            <p className="text-[10px] text-t3 mt-[2px] leading-relaxed">{center.address}</p>
-                            <p className="text-[10px] text-t3 mt-[1px]">{center.phone} | {center.hours}</p>
+                        )}
+                      </div>
+
+                      {/* Province search */}
+                      <div className="mb-3 relative">
+                        <label className="text-[10px] font-extrabold text-t2 tracking-wider uppercase mb-[5px] block">จังหวัด / Province</label>
+                        <input
+                          type="text"
+                          placeholder="ค้นหาด้วยจังหวัด..."
+                          value={scProvinceSearch}
+                          onChange={(e) => { setScProvinceSearch(e.target.value); setScProvinceOpen(true); }}
+                          onFocus={() => setScProvinceOpen(true)}
+                          onBlur={() => setTimeout(() => setScProvinceOpen(false), 200)}
+                          className="w-full h-[42px] bg-bg border border-border rounded-md px-3 text-[13px] text-t1 outline-none focus:border-primary"
+                        />
+                        {scProvinceOpen && scFilteredProvinces.length > 0 && (
+                          <div className="absolute z-20 left-0 right-0 mt-1 bg-white border border-border rounded-md shadow-lg max-h-40 overflow-y-auto">
+                            {scFilteredProvinces.map((p) => (
+                              <button key={p.name} className="w-full text-left px-3 py-2 text-[12px] hover:bg-green-50 cursor-pointer" onMouseDown={() => { setScProvinceSearch(p.name); setScProvinceOpen(false); }}>
+                                {p.name} ({p.nameEn})
+                              </button>
+                            ))}
                           </div>
-                          {formData.selectedCenter === center.id && (
-                            <div className="text-primary flex-shrink-0 mt-1">
-                              <Icon name="check" size={16} />
-                            </div>
-                          )}
-                        </div>
+                        )}
+                      </div>
+
+                      {/* Use current location */}
+                      <button onClick={handleUseLocation} disabled={scLocating} className="w-full flex items-center justify-center gap-2 py-2.5 mb-3 rounded-md border border-primary text-primary text-[12px] font-bold bg-green-50 hover:bg-green-100 transition-colors cursor-pointer disabled:opacity-50">
+                        <Icon name="location" size={14} />
+                        {scLocating ? 'กำลังค้นหาตำแหน่ง...' : 'ใช้ตำแหน่งปัจจุบัน / Use my current location'}
                       </button>
-                    ))}
+
+                      {/* Center list */}
+                      <div className="max-h-[200px] overflow-y-auto space-y-2 mb-3 md:mb-0">
+                        {scFilteredCenters.length === 0 && (
+                          <p className="text-[11px] text-t3 text-center py-4">ไม่พบศูนย์บริการในพื้นที่ที่เลือก</p>
+                        )}
+                        {scFilteredCenters.map((c) => (
+                          <button
+                            key={c.id}
+                            onClick={() => updateForm({ selectedCenter: c.id })}
+                            className={`w-full text-left p-3 rounded-lg border-[1.5px] transition-all cursor-pointer ${formData.selectedCenter === c.id ? 'border-primary bg-green-50' : 'border-border bg-white hover:border-gray-300'}`}
+                          >
+                            <div className="text-[12px] font-extrabold text-t1">{c.name}</div>
+                            <div className="text-[10px] text-t2 mt-[2px]">{c.address}</div>
+                            <div className="flex items-center gap-3 mt-[3px]">
+                              <span className="text-[10px] text-t3 flex items-center gap-1"><Icon name="phone" size={10} /> {c.phone}</span>
+                              <span className="text-[10px] text-t3 flex items-center gap-1"><Icon name="clock" size={10} /> {c.hours}</span>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Right: Map */}
+                    <div className="md:w-1/2 mt-3 md:mt-0">
+                      <ServiceCenterMap
+                        centers={scFilteredCenters}
+                        selectedCenter={formData.selectedCenter}
+                        onSelectCenter={(id) => updateForm({ selectedCenter: id })}
+                        userLocation={scUserLocation}
+                      />
+                    </div>
                   </div>
                 </div>
 
