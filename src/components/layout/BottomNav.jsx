@@ -16,9 +16,10 @@ const SALES_TABS = [
 // Prototype: Manager has 4 tabs: Dashboard / Pipeline / Targets / Reports
 const MGR_TABS = [
   { label: 'Dashboard', path: '/mgr-dash', icon: 'chart' },
-  { label: 'Pipeline', path: '/pipeline', icon: 'pipeline', badge: true },
-  { label: 'Targets', path: '/targets', icon: 'target' },
+  { label: 'Pipeline', path: '/pipeline', icon: 'pipeline' },
+  { label: 'แจ้งเตือน', path: '/notifications', icon: 'bell', badge: true },
   { label: 'Reports', path: '/reports', icon: 'report' },
+  { label: 'Profile', path: '/profile', icon: 'user' },
 ];
 
 export default function BottomNav() {

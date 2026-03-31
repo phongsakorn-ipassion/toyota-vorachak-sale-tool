@@ -4,7 +4,6 @@ import { useAuthStore } from '../stores/authStore';
 import { useDashboardStore } from '../stores/dashboardStore';
 import { useLeadStore } from '../stores/leadStore';
 import { useBookingStore } from '../stores/bookingStore';
-import { useUiStore } from '../stores/uiStore';
 import Icon from '../components/icons/Icon';
 import { useVisibilityRefresh } from '../hooks/useVisibilityRefresh';
 import { Chart, BarElement, CategoryScale, LinearScale, BarController } from 'chart.js';
@@ -22,11 +21,16 @@ export default function ManagerDashboard() {
   const leads = useLeadStore((s) => s.leads);
   const getLeadStats = useLeadStore((s) => s.getLeadStats);
   const bookings = useBookingStore((s) => s.bookings);
-  const getUnreadCount = useUiStore((s) => s.getUnreadCount);
   const chartRef = useRef(null);
   const chartInst = useRef(null);
 
-  const unreadCount = getUnreadCount();
+  // Month/Year filter
+  const now = new Date();
+  const [filterMonth, setFilterMonth] = useState(now.getMonth());
+  const [filterYear, setFilterYear] = useState(now.getFullYear());
+  const thaiMonths = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+  const filterLabel = `${thaiMonths[filterMonth]} ${filterYear + 543}`;
+
   const stats = getLeadStats();
 
   // Filter leads by branch
@@ -64,18 +68,18 @@ export default function ManagerDashboard() {
     if (worst) {
       const worstPct = Math.round((worst.units / worst.target) * 100);
       if (worstPct < 60) {
-        result.push({ type: 'alert', bg: '#FEF2F2', color: '#991B1B', border: '#FECACA', icon: '🚨', text: `${worst.name} ยังต่ำกว่าเป้า ${100 - worstPct}% — ควรนัดพูดคุยเพื่อสนับสนุน` });
+        result.push({ type: 'alert', bg: '#FEF2F2', color: '#991B1B', border: '#FECACA', iconName: 'alert', text: `${worst.name} ยังต่ำกว่าเป้า ${100 - worstPct}% — ควรนัดพูดคุยเพื่อสนับสนุน` });
       }
     }
     // Hot leads aging
     const hotCount = filteredLeads.filter((l) => l.level === 'hot').length;
     if (hotCount > 0) {
-      result.push({ type: 'warn', bg: '#FFFBEB', color: '#92400E', border: '#FDE68A', icon: '⚠️', text: `Hot Lead ${hotCount} รายการ รอการติดตามนานกว่า 24 ชั่วโมง` });
+      result.push({ type: 'warn', bg: '#FFFBEB', color: '#92400E', border: '#FDE68A', iconName: 'flame', text: `Hot Lead ${hotCount} รายการ รอการติดตามนานกว่า 24 ชั่วโมง` });
     }
     // Best seller
     const best = sortedTeam[0];
     if (best) {
-      result.push({ type: 'info', bg: '#EBF7EF', color: '#1B7A3F', border: '#C4E3CE', icon: '💡', text: `${best.name} ขายดีที่สุดเดือนนี้ — ${best.units} คัน` });
+      result.push({ type: 'info', bg: '#EBF7EF', color: '#1B7A3F', border: '#C4E3CE', iconName: 'star', text: `${best.name} ขายดีที่สุดเดือนนี้ — ${best.units} คัน` });
     }
     return result;
   }, [teamMembers, filteredLeads, sortedTeam]);
@@ -115,14 +119,8 @@ export default function ManagerDashboard() {
         <div className="w-[42px] h-[42px] rounded-full bg-t1 flex items-center justify-center text-[15px] font-extrabold text-white flex-shrink-0">{user?.init || 'ว'}</div>
         <div className="flex-1">
           <h2 className="text-[15px] font-extrabold text-t1">Manager Dashboard</h2>
-          <p className="text-[11px] text-t2 mt-[1px]">วรจักร์ยนต์ · มีนาคม 2026</p>
+          <p className="text-[11px] text-t2 mt-[1px]">วรจักร์ยนต์ · {filterLabel}</p>
         </div>
-        <button onClick={() => navigate('/notifications')} className="relative text-t2 cursor-pointer">
-          <Icon name="bell" size={22} />
-          {unreadCount > 0 && (
-            <span className="absolute top-0 right-0 w-[7px] h-[7px] rounded-full bg-hot" style={{ border: '1.5px solid white' }} />
-          )}
-        </button>
       </div>
 
       <div className="flex-1 overflow-y-auto px-4 pt-4 pb-24" style={{ WebkitOverflowScrolling: 'touch' }}>
@@ -131,6 +129,16 @@ export default function ManagerDashboard() {
           {[{ id: 'lp', label: 'ลาดพร้าว' }, { id: 'on', label: 'อ่อนนุช' }, { id: 'bn', label: 'บางนา' }, { id: 'all', label: 'ทุกสาขา' }].map(b => (
             <button key={b.id} onClick={() => setSelectedBranch(b.id)} className={`pill-filter ${selectedBranch === b.id ? 'on' : ''}`}>{b.label}</button>
           ))}
+        </div>
+
+        {/* Month/Year Filter */}
+        <div className="flex gap-2 mb-3">
+          <select value={filterMonth} onChange={(e) => setFilterMonth(Number(e.target.value))} className="flex-1 h-[38px] bg-white border border-border rounded-md px-3 text-[12px] text-t1 font-bold outline-none focus:border-primary cursor-pointer">
+            {thaiMonths.map((m, i) => <option key={i} value={i}>{m}</option>)}
+          </select>
+          <select value={filterYear} onChange={(e) => setFilterYear(Number(e.target.value))} className="w-[100px] h-[38px] bg-white border border-border rounded-md px-3 text-[12px] text-t1 font-bold outline-none focus:border-primary cursor-pointer">
+            {[2024, 2025, 2026, 2027].map(y => <option key={y} value={y}>{y + 543}</option>)}
+          </select>
         </div>
 
         {/* KPI Grid */}
@@ -151,7 +159,7 @@ export default function ManagerDashboard() {
 
         {/* Team Chart */}
         <div className="card-base">
-          <div className="card-hd"><span className="card-title">Team Performance</span><span className="text-[12px] font-bold text-primary cursor-pointer">มีนาคม 2026</span></div>
+          <div className="card-hd"><span className="card-title">Team Performance</span><span className="text-[12px] font-bold text-primary cursor-pointer">{filterLabel}</span></div>
           <div style={{ height: 180 }}><canvas ref={chartRef} /></div>
         </div>
 
@@ -184,7 +192,7 @@ export default function ManagerDashboard() {
         <div className="sec-lbl">Insights & Alerts</div>
         {insights.map((ins, i) => (
           <div key={i} className="rounded-md p-[11px] text-[12px] font-semibold mb-2 leading-relaxed flex items-start gap-2" style={{ background: ins.bg, color: ins.color, border: `1px solid ${ins.border}` }}>
-            <span>{ins.icon}</span>{ins.text}
+            <Icon name={ins.iconName || 'bell'} size={14} />{ins.text}
           </div>
         ))}
       </div>

@@ -127,14 +127,6 @@ export default function PipelinePage() {
           </button>
         </div>
 
-        {/* Summary Pills */}
-        <div className="flex gap-[7px] flex-wrap mb-[14px]">
-          {columns.map(col => (
-            <span key={col.level} className="px-3 py-[6px] rounded-pill text-[11px] font-bold flex items-center gap-1" style={{ background: col.bg, color: col.color }}>
-              {col.label} {col.count}
-            </span>
-          ))}
-        </div>
 
         {/* Kanban */}
         <div className="flex gap-[10px] overflow-x-auto pb-[10px]" style={{ WebkitOverflowScrolling: 'touch' }}>
