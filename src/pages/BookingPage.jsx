@@ -1096,6 +1096,21 @@ export default function BookingPage() {
                   <button onClick={handleCopyLink} className="btn-o w-full cursor-pointer mb-2">
                     <Icon name="clip" size={16} /> คัดลอกลิงก์
                   </button>
+                  <button
+                    onClick={async () => {
+                      const url = `${window.location.origin}${import.meta.env.BASE_URL || '/'}#/booking-view/${bookingRef}`;
+                      if (navigator.share) {
+                        try {
+                          await navigator.share({ title: 'Toyota Booking', text: `รายละเอียดการจอง ${bookingRef}`, url });
+                        } catch (e) { if (e.name !== 'AbortError') toast.error('ไม่สามารถแชร์ได้'); }
+                      } else {
+                        navigator.clipboard.writeText(url).then(() => toast.success('คัดลอกลิงก์แล้ว'));
+                      }
+                    }}
+                    className="btn-p w-full cursor-pointer"
+                  >
+                    <Icon name="share" size={16} /> แชร์ลิงก์
+                  </button>
                 </div>
               </div>
             )}

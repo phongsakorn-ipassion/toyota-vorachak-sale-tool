@@ -448,9 +448,23 @@ export default function LeadDetailPage() {
                               toast.success('คัดลอกลิงก์แล้ว');
                             });
                           }}
+                          className="w-full py-2.5 border border-primary text-primary rounded-md text-[12px] font-bold cursor-pointer mb-2"
+                        >
+                          <span className="flex items-center justify-center gap-1"><Icon name="clip" size={14} /> คัดลอกลิงก์</span>
+                        </button>
+                        <button
+                          onClick={async () => {
+                            if (navigator.share) {
+                              try {
+                                await navigator.share({ title: 'Toyota Booking', text: `รายละเอียดการจอง ${bookingRef}`, url: shareUrl });
+                              } catch (e) { if (e.name !== 'AbortError') toast.error('ไม่สามารถแชร์ได้'); }
+                            } else {
+                              navigator.clipboard.writeText(shareUrl).then(() => toast.success('คัดลอกลิงก์แล้ว'));
+                            }
+                          }}
                           className="w-full py-2.5 bg-primary text-white rounded-md text-[12px] font-bold cursor-pointer"
                         >
-                          คัดลอกลิงก์
+                          <span className="flex items-center justify-center gap-1"><Icon name="share" size={14} /> แชร์ลิงก์</span>
                         </button>
                       </div>
                     </div>
