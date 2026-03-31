@@ -7,8 +7,9 @@ import Icon from '../icons/Icon';
 // Prototype: Sales has 4 tabs: หน้าหลัก / Leads / รุ่นรถ / ผ่อน
 const SALES_TABS = [
   { label: 'หน้าหลัก', path: '/sales-dash', icon: 'home' },
-  { label: 'Leads', path: '/leads', icon: 'users', badge: true },
+  { label: 'Leads', path: '/leads', icon: 'users' },
   { label: 'รุ่นรถ', path: '/catalog', icon: 'car' },
+  { label: 'แจ้งเตือน', path: '/notifications', icon: 'bell', badge: true },
   { label: 'Profile', path: '/profile', icon: 'user' },
 ];
 
