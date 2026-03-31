@@ -10,6 +10,7 @@ import { formatNumber } from '../lib/formats';
 import { useLeadStore } from '../stores/leadStore';
 import { useBookingStore } from '../stores/bookingStore';
 import { useUiStore } from '../stores/uiStore';
+import { useAuthStore } from '../stores/authStore';
 import { useVisibilityRefresh } from '../hooks/useVisibilityRefresh';
 
 export default function LeadDetailPage() {
@@ -23,6 +24,7 @@ export default function LeadDetailPage() {
   const readTimestamp = useRef(Date.now());
   useEffect(() => { readTimestamp.current = Date.now(); }, [id]);
 
+  const role = useAuthStore((s) => s.role);
   const getLeadById = useLeadStore((s) => s.getLeadById);
   const changeLevel = useLeadStore((s) => s.changeLevel);
   const updateLead = useLeadStore((s) => s.updateLead);
@@ -398,8 +400,8 @@ export default function LeadDetailPage() {
           </div>
         </div>
 
-        {/* Salesperson in charge */}
-        <div className="bg-white px-4 py-3 border-b border-border">
+        {/* Salesperson in charge — visible to manager only */}
+        {role === 'mgr' && <div className="bg-white px-4 py-3 border-b border-border">
           <div className="text-[11px] font-bold text-t3 mb-2">พนักงานขายที่ดูแล</div>
           <div className="grid grid-cols-1 gap-2">
             <div className="flex items-center gap-2 text-[12px]">
@@ -415,7 +417,7 @@ export default function LeadDetailPage() {
               <span className="text-t1">malee@vorachak.co.th</span>
             </div>
           </div>
-        </div>
+        </div>}
 
         {/* Status management section — different for test drive vs purchase */}
         {isTestDrive ? (
