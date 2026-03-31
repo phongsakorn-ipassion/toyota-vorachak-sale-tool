@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import BottomNav from './BottomNav';
 import { useVisibilityRefresh } from '../../hooks/useVisibilityRefresh';
@@ -11,6 +11,15 @@ export default function AppShell() {
   const syncLeads = useLeadStore((s) => s.syncFromServer);
   const syncBookings = useBookingStore((s) => s.syncFromServer);
   const syncNotifications = useUiStore((s) => s.syncFromServer);
+
+  // Initial sync on mount
+  useEffect(() => {
+    if (hasSupabase) {
+      syncLeads();
+      syncBookings();
+      syncNotifications();
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useVisibilityRefresh(useCallback(() => {
     if (hasSupabase) {

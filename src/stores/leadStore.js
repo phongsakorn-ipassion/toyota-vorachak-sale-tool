@@ -39,7 +39,7 @@ export const useLeadStore = create(persist((set, get) => ({
 
   addLead: (lead) => {
     const newLead = stampRecord({
-      id: `lead_${Date.now()}`,
+      id: (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : `lead_${Date.now()}`,
       leadType: 'purchase',
       createdAt: new Date().toISOString(),
       activities: [],
@@ -245,7 +245,7 @@ export const useLeadStore = create(persist((set, get) => ({
 
     // Create new purchase lead from test drive data
     const newLead = stampRecord({
-      id: `lead_${Date.now()}`,
+      id: (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : `lead_${Date.now()}`,
       leadType: 'purchase',
       name: tdLead.name,
       phone: tdLead.phone,

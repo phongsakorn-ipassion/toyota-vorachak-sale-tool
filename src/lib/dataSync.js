@@ -269,6 +269,7 @@ export function notificationToRemote(notif) {
     type: notif.type || 'info',
     read: notif.read || false,
     created_at: notif.time || notif.createdAt || new Date().toISOString(),
+    updated_at: new Date(notif._updatedAt || Date.now()).toISOString(),
   };
 }
 
@@ -281,7 +282,7 @@ export function remoteToNotification(remote) {
     type: remote.type || 'info',
     read: remote.read || false,
     time: remote.created_at || new Date().toISOString(),
-    _updatedAt: new Date(remote.created_at || 0).getTime(),
+    _updatedAt: new Date(remote.updated_at || remote.created_at || 0).getTime(),
   };
 }
 

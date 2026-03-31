@@ -165,7 +165,7 @@ export const useBookingStore = create(persist((set, get) => ({
     const email = state.customerEmail || state.customerInfo.email
 
     const booking = stampRecord({
-      id: `booking_${Date.now()}`,
+      id: (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : `booking_${Date.now()}`,
       ref: generateBookingRef(),
       carId: state.carId,
       carName: car ? car.name : '',
