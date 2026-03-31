@@ -33,7 +33,40 @@ export default function SalesDashboard() {
   }, []);
 
   const handleRevealCommission = async () => {
-    const pin = prompt('กรุณาใส่รหัส PIN (4 หลัก)');
+    try {
+      // Try Web Authentication API (biometric: Face ID, Touch ID, fingerprint)
+      if (window.PublicKeyCredential && navigator.credentials) {
+        const credential = await navigator.credentials.create({
+          publicKey: {
+            challenge: crypto.getRandomValues(new Uint8Array(32)),
+            rp: { name: 'Toyota Sale Tool' },
+            user: {
+              id: new Uint8Array(16),
+              name: user?.name || 'user',
+              displayName: user?.name || 'User',
+            },
+            pubKeyCredParams: [{ alg: -7, type: 'public-key' }],
+            authenticatorSelection: {
+              authenticatorAttachment: 'platform',
+              userVerification: 'required',
+            },
+            timeout: 60000,
+          },
+        });
+        if (credential) {
+          setShowCommission(true);
+          if (commissionTimerRef.current) clearTimeout(commissionTimerRef.current);
+          commissionTimerRef.current = setTimeout(() => setShowCommission(false), 10000);
+          return;
+        }
+      }
+    } catch (e) {
+      // Biometric not available or user cancelled — fall through to PIN
+      console.log('Biometric auth unavailable:', e.message);
+    }
+
+    // Fallback: PIN entry if biometric unavailable
+    const pin = prompt('ไม่สามารถใช้ Biometric ได้\nกรุณาใส่รหัส PIN (4 หลัก)');
     if (pin === '1234') {
       setShowCommission(true);
       if (commissionTimerRef.current) clearTimeout(commissionTimerRef.current);
