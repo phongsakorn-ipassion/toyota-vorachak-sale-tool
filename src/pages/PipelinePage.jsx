@@ -5,10 +5,11 @@ import Icon from '../components/icons/Icon';
 import { useLeadStore } from '../stores/leadStore';
 import { useUiStore } from '../stores/uiStore';
 import { CARS } from '../lib/mockData';
+import { TEST_DRIVE_STATUSES } from '../lib/constants';
 import { formatCurrency } from '../lib/formats';
 import { useVisibilityRefresh } from '../hooks/useVisibilityRefresh';
 
-const COLUMN_CONFIG = {
+const PURCHASE_COLUMN_CONFIG = {
   hot: { label: 'HOT', color: '#DC2626', bg: '#FEF2F2', border: '#FECACA' },
   warm: { label: 'WARM', color: '#D97706', bg: '#FFFBEB', border: '#FDE68A' },
   cool: { label: 'COOL', color: '#2563EB', bg: '#EFF6FF', border: '#BFDBFE' },
@@ -16,7 +17,14 @@ const COLUMN_CONFIG = {
   lost: { label: 'LOST', color: '#6B7280', bg: '#F3F4F6', border: '#D1D5DB' },
 };
 
-const LEVELS = ['hot', 'warm', 'cool', 'won', 'lost'];
+const TD_COLUMN_CONFIG = {
+  scheduled: { label: 'นัดหมาย', color: '#3B82F6', bg: '#EFF6FF', border: '#BFDBFE' },
+  confirmed: { label: 'ยืนยัน', color: '#8B5CF6', bg: '#F5F3FF', border: '#DDD6FE' },
+  completed: { label: 'เสร็จสิ้น', color: '#10B981', bg: '#ECFDF5', border: '#A7F3D0' },
+};
+
+const PURCHASE_LEVELS = ['hot', 'warm', 'cool', 'won', 'lost'];
+const TD_LEVELS = ['scheduled', 'confirmed', 'completed'];
 
 export default function PipelinePage() {
   const [, forceUpdate] = useState(0);
@@ -28,17 +36,25 @@ export default function PipelinePage() {
   const leads = useLeadStore((s) => s.leads);
   const getLeadStats = useLeadStore((s) => s.getLeadStats);
   const changeLevel = useLeadStore((s) => s.changeLevel);
+  const updateLead = useLeadStore((s) => s.updateLead);
   const addNotification = useUiStore((s) => s.addNotification);
   const [moveMenuId, setMoveMenuId] = useState(null);
+  const [pipelineType, setPipelineType] = useState('purchase');
 
   const stats = getLeadStats();
 
-  // Group leads by level
+  const isTestDrive = pipelineType === 'test_drive';
+  const LEVELS = isTestDrive ? TD_LEVELS : PURCHASE_LEVELS;
+  const COLUMN_CONFIG = isTestDrive ? TD_COLUMN_CONFIG : PURCHASE_COLUMN_CONFIG;
+
+  // Group leads by level filtered by type
   const columns = useMemo(() => {
-    const grouped = { hot: [], warm: [], cool: [], won: [], lost: [] };
+    const grouped = {};
+    LEVELS.forEach(l => { grouped[l] = []; });
     leads.forEach((l) => {
+      const lt = l.leadType || 'purchase';
+      if (lt !== pipelineType) return;
       if (grouped[l.level]) grouped[l.level].push(l);
-      // Capture read timestamp for each lead
       if (!readTimestamps.current[l.id]) readTimestamps.current[l.id] = Date.now();
     });
     return LEVELS.map((level) => ({
@@ -51,11 +67,20 @@ export default function PipelinePage() {
         return sum + (car ? car.price : 0);
       }, 0),
     }));
-  }, [leads]);
+  }, [leads, pipelineType]);
+
+  // Counts for toggle
+  const purchaseCount = leads.filter(l => (l.leadType || 'purchase') === 'purchase').length;
+  const testDriveCount = leads.filter(l => l.leadType === 'test_drive').length;
 
   const handleMove = (leadId, newLevel) => {
     const _readAt = readTimestamps.current[leadId] || Date.now();
-    const result = changeLevel(leadId, newLevel, undefined, _readAt);
+    let result;
+    if (isTestDrive) {
+      result = updateLead(leadId, { level: newLevel }, _readAt);
+    } else {
+      result = changeLevel(leadId, newLevel, undefined, _readAt);
+    }
     if (result?.conflict) {
       toast((t) => (
         <div className="flex items-center gap-3">
@@ -68,13 +93,14 @@ export default function PipelinePage() {
     }
     readTimestamps.current[leadId] = Date.now();
     const lead = leads.find((l) => l.id === leadId);
+    const colConfig = COLUMN_CONFIG[newLevel];
     addNotification({
       type: 'info',
       icon: 'target',
-      color: COLUMN_CONFIG[newLevel]?.color || '#6B7280',
-      borderColor: COLUMN_CONFIG[newLevel]?.border || '#E5E7EB',
-      title: `Lead ย้ายไปยัง ${newLevel.toUpperCase()}`,
-      body: `${lead?.name || ''} ถูกย้ายไปยังระดับ ${newLevel.toUpperCase()}`,
+      color: colConfig?.color || '#6B7280',
+      borderColor: colConfig?.border || '#E5E7EB',
+      title: `Lead ย้ายไปยัง ${colConfig?.label || newLevel.toUpperCase()}`,
+      body: `${lead?.name || ''} ถูกย้ายไปยังระดับ ${colConfig?.label || newLevel.toUpperCase()}`,
       time: 'เมื่อสักครู่',
     });
     setMoveMenuId(null);
@@ -91,17 +117,21 @@ export default function PipelinePage() {
       </div>
 
       <div className="flex-1 overflow-y-auto px-4 pt-3 pb-24" style={{ WebkitOverflowScrolling: 'touch' }}>
+        {/* Type toggle */}
+        <div className="flex gap-2 mb-3">
+          <button onClick={() => setPipelineType('purchase')} className={`flex-1 py-2 rounded-lg text-[12px] font-bold text-center cursor-pointer transition-all ${pipelineType === 'purchase' ? 'bg-primary text-white' : 'bg-white border border-border text-t2'}`}>
+            ลูกค้า ({purchaseCount})
+          </button>
+          <button onClick={() => setPipelineType('test_drive')} className={`flex-1 py-2 rounded-lg text-[12px] font-bold text-center cursor-pointer transition-all ${pipelineType === 'test_drive' ? 'bg-primary text-white' : 'bg-white border border-border text-t2'}`}>
+            ทดลองขับ ({testDriveCount})
+          </button>
+        </div>
+
         {/* Summary Pills */}
         <div className="flex gap-[7px] flex-wrap mb-[14px]">
-          {[
-            { label: 'Hot', count: stats.hot, bg: '#FEF2F2', color: '#DC2626' },
-            { label: 'Warm', count: stats.warm, bg: '#FFFBEB', color: '#D97706' },
-            { label: 'Cool', count: stats.cool, bg: '#EFF6FF', color: '#2563EB' },
-            { label: 'Won', count: stats.won, bg: '#F0FDF4', color: '#1B7A3F' },
-            { label: 'Lost', count: stats.lost, bg: '#F1F5F9', color: '#6B7280' },
-          ].map(p => (
-            <span key={p.label} className="px-3 py-[6px] rounded-pill text-[11px] font-bold flex items-center gap-1" style={{ background: p.bg, color: p.color }}>
-              {p.label} {p.count}
+          {columns.map(col => (
+            <span key={col.level} className="px-3 py-[6px] rounded-pill text-[11px] font-bold flex items-center gap-1" style={{ background: col.bg, color: col.color }}>
+              {col.label} {col.count}
             </span>
           ))}
         </div>
@@ -122,6 +152,11 @@ export default function PipelinePage() {
                     <div onClick={() => navigate(`/lead/${card.id}`)} className="cursor-pointer">
                       <p className="text-[12px] font-bold text-t1 mb-[2px]">{card.name}</p>
                       <p className="text-[11px] text-t2 mb-[6px]">{car ? car.name : 'N/A'}</p>
+                      {isTestDrive && card.testDriveDate && (
+                        <p className="text-[10px] text-t3 mb-[4px] flex items-center gap-1">
+                          <Icon name="calendar" size={10} /> {card.testDriveDate} {card.testDriveTime && `${card.testDriveTime}`}
+                        </p>
+                      )}
                       <div className="flex justify-between">
                         <span className="text-[10px] text-t3">{card.assignedTo || ''}</span>
                         <span className="text-[10px] font-bold text-primary">{car ? formatCurrency(car.price) : ''}</span>

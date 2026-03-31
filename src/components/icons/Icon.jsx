@@ -352,6 +352,15 @@ const icons = {
       <polyline points="12 6 12 12 16 14" />
     </>
   ),
+  steering: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <circle cx="12" cy="12" r="3" />
+      <line x1="12" y1="3" x2="12" y2="9" />
+      <line x1="3.5" y1="15" x2="9.2" y2="12.8" />
+      <line x1="20.5" y1="15" x2="14.8" y2="12.8" />
+    </>
+  ),
 };
 
 export default function Icon({ name, size = 20, className = '', strokeWidth = 2 }) {

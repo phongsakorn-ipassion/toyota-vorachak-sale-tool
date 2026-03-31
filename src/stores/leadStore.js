@@ -9,6 +9,7 @@ export const useLeadStore = create(persist((set, get) => ({
   selectedLead: null,
   filterLevel: 'all', // 'all' | 'hot' | 'warm' | 'cool' | 'won' | 'lost'
   filterStage: 'all', // 'all' | 'new' | 'test_drive' | 'negotiation' | 'won' | 'lost'
+  filterType: 'purchase', // 'purchase' | 'test_drive'
   searchTerm: '',
 
   // ---------------------------------------------------------------------------
@@ -28,6 +29,8 @@ export const useLeadStore = create(persist((set, get) => ({
 
   setFilterStage: (stage) => set({ filterStage: stage }),
 
+  setFilterType: (type) => set({ filterType: type }),
+
   setSearch: (term) => set({ searchTerm: term }),
 
   // ---------------------------------------------------------------------------
@@ -37,6 +40,7 @@ export const useLeadStore = create(persist((set, get) => ({
   addLead: (lead) => {
     const newLead = stampRecord({
       id: `lead_${Date.now()}`,
+      leadType: 'purchase',
       createdAt: new Date().toISOString(),
       activities: [],
       stage: 'new',
@@ -162,8 +166,11 @@ export const useLeadStore = create(persist((set, get) => ({
   // ---------------------------------------------------------------------------
 
   getFilteredLeads: () => {
-    const { leads, filterLevel, filterStage, searchTerm } = get()
+    const { leads, filterLevel, filterStage, filterType, searchTerm } = get()
     let result = leads
+
+    // Filter by lead type first (default to 'purchase' for leads without leadType)
+    result = result.filter((l) => (l.leadType || 'purchase') === filterType)
 
     if (filterLevel !== 'all') {
       result = result.filter((l) => l.level === filterLevel)
@@ -210,6 +217,48 @@ export const useLeadStore = create(persist((set, get) => ({
       }
     })
     return stats
+  },
+
+  convertToCustomer: (leadId) => {
+    const state = get();
+    const tdLead = state.leads.find(l => l.id === leadId);
+    if (!tdLead || tdLead.leadType !== 'test_drive') return null;
+
+    // Create new purchase lead from test drive data
+    const newLead = stampRecord({
+      id: `lead_${Date.now()}`,
+      leadType: 'purchase',
+      name: tdLead.name,
+      phone: tdLead.phone,
+      email: tdLead.email,
+      lineId: tdLead.lineId,
+      source: tdLead.source,
+      car: tdLead.car,
+      selectedColor: tdLead.selectedColor,
+      serviceCenter: tdLead.serviceCenter,
+      level: 'hot',
+      stage: 'negotiation',
+      notes: `แปลงจากทดลองขับ ${tdLead.testDriveDate}`,
+      createdAt: new Date().toISOString(),
+      activities: [{
+        id: `act_${Date.now()}`,
+        type: 'status_change',
+        title: 'แปลงเป็นลูกค้า',
+        description: `จากการทดลองขับ ${tdLead.name}`,
+        createdAt: new Date().toISOString(),
+        createdBy: 'มาลี',
+      }],
+    });
+
+    // Update original test drive lead to completed
+    set((state) => ({
+      leads: [newLead, ...state.leads.map(l =>
+        l.id === leadId ? { ...l, level: 'completed', _updatedAt: Date.now() } : l
+      )],
+    }));
+
+    pushLead(newLead);
+    return newLead;
   },
 
   syncFromServer: async () => {

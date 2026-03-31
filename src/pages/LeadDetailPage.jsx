@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import Icon from '../components/icons/Icon';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import { CARS, COLOR_OPTIONS } from '../lib/mockData';
+import { TEST_DRIVE_STATUSES } from '../lib/constants';
 import { formatNumber } from '../lib/formats';
 import { useLeadStore } from '../stores/leadStore';
 import { useBookingStore } from '../stores/bookingStore';
@@ -27,6 +28,7 @@ export default function LeadDetailPage() {
   const addActivity = useLeadStore((s) => s.addActivity);
   const editActivity = useLeadStore((s) => s.editActivity);
   const deleteActivity = useLeadStore((s) => s.deleteActivity);
+  const convertToCustomer = useLeadStore((s) => s.convertToCustomer);
   const setCarId = useBookingStore((s) => s.setCarId);
   const setLeadId = useBookingStore((s) => s.setLeadId);
   const getBookings = useBookingStore((s) => s.getBookings);
@@ -55,15 +57,26 @@ export default function LeadDetailPage() {
 
   if (!lead) return <div className="p-4 text-t2">Lead not found</div>;
 
+  const isTestDrive = lead.leadType === 'test_drive';
   const car = CARS[lead.car];
-  const isTerminal = lead.level === 'won' || lead.level === 'lost';
+  const isTerminal = isTestDrive
+    ? (lead.level === 'cancelled' || lead.level === 'no_show')
+    : (lead.level === 'won' || lead.level === 'lost');
+
+  // Badge label/class
+  const getBadgeInfo = () => {
+    if (isTestDrive) {
+      const st = TEST_DRIVE_STATUSES[lead.level] || TEST_DRIVE_STATUSES.scheduled;
+      return { label: st.label, color: st.color, bg: st.bg };
+    }
+    const badgeLabel = { won: 'Won', lost: 'Lost', hot: 'HOT', warm: 'Warm', cool: 'Cool' }[lead.level] || lead.level;
+    return { label: badgeLabel };
+  };
+  const badgeInfo = getBadgeInfo();
   const badgeClass = `badge-${lead.level}`;
-  const badgeLabel = {
-    won: 'Won', lost: 'Lost', hot: 'HOT', warm: 'Warm', cool: 'Cool'
-  }[lead.level] || lead.level;
 
   // Find status change note for won/lost
-  const statusChangeActivity = isTerminal
+  const statusChangeActivity = (!isTestDrive && isTerminal)
     ? (lead.activities || []).find(a =>
         a.type === 'won' || a.type === 'lost' ||
         (a.type === 'status' && (a.description || a.content || '').length > 0)
@@ -92,9 +105,68 @@ export default function LeadDetailPage() {
     setShowBookingInfo(!showBookingInfo);
   };
 
-  // --- Level change with confirmation ---
+  // --- Test drive status changes ---
+  const handleTestDriveStatusChange = (newStatus) => {
+    const statusLabel = TEST_DRIVE_STATUSES[newStatus]?.label || newStatus;
+    setConfirmConfig({
+      title: 'ยืนยันเปลี่ยนสถานะ',
+      message: `เปลี่ยนสถานะเป็น "${statusLabel}"`,
+      showNotes: true,
+      requireNotes: false,
+      confirmLabel: `ยืนยัน ${statusLabel}`,
+      confirmColor: TEST_DRIVE_STATUSES[newStatus]?.color || '#2563EB',
+      onConfirm: (note) => {
+        const result = updateLead(lead.id, { level: newStatus }, readTimestamp.current);
+        if (result?.conflict) {
+          toast((t) => (
+            <div className="flex items-center gap-3">
+              <span className="text-sm">{result.message}</span>
+              <button onClick={() => { readTimestamp.current = Date.now(); forceUpdate(n => n + 1); toast.dismiss(t.id); }} className="text-xs px-2 py-1 bg-primary text-white rounded whitespace-nowrap">โหลดใหม่</button>
+            </div>
+          ), { duration: 5000, icon: '\u26A0\uFE0F' });
+          setConfirmOpen(false);
+          return;
+        }
+        addActivity(lead.id, {
+          type: 'status_change',
+          title: `เปลี่ยนสถานะเป็น ${statusLabel}`,
+          description: note || `สถานะทดลองขับเปลี่ยนเป็น ${statusLabel}`,
+        });
+        addNotification({ title: 'เปลี่ยนสถานะทดลองขับ', body: `${lead.name} — ${statusLabel}`, type: 'info' });
+        readTimestamp.current = Date.now();
+        setConfirmOpen(false);
+      },
+    });
+    setConfirmOpen(true);
+  };
+
+  const handleConvertToCustomer = () => {
+    setConfirmConfig({
+      title: 'แปลงเป็นลูกค้า',
+      message: `สร้าง Lead ลูกค้าใหม่จากข้อมูลทดลองขับของ ${lead.name}`,
+      showNotes: false,
+      requireNotes: false,
+      confirmLabel: 'ยืนยันแปลง',
+      confirmColor: '#16A34A',
+      onConfirm: () => {
+        const newLead = convertToCustomer(lead.id);
+        if (newLead) {
+          addNotification({ title: 'แปลงเป็นลูกค้าสำเร็จ', body: `${lead.name} ถูกสร้างเป็น Lead ลูกค้าแล้ว`, type: 'success' });
+          toast.success('สร้าง Lead ลูกค้าใหม่แล้ว');
+          setConfirmOpen(false);
+          navigate(`/lead/${newLead.id}`);
+        } else {
+          toast.error('ไม่สามารถแปลงได้');
+          setConfirmOpen(false);
+        }
+      },
+    });
+    setConfirmOpen(true);
+  };
+
+  // --- Level change with confirmation (purchase leads) ---
   const handleLevelClick = (newLevel) => {
-    if (isTerminal) return; // Cannot change from won/lost
+    if (isTerminal) return;
 
     if (newLevel === 'won') {
       setConfirmConfig({
@@ -149,7 +221,6 @@ export default function LeadDetailPage() {
       });
       setConfirmOpen(true);
     } else {
-      // hot/warm/cool — simple confirm with optional note
       setConfirmConfig({
         title: 'ยืนยันเปลี่ยนสถานะ',
         message: `เปลี่ยนสถานะเป็น ${newLevel.toUpperCase()}`,
@@ -225,6 +296,7 @@ export default function LeadDetailPage() {
       case 'booking': return 'book';
       case 'won': return 'trophy';
       case 'lost': return 'flag';
+      case 'status_change': return 'check';
       default: return 'check';
     }
   };
@@ -256,7 +328,7 @@ export default function LeadDetailPage() {
     <div className="screen-enter flex flex-col h-full">
       <div className="bg-white px-4 py-[13px] flex items-center gap-[11px] border-b border-border flex-shrink-0">
         <button onClick={() => navigate(-1)} className="w-9 h-9 rounded-full flex items-center justify-center bg-bg border border-border text-t1 cursor-pointer"><Icon name="back" size={18} /></button>
-        <div className="flex-1"><h2 className="text-[15px] font-extrabold text-t1">{lead.name}</h2><p className="text-[11px] text-t2 mt-[1px]">Customer Profile</p></div>
+        <div className="flex-1"><h2 className="text-[15px] font-extrabold text-t1">{lead.name}</h2><p className="text-[11px] text-t2 mt-[1px]">{isTestDrive ? 'Test Drive Profile' : 'Customer Profile'}</p></div>
         <span className="text-t2 cursor-pointer"><Icon name="more" size={20} /></span>
       </div>
 
@@ -266,9 +338,17 @@ export default function LeadDetailPage() {
           <div className="w-[52px] h-[52px] rounded-full flex items-center justify-center text-[20px] font-extrabold text-white flex-shrink-0" style={{ background: lead.color }}>{lead.init}</div>
           <div className="flex-1">
             <p className="text-[17px] font-extrabold text-t1">{lead.name}</p>
-            <p className="text-[12px] text-t2 flex items-center gap-1 mt-[2px]"><Icon name="walk" size={12} /> {lead.source}</p>
+            <p className="text-[12px] text-t2 flex items-center gap-1 mt-[2px]">
+              <Icon name={isTestDrive ? 'steering' : 'walk'} size={12} /> {isTestDrive ? 'ทดลองขับ' : lead.source}
+            </p>
           </div>
-          <span className={badgeClass}>{badgeLabel}</span>
+          {isTestDrive ? (
+            <span className="px-3 py-1 rounded-full text-[10px] font-bold" style={{ backgroundColor: badgeInfo.bg, color: badgeInfo.color }}>
+              {badgeInfo.label}
+            </span>
+          ) : (
+            <span className={badgeClass}>{badgeInfo.label}</span>
+          )}
         </div>
 
         {/* Customer Info Card */}
@@ -284,13 +364,13 @@ export default function LeadDetailPage() {
                 <a href={`tel:${lead.phone}`} className="text-primary font-bold">{lead.phone}</a>
               </div>
             )}
-            {lead.email && (
+            {!isTestDrive && lead.email && (
               <div className="flex items-center gap-2 text-[12px]">
                 <span className="text-t3 w-10">อีเมล</span>
                 <span className="text-t1">{lead.email}</span>
               </div>
             )}
-            {lead.lineId && (
+            {!isTestDrive && lead.lineId && (
               <div className="flex items-center gap-2 text-[12px]">
                 <span className="text-t3 w-10">LINE</span>
                 <span className="text-t1">{lead.lineId}</span>
@@ -299,69 +379,158 @@ export default function LeadDetailPage() {
           </div>
         </div>
 
-        {/* Level change pills */}
-        <div className="bg-white px-4 py-2 border-b border-border flex gap-2 overflow-x-auto">
-          {isTerminal ? (
-            // Terminal state: show permanent badge using same badge-* class as list
-            <div className="flex flex-col gap-2">
-              <div className="flex items-center gap-2">
-                <span className={badgeClass}>{badgeLabel} (ถาวร)</span>
+        {/* Status management section — different for test drive vs purchase */}
+        {isTestDrive ? (
+          /* Test drive status management */
+          <div className="bg-white px-4 py-3 border-b border-border">
+            {lead.level === 'scheduled' && (
+              <div className="flex gap-2">
+                <button onClick={() => handleTestDriveStatusChange('confirmed')} className="flex-1 py-2 rounded-lg text-[12px] font-bold text-center cursor-pointer bg-purple-50 text-purple-600 border border-purple-200 active:opacity-70">
+                  ยืนยัน
+                </button>
+                <button onClick={() => handleTestDriveStatusChange('cancelled')} className="flex-1 py-2 rounded-lg text-[12px] font-bold text-center cursor-pointer bg-red-50 text-red-500 border border-red-200 active:opacity-70">
+                  ยกเลิก
+                </button>
               </div>
-              {/* 2.3.2: Show status change note for won/lost */}
-              {statusNote && (
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setShowStatusNote(!showStatusNote)}
-                    className="flex items-center gap-1 text-[10px] text-t3 hover:text-t1 cursor-pointer"
-                  >
-                    <Icon name="edit" size={10} />
-                    <span>{showStatusNote ? 'ซ่อนบันทึก' : 'ดูบันทึก'}</span>
-                    <Icon name="chevronDown" size={10} className={`transition-transform ${showStatusNote ? 'rotate-180' : ''}`} />
-                  </button>
-                </div>
-              )}
-              {showStatusNote && statusNote && (
-                <div className="bg-bg border border-border rounded-md p-2">
-                  <p className="text-[11px] text-t2">{statusNote}</p>
-                </div>
-              )}
-            </div>
-          ) : (
-            levelButtons.map((lb) => (
-              <button
-                key={lb.id}
-                onClick={() => handleLevelClick(lb.id)}
-                className="px-3 py-[3px] rounded-full text-[10px] font-bold border transition-all cursor-pointer flex-shrink-0"
-                style={{
-                  borderColor: lead.level === lb.id ? lb.color : '#E5E7EB',
-                  background: lead.level === lb.id ? lb.bg : '#fff',
-                  color: lead.level === lb.id ? lb.color : '#6B7280',
-                }}
-              >
-                {lb.label}
+            )}
+            {lead.level === 'confirmed' && (
+              <div className="flex gap-2">
+                <button onClick={() => handleTestDriveStatusChange('completed')} className="flex-1 py-2 rounded-lg text-[12px] font-bold text-center cursor-pointer bg-emerald-50 text-emerald-600 border border-emerald-200 active:opacity-70">
+                  เสร็จสิ้น
+                </button>
+                <button onClick={() => handleTestDriveStatusChange('no_show')} className="flex-1 py-2 rounded-lg text-[12px] font-bold text-center cursor-pointer bg-gray-50 text-gray-500 border border-gray-200 active:opacity-70">
+                  ไม่มา
+                </button>
+                <button onClick={() => handleTestDriveStatusChange('cancelled')} className="flex-1 py-2 rounded-lg text-[12px] font-bold text-center cursor-pointer bg-red-50 text-red-500 border border-red-200 active:opacity-70">
+                  ยกเลิก
+                </button>
+              </div>
+            )}
+            {lead.level === 'completed' && (
+              <button onClick={handleConvertToCustomer} className="w-full py-2.5 rounded-lg text-[12px] font-bold text-center cursor-pointer bg-primary text-white active:opacity-70">
+                <span className="flex items-center justify-center gap-1"><Icon name="users" size={14} /> แปลงเป็นลูกค้า</span>
               </button>
-            ))
-          )}
-        </div>
+            )}
+            {(lead.level === 'cancelled' || lead.level === 'no_show') && (
+              <div className="text-center py-1">
+                <span className="px-3 py-1 rounded-full text-[11px] font-bold" style={{ backgroundColor: (TEST_DRIVE_STATUSES[lead.level] || {}).bg, color: (TEST_DRIVE_STATUSES[lead.level] || {}).color }}>
+                  {(TEST_DRIVE_STATUSES[lead.level] || {}).label} (ถาวร)
+                </span>
+              </div>
+            )}
+          </div>
+        ) : (
+          /* Purchase lead level change pills */
+          <div className="bg-white px-4 py-2 border-b border-border flex gap-2 overflow-x-auto">
+            {isTerminal ? (
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center gap-2">
+                  <span className={badgeClass}>{badgeInfo.label} (ถาวร)</span>
+                </div>
+                {statusNote && (
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setShowStatusNote(!showStatusNote)}
+                      className="flex items-center gap-1 text-[10px] text-t3 hover:text-t1 cursor-pointer"
+                    >
+                      <Icon name="edit" size={10} />
+                      <span>{showStatusNote ? 'ซ่อนบันทึก' : 'ดูบันทึก'}</span>
+                      <Icon name="chevronDown" size={10} className={`transition-transform ${showStatusNote ? 'rotate-180' : ''}`} />
+                    </button>
+                  </div>
+                )}
+                {showStatusNote && statusNote && (
+                  <div className="bg-bg border border-border rounded-md p-2">
+                    <p className="text-[11px] text-t2">{statusNote}</p>
+                  </div>
+                )}
+              </div>
+            ) : (
+              levelButtons.map((lb) => (
+                <button
+                  key={lb.id}
+                  onClick={() => handleLevelClick(lb.id)}
+                  className="px-3 py-[3px] rounded-full text-[10px] font-bold border transition-all cursor-pointer flex-shrink-0"
+                  style={{
+                    borderColor: lead.level === lb.id ? lb.color : '#E5E7EB',
+                    background: lead.level === lb.id ? lb.bg : '#fff',
+                    color: lead.level === lb.id ? lb.color : '#6B7280',
+                  }}
+                >
+                  {lb.label}
+                </button>
+              ))
+            )}
+          </div>
+        )}
 
         <div className="px-4 pt-4">
-          {/* Quick Actions — reordered: โทร / LINE / จอง / แก้ไข */}
-          <div className="grid grid-cols-4 gap-2 mb-[14px]">
-            {[
-              { icon: 'phone', label: 'โทร', action: handleCall },
-              { icon: 'chat', label: 'LINE', action: handleLine },
-              { icon: 'book', label: 'จอง', action: handleBook },
-              { icon: 'edit', label: 'แก้ไข', action: handleEdit },
-            ].map(a => (
-              <button key={a.label} onClick={a.action} className="flex flex-col items-center gap-1 p-3 bg-white border border-border rounded-md cursor-pointer active:opacity-70 transition-opacity">
-                <span className="text-primary"><Icon name={a.icon} size={18} /></span>
-                <span className="text-[10px] font-bold text-t2">{a.label}</span>
-              </button>
-            ))}
-          </div>
+          {/* Test drive info card */}
+          {isTestDrive && (lead.testDriveDate || lead.testDriveTime || lead.serviceCenter) && (
+            <div className="card-base">
+              <div className="card-hd"><span className="card-title flex items-center gap-2"><Icon name="steering" size={14} /> ข้อมูลทดลองขับ</span></div>
+              <div className="grid grid-cols-1 gap-2">
+                {lead.testDriveDate && (
+                  <div className="flex items-center justify-between text-[12px]">
+                    <span className="text-t3 flex items-center gap-1"><Icon name="calendar" size={12} /> วันที่</span>
+                    <span className="text-t1 font-bold">{formatThaiDate(lead.testDriveDate)}</span>
+                  </div>
+                )}
+                {lead.testDriveTime && (
+                  <div className="flex items-center justify-between text-[12px]">
+                    <span className="text-t3 flex items-center gap-1"><Icon name="clock" size={12} /> เวลา</span>
+                    <span className="text-t1 font-bold">{lead.testDriveTime} น.</span>
+                  </div>
+                )}
+                {lead.serviceCenter && (
+                  <div className="flex items-center justify-between text-[12px]">
+                    <span className="text-t3 flex items-center gap-1"><Icon name="location" size={12} /> ศูนย์บริการ</span>
+                    <span className="text-t1 font-bold">{lead.serviceCenter}</span>
+                  </div>
+                )}
+                {lead.notes && (
+                  <div className="flex items-start justify-between text-[12px] pt-1 border-t border-border mt-1">
+                    <span className="text-t3 flex items-center gap-1"><Icon name="edit" size={12} /> หมายเหตุ</span>
+                    <span className="text-t1 text-right max-w-[60%]">{lead.notes}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
-          {/* 2.3.4.1: Booking Info Section (shown when จอง is clicked) */}
-          {showBookingInfo && (
+          {/* Quick Actions */}
+          {isTestDrive ? (
+            /* Test drive: only call + LINE */
+            <div className="grid grid-cols-2 gap-2 mb-[14px]">
+              {[
+                { icon: 'phone', label: 'โทร', action: handleCall },
+                { icon: 'chat', label: 'LINE', action: handleLine },
+              ].map(a => (
+                <button key={a.label} onClick={a.action} className="flex flex-col items-center gap-1 p-3 bg-white border border-border rounded-md cursor-pointer active:opacity-70 transition-opacity">
+                  <span className="text-primary"><Icon name={a.icon} size={18} /></span>
+                  <span className="text-[10px] font-bold text-t2">{a.label}</span>
+                </button>
+              ))}
+            </div>
+          ) : (
+            /* Purchase: โทร / LINE / จอง / แก้ไข */
+            <div className="grid grid-cols-4 gap-2 mb-[14px]">
+              {[
+                { icon: 'phone', label: 'โทร', action: handleCall },
+                { icon: 'chat', label: 'LINE', action: handleLine },
+                { icon: 'book', label: 'จอง', action: handleBook },
+                { icon: 'edit', label: 'แก้ไข', action: handleEdit },
+              ].map(a => (
+                <button key={a.label} onClick={a.action} className="flex flex-col items-center gap-1 p-3 bg-white border border-border rounded-md cursor-pointer active:opacity-70 transition-opacity">
+                  <span className="text-primary"><Icon name={a.icon} size={18} /></span>
+                  <span className="text-[10px] font-bold text-t2">{a.label}</span>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Booking Info Section (purchase leads only) */}
+          {!isTestDrive && showBookingInfo && (
             <div className="card-base">
               <div className="card-hd"><span className="card-title">ข้อมูลการจอง</span></div>
               {existingBooking ? (() => {
@@ -489,7 +658,7 @@ export default function LeadDetailPage() {
             </div>
           )}
 
-          {/* Car Interest — 2.2.4.1: chevron icon only, no text */}
+          {/* Car Interest */}
           <div className="card-base">
             <div className="card-hd"><span className="card-title">รุ่นรถที่สนใจ</span></div>
             {car && (
@@ -555,7 +724,6 @@ export default function LeadDetailPage() {
                     </>
                   )}
                 </div>
-                {/* Edit / Delete buttons — 2.3.3.1+2: larger 28x28 touch targets, X icon for delete */}
                 {editingActivityId !== act.id && (
                   <div className="flex items-start gap-1 flex-shrink-0 mt-[2px]">
                     <button
@@ -598,13 +766,15 @@ export default function LeadDetailPage() {
             </div>
           </div>
 
-          {/* Notes */}
-          <div className="card-base">
-            <div className="card-hd"><span className="card-title">หมายเหตุ</span></div>
-            <p className="text-[12px] text-t2 leading-relaxed">
-              {lead.notes || (`ลูกค้าสนใจ ${car?.name || ''} สี Pearl White ต้องการดาวน์ 20% ผ่อน 60 เดือน ใช้ Toyota Leasing`)}
-            </p>
-          </div>
+          {/* Notes (purchase leads only — test drive notes shown in drive info card) */}
+          {!isTestDrive && (
+            <div className="card-base">
+              <div className="card-hd"><span className="card-title">หมายเหตุ</span></div>
+              <p className="text-[12px] text-t2 leading-relaxed">
+                {lead.notes || (`ลูกค้าสนใจ ${car?.name || ''} สี Pearl White ต้องการดาวน์ 20% ผ่อน 60 เดือน ใช้ Toyota Leasing`)}
+              </p>
+            </div>
+          )}
         </div>
       </div>
 

@@ -170,23 +170,57 @@ export const MODEL_FILTERS = [
 export const LEADS = {
   duangjai: {
     id: 'duangjai', name: 'ดวงใจ ทองดี', init: 'ด', color: '#DC2626',
-    level: 'hot', source: 'Walk-in · สาขาลาดพร้าว', car: 'yaris',
+    leadType: 'purchase', level: 'hot', source: 'Walk-in · สาขาลาดพร้าว', car: 'yaris',
     phone: '081-234-5678', email: 'duangjai@email.com',
   },
   prawit: {
     id: 'prawit', name: 'ประวิทย์ จันทร์', init: 'ป', color: '#8B5CF6',
-    level: 'warm', source: 'LINE OA', car: 'lc',
+    leadType: 'purchase', level: 'warm', source: 'LINE OA', car: 'lc',
     phone: '089-876-5432', email: 'prawit@email.com',
   },
   oranee: {
     id: 'oranee', name: 'อรณี สุขสม', init: 'อ', color: '#F59E0B',
-    level: 'warm', source: 'Facebook Lead', car: 'bz4x',
+    leadType: 'purchase', level: 'warm', source: 'Facebook Lead', car: 'bz4x',
     phone: '062-345-6789', email: 'oranee@email.com',
   },
   jirawat: {
     id: 'jirawat', name: 'จิรวัฒน์ ศรีรัตน์', init: 'จ', color: '#10B981',
-    level: 'won', source: 'Referral', car: 'corolla',
+    leadType: 'purchase', level: 'won', source: 'Referral', car: 'corolla',
     phone: '095-678-1234', email: 'jirawat@email.com',
+  },
+  // Test Drive Leads
+  td_somchai: {
+    id: 'td_somchai', name: 'สมชาย พลายงาม', init: 'ส', color: '#3B82F6',
+    leadType: 'test_drive', level: 'scheduled', source: 'Walk-in', car: 'yaris',
+    phone: '089-111-2222', email: 'somchai@email.com',
+    testDriveDate: '2026-04-02', testDriveTime: '10:00', serviceCenter: 'sc1',
+    notes: 'สนใจ Yaris Cross สีขาว',
+    createdAt: '2026-03-31T09:00:00+07:00',
+    activities: [
+      { id: 'act_td1', type: 'test_drive', title: 'นัดทดลองขับ', description: 'Yaris Cross วันที่ 2 เม.ย. 10:00', createdAt: '2026-03-31T09:00:00+07:00', createdBy: 'มาลี' }
+    ],
+  },
+  td_nisa: {
+    id: 'td_nisa', name: 'นิสา แก้วมณี', init: 'น', color: '#8B5CF6',
+    leadType: 'test_drive', level: 'confirmed', source: 'LINE OA', car: 'corolla',
+    phone: '091-333-4444',
+    testDriveDate: '2026-04-01', testDriveTime: '14:00', serviceCenter: 'sc2',
+    notes: '',
+    createdAt: '2026-03-30T14:00:00+07:00',
+    activities: [
+      { id: 'act_td2', type: 'test_drive', title: 'นัดทดลองขับ', description: 'Corolla Altis วันที่ 1 เม.ย. 14:00', createdAt: '2026-03-30T14:00:00+07:00', createdBy: 'มาลี' }
+    ],
+  },
+  td_wichai: {
+    id: 'td_wichai', name: 'วิชัย สุขสันต์', init: 'ว', color: '#10B981',
+    leadType: 'test_drive', level: 'completed', source: 'Facebook', car: 'hilux',
+    phone: '085-555-6666',
+    testDriveDate: '2026-03-28', testDriveTime: '11:00', serviceCenter: 'sc1',
+    notes: 'ทดลองขับเสร็จ สนใจซื้อ',
+    createdAt: '2026-03-27T10:00:00+07:00',
+    activities: [
+      { id: 'act_td3', type: 'test_drive', title: 'ทดลองขับเสร็จสิ้น', description: 'Hilux Revo ทดสอบแล้ว ลูกค้าพอใจ', createdAt: '2026-03-28T12:00:00+07:00', createdBy: 'มาลี' }
+    ],
   },
 }
 

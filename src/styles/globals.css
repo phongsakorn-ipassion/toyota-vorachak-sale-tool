@@ -91,6 +91,13 @@
     padding: 3px 9px;
   }
 
+  /* Test drive status badges */
+  .badge-scheduled { background: #EFF6FF; color: #3B82F6; padding: 3px 10px; border-radius: 99px; font-size: 10px; font-weight: 700; }
+  .badge-confirmed { background: #F5F3FF; color: #8B5CF6; padding: 3px 10px; border-radius: 99px; font-size: 10px; font-weight: 700; }
+  .badge-completed { background: #ECFDF5; color: #10B981; padding: 3px 10px; border-radius: 99px; font-size: 10px; font-weight: 700; }
+  .badge-cancelled { background: #FEF2F2; color: #EF4444; padding: 3px 10px; border-radius: 99px; font-size: 10px; font-weight: 700; }
+  .badge-no_show { background: #F3F4F6; color: #6B7280; padding: 3px 10px; border-radius: 99px; font-size: 10px; font-weight: 700; }
+
   /* Section label */
   .sec-lbl {
     font-size: 10px;

@@ -4,6 +4,7 @@ import { useAuthStore } from '../stores/authStore';
 import { useLeadStore } from '../stores/leadStore';
 import { useBookingStore } from '../stores/bookingStore';
 import { CARS, carPlaceholder } from '../lib/mockData';
+import { TEST_DRIVE_STATUSES } from '../lib/constants';
 import { formatNumber, formatCurrency } from '../lib/formats';
 import Icon from '../components/icons/Icon';
 import { useVisibilityRefresh } from '../hooks/useVisibilityRefresh';
@@ -84,6 +85,14 @@ export default function SalesDashboard() {
     const today = new Date().toISOString().slice(0, 10);
     return bookings.filter((b) => b.status === 'confirmed' && b.createdAt && b.createdAt.slice(0, 10) === today);
   }, [bookings]);
+
+  // Today's test drives
+  const todayDrives = useMemo(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    return leads
+      .filter((l) => l.leadType === 'test_drive' && l.testDriveDate === today && l.level !== 'cancelled' && l.level !== 'no_show')
+      .sort((a, b) => (a.testDriveTime || '').localeCompare(b.testDriveTime || ''));
+  }, [leads]);
 
   // Commission: 2% of total car prices for won leads
   const commission = useMemo(() => {
@@ -242,6 +251,27 @@ export default function SalesDashboard() {
             );
           })}
         </div>
+
+        {/* Test Drives Today */}
+        {todayDrives.length > 0 && (
+          <div className="card-base">
+            <div className="card-hd">
+              <span className="card-title flex items-center gap-2"><Icon name="steering" size={16} /> ทดลองขับวันนี้</span>
+            </div>
+            {todayDrives.map(td => (
+              <div key={td.id} onClick={() => navigate(`/lead/${td.id}`)} className="flex items-center gap-3 py-3 border-b border-border last:border-b-0 cursor-pointer">
+                <div className="text-[14px] font-bold text-primary w-[50px]">{td.testDriveTime}</div>
+                <div className="flex-1">
+                  <p className="text-[12px] font-bold text-t1">{td.name}</p>
+                  <p className="text-[10px] text-t3">{CARS[td.car]?.name || td.car}</p>
+                </div>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold" style={{ backgroundColor: (TEST_DRIVE_STATUSES[td.level] || {}).bg, color: (TEST_DRIVE_STATUSES[td.level] || {}).color }}>
+                  {(TEST_DRIVE_STATUSES[td.level] || {}).label || td.level}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Commission — hidden behind PIN */}
         <div className="bg-primary rounded-lg p-4 relative overflow-hidden">

@@ -31,3 +31,16 @@ export const DOWN_PAYMENT_OPTIONS = [5, 10, 15, 20, 25]
 export const LOAN_TERM_RANGE = { min: 12, max: 84, step: 12, default: 48 }
 
 export const LEAD_SOURCES = ['Walk-in', 'LINE OA', 'Facebook', 'Instagram', 'Event', 'Referral']
+
+export const LEAD_TYPES = {
+  purchase: { label: 'ลูกค้า', labelEn: 'Customer', icon: 'users' },
+  test_drive: { label: 'ทดลองขับ', labelEn: 'Test Drive', icon: 'car' },
+};
+
+export const TEST_DRIVE_STATUSES = {
+  scheduled: { label: 'นัดหมาย', labelEn: 'Scheduled', color: '#3B82F6', bg: '#EFF6FF' },
+  confirmed: { label: 'ยืนยัน', labelEn: 'Confirmed', color: '#8B5CF6', bg: '#F5F3FF' },
+  completed: { label: 'เสร็จสิ้น', labelEn: 'Completed', color: '#10B981', bg: '#ECFDF5' },
+  cancelled: { label: 'ยกเลิก', labelEn: 'Cancelled', color: '#EF4444', bg: '#FEF2F2' },
+  no_show: { label: 'ไม่มา', labelEn: 'No Show', color: '#6B7280', bg: '#F3F4F6' },
+};

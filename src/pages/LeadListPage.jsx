@@ -4,15 +4,24 @@ import PageHeader from '../components/layout/PageHeader';
 import Icon from '../components/icons/Icon';
 import { useLeadStore } from '../stores/leadStore';
 import { CARS } from '../lib/mockData';
+import { TEST_DRIVE_STATUSES } from '../lib/constants';
 import { useVisibilityRefresh } from '../hooks/useVisibilityRefresh';
 
-const FILTER_OPTIONS = [
+const PURCHASE_FILTER_OPTIONS = [
   { key: 'all', label: 'ทั้งหมด' },
   { key: 'hot', label: 'Hot' },
   { key: 'warm', label: 'Warm' },
   { key: 'cool', label: 'Cool' },
   { key: 'won', label: 'Won' },
   { key: 'lost', label: 'Lost' },
+];
+
+const TEST_DRIVE_FILTER_OPTIONS = [
+  { key: 'all', label: 'ทั้งหมด' },
+  { key: 'scheduled', label: 'นัดหมาย' },
+  { key: 'confirmed', label: 'ยืนยัน' },
+  { key: 'completed', label: 'เสร็จสิ้น' },
+  { key: 'cancelled', label: 'ยกเลิก' },
 ];
 
 const LEVEL_STYLES = {
@@ -41,12 +50,22 @@ export default function LeadListPage() {
   const navigate = useNavigate();
   const filterLevel = useLeadStore((s) => s.filterLevel);
   const setFilterLevel = useLeadStore((s) => s.setFilterLevel);
+  const filterType = useLeadStore((s) => s.filterType);
+  const setFilterType = useLeadStore((s) => s.setFilterType);
   const searchTerm = useLeadStore((s) => s.searchTerm);
   const setSearch = useLeadStore((s) => s.setSearch);
   const getFilteredLeads = useLeadStore((s) => s.getFilteredLeads);
   const addActivity = useLeadStore((s) => s.addActivity);
+  const allLeads = useLeadStore((s) => s.leads);
 
   const leads = getFilteredLeads();
+
+  // Counts for type toggle
+  const purchaseCount = allLeads.filter(l => (l.leadType || 'purchase') === 'purchase').length;
+  const testDriveCount = allLeads.filter(l => l.leadType === 'test_drive').length;
+
+  // Type selector popup state
+  const [showTypePopup, setShowTypePopup] = useState(false);
 
   const handleCall = (e, lead) => {
     e.stopPropagation();
@@ -60,6 +79,12 @@ export default function LeadListPage() {
     addActivity(lead.id, { type: 'line', title: 'ส่ง LINE', description: 'ส่งข้อความ LINE ถึง ' + lead.name });
   };
 
+  const handleTypeSwitch = (type) => {
+    setFilterType(type);
+    setFilterLevel('all');
+  };
+
+  const filterOptions = filterType === 'test_drive' ? TEST_DRIVE_FILTER_OPTIONS : PURCHASE_FILTER_OPTIONS;
 
   return (
     <div className="screen-enter flex flex-col h-full">
@@ -67,7 +92,7 @@ export default function LeadListPage() {
         title="Lead ทั้งหมด"
         rightAction={
           <button
-            onClick={() => navigate('/acard')}
+            onClick={() => setShowTypePopup(true)}
             className="w-8 h-8 rounded-full bg-primary flex items-center justify-center cursor-pointer"
           >
             <Icon name="plus" size={16} className="text-white" />
@@ -75,8 +100,18 @@ export default function LeadListPage() {
         }
       />
 
-      {/* Search bar */}
+      {/* Type toggle tabs */}
       <div className="px-4 pt-3 pb-1">
+        <div className="flex gap-2 mb-3">
+          <button onClick={() => handleTypeSwitch('purchase')} className={`flex-1 py-2 rounded-lg text-[12px] font-bold text-center cursor-pointer transition-all ${filterType === 'purchase' ? 'bg-primary text-white' : 'bg-white border border-border text-t2'}`}>
+            ลูกค้า ({purchaseCount})
+          </button>
+          <button onClick={() => handleTypeSwitch('test_drive')} className={`flex-1 py-2 rounded-lg text-[12px] font-bold text-center cursor-pointer transition-all ${filterType === 'test_drive' ? 'bg-primary text-white' : 'bg-white border border-border text-t2'}`}>
+            ทดลองขับ ({testDriveCount})
+          </button>
+        </div>
+
+        {/* Search bar */}
         <div className="relative">
           <div className="absolute left-3 top-1/2 -translate-y-1/2 text-t3">
             <Icon name="search" size={16} />
@@ -102,7 +137,7 @@ export default function LeadListPage() {
 
       {/* Filter pills */}
       <div className="flex gap-2 px-4 py-2.5 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
-        {FILTER_OPTIONS.map((opt) => (
+        {filterOptions.map((opt) => (
           <button
             key={opt.key}
             onClick={() => setFilterLevel(opt.key)}
@@ -118,7 +153,7 @@ export default function LeadListPage() {
         {leads.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center mb-3">
-              <Icon name="users" size={28} className="text-t3" />
+              <Icon name={filterType === 'test_drive' ? 'steering' : 'users'} size={28} className="text-t3" />
             </div>
             <p className="text-sm font-bold text-t2">ไม่พบลีด</p>
             <p className="text-xs text-t3 mt-1">ลองเปลี่ยนตัวกรองหรือค้นหาใหม่</p>
@@ -126,12 +161,77 @@ export default function LeadListPage() {
         ) : (
           <div className="flex flex-col gap-2">
             {leads.map((lead) => {
-              const style = LEVEL_STYLES[lead.level] || LEVEL_STYLES.cool;
+              const isTestDrive = lead.leadType === 'test_drive';
               const color = lead.color || getAvatarColor(lead.name);
               const initial = lead.init || lead.name?.charAt(0) || '?';
               const carName = lead.car ? (CARS[lead.car]?.name || lead.car) : '';
               const hasNotes = lead.activities?.some(a => a.type === 'note');
 
+              if (isTestDrive) {
+                // Test drive card layout
+                const tdStatus = TEST_DRIVE_STATUSES[lead.level] || TEST_DRIVE_STATUSES.scheduled;
+                return (
+                  <button
+                    key={lead.id}
+                    onClick={() => navigate(`/lead/${lead.id}`)}
+                    className="card-base flex items-center gap-3 cursor-pointer hover:shadow-sm transition-shadow text-left"
+                    style={{ marginBottom: 0 }}
+                  >
+                    {/* Avatar */}
+                    <div
+                      className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0"
+                      style={{ backgroundColor: color }}
+                    >
+                      {initial}
+                    </div>
+
+                    {/* Info */}
+                    <div className="flex-1 min-w-0">
+                      <span className="text-sm font-bold text-t1 truncate flex items-center gap-1">
+                        {lead.name}
+                      </span>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        {carName && (
+                          <span className="text-xs text-t3 truncate">
+                            <Icon name="car" size={11} className="inline mr-0.5 -mt-px" />
+                            {carName}
+                          </span>
+                        )}
+                      </div>
+                      {(lead.testDriveDate || lead.testDriveTime) && (
+                        <div className="flex items-center gap-1 mt-0.5">
+                          <Icon name="calendar" size={10} className="text-t3" />
+                          <span className="text-[10px] text-t3">
+                            {lead.testDriveDate && new Date(lead.testDriveDate).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' })}
+                            {lead.testDriveTime && ` ${lead.testDriveTime}`}
+                          </span>
+                          {lead.serviceCenter && (
+                            <span className="text-[10px] text-t3 ml-1 truncate">
+                              <Icon name="location" size={10} className="inline -mt-px" /> {lead.serviceCenter}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Status badge + quick actions */}
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <span className={`badge-${lead.level}`} style={{ backgroundColor: tdStatus.bg, color: tdStatus.color }}>
+                        {tdStatus.label}
+                      </span>
+                      <span
+                        onClick={(e) => handleCall(e, lead)}
+                        className="w-7 h-7 rounded-full flex items-center justify-center bg-green-50 text-green-600 active:opacity-60 cursor-pointer"
+                      >
+                        <Icon name="phone" size={12} />
+                      </span>
+                    </div>
+                  </button>
+                );
+              }
+
+              // Purchase lead card (existing layout)
+              const style = LEVEL_STYLES[lead.level] || LEVEL_STYLES.cool;
               return (
                 <button
                   key={lead.id}
@@ -202,6 +302,40 @@ export default function LeadListPage() {
           </div>
         )}
       </div>
+
+      {/* Type selector popup */}
+      {showTypePopup && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4" onClick={() => setShowTypePopup(false)}>
+          <div className="bg-white rounded-xl p-5 w-full max-w-xs shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-[15px] font-extrabold text-t1 mb-4">เลือกประเภท</h3>
+            <div className="flex flex-col gap-3">
+              <button
+                onClick={() => { setShowTypePopup(false); navigate('/acard?type=purchase'); }}
+                className="flex items-center gap-3 p-4 rounded-lg border border-border bg-white hover:bg-green-50 cursor-pointer transition-colors"
+              >
+                <span className="w-10 h-10 rounded-full bg-primary-light flex items-center justify-center text-primary"><Icon name="users" size={20} /></span>
+                <div className="text-left">
+                  <p className="text-[13px] font-bold text-t1">ลงทะเบียนลูกค้า</p>
+                  <p className="text-[11px] text-t3">เพิ่ม Lead ใหม่เข้าระบบ</p>
+                </div>
+              </button>
+              <button
+                onClick={() => { setShowTypePopup(false); navigate('/acard?type=test_drive'); }}
+                className="flex items-center gap-3 p-4 rounded-lg border border-border bg-white hover:bg-blue-50 cursor-pointer transition-colors"
+              >
+                <span className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600"><Icon name="steering" size={20} /></span>
+                <div className="text-left">
+                  <p className="text-[13px] font-bold text-t1">นัดทดลองขับ</p>
+                  <p className="text-[11px] text-t3">สร้างนัดหมายทดลองขับ</p>
+                </div>
+              </button>
+            </div>
+            <button onClick={() => setShowTypePopup(false)} className="w-full mt-4 py-2 text-[12px] font-bold text-t3 text-center cursor-pointer">
+              ยกเลิก
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

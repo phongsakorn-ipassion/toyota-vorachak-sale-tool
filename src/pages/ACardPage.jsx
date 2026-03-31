@@ -11,6 +11,8 @@ import { useDraftStore } from '../stores/draftStore';
 import ServiceCenterMap from '../components/map/ServiceCenterMap';
 import { useVisibilityRefresh } from '../hooks/useVisibilityRefresh';
 
+const TIME_SLOTS = ['09:00', '10:00', '11:00', '13:00', '14:00', '15:00', '16:00'];
+
 export default function ACardPage() {
   const [, forceUpdate] = useState(0);
   useVisibilityRefresh(useCallback(() => forceUpdate(n => n + 1), []));
@@ -21,12 +23,16 @@ export default function ACardPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const editId = searchParams.get('edit');
+  const typeParam = searchParams.get('type');
 
   const addLead = useLeadStore((s) => s.addLead);
   const updateLead = useLeadStore((s) => s.updateLead);
   const getLeadById = useLeadStore((s) => s.getLeadById);
   const addNotification = useUiStore((s) => s.addNotification);
   const draftStore = useDraftStore();
+
+  // Form type: 'purchase' or 'test_drive'
+  const [formType, setFormType] = useState(typeParam || 'purchase');
 
   // Customer info
   const [name, setName] = useState('');
@@ -41,9 +47,12 @@ export default function ACardPage() {
   const [carType, setCarType] = useState('all');
   const [model, setModel] = useState('');
   const [selectedColor, setSelectedColor] = useState('');
-  // budget removed per 2.2.3.2
   const [notes, setNotes] = useState('');
   const [errors, setErrors] = useState({});
+
+  // Test drive specific
+  const [driveDate, setDriveDate] = useState('');
+  const [driveTime, setDriveTime] = useState('');
 
   // Service center
   const [selectedCenter, setSelectedCenter] = useState('');
@@ -58,12 +67,20 @@ export default function ACardPage() {
   const [customerProvinceOpen, setCustomerProvinceOpen] = useState(false);
   const [customerProvinceSearch, setCustomerProvinceSearch] = useState('');
 
+  // Set form type from URL param
+  useEffect(() => {
+    if (typeParam === 'test_drive' || typeParam === 'purchase') {
+      setFormType(typeParam);
+    }
+  }, [typeParam]);
+
   // Load lead data for edit mode
   useEffect(() => {
     if (editId) {
       readTimestamp.current = Date.now();
       const lead = getLeadById(editId);
       if (lead) {
+        setFormType(lead.leadType || 'purchase');
         setName(lead.name || '');
         setPhone(lead.phone || '');
         setEmail(lead.email || '');
@@ -72,12 +89,13 @@ export default function ACardPage() {
         setInterest(lead.level || 'hot');
         setModel(lead.car || '');
         setSelectedColor(lead.selectedColor || '');
-        // budget removed
         setNotes(lead.notes || '');
         setProvince(lead.province || '');
         setServiceDate(lead.serviceDate || '');
         setServiceTime(lead.serviceTime || '');
         setSelectedCenter(lead.serviceCenter || '');
+        setDriveDate(lead.testDriveDate || '');
+        setDriveTime(lead.testDriveTime || '');
         if (lead.car) {
           const car = CARS[lead.car];
           if (car) setCarType(car.cat || 'all');
@@ -95,6 +113,7 @@ export default function ACardPage() {
       setModel(d.model || ''); setSelectedColor(d.selectedColor || ''); setNotes(d.notes || '');
       setProvince(d.province || ''); setServiceDate(d.serviceDate || ''); setServiceTime(d.serviceTime || '');
       setSelectedCenter(d.selectedCenter || ''); setCarType(d.carType || 'all');
+      setDriveDate(d.driveDate || ''); setDriveTime(d.driveTime || '');
     }
   }, []);
 
@@ -102,10 +121,10 @@ export default function ACardPage() {
   useEffect(() => {
     if (editId) return;
     const timer = setTimeout(() => {
-      draftStore.setAcardDraft({ name, phone, email, lineId, source, interest, model, selectedColor, province, serviceDate, serviceTime, selectedCenter, notes, carType });
+      draftStore.setAcardDraft({ name, phone, email, lineId, source, interest, model, selectedColor, province, serviceDate, serviceTime, selectedCenter, notes, carType, driveDate, driveTime, formType });
     }, 500);
     return () => clearTimeout(timer);
-  }, [name, phone, email, lineId, source, interest, model, selectedColor, province, serviceDate, serviceTime, selectedCenter, notes, carType]);
+  }, [name, phone, email, lineId, source, interest, model, selectedColor, province, serviceDate, serviceTime, selectedCenter, notes, carType, driveDate, driveTime, formType]);
 
   // Filter service centers by province/postal
   const filteredCenters = useMemo(() => {
@@ -114,7 +133,6 @@ export default function ACardPage() {
       centers = centers.filter(c => c.province.includes(provinceSearch));
     }
     if (postalSearch) {
-      // Find provinces matching postal code, then filter centers by those provinces
       const matchingProvinces = THAI_PROVINCES
         .filter(p => p.postalCodes.some(pc => pc.startsWith(postalSearch)))
         .map(p => p.name);
@@ -185,13 +203,25 @@ export default function ACardPage() {
 
   const validate = () => {
     const missing = [];
-    if (!name.trim()) missing.push('ชื่อ-นามสกุล');
-    if (!phone.trim()) missing.push('เบอร์โทร');
-    if (!province) missing.push('จังหวัด');
-    if (!serviceDate) missing.push('วันที่จะเข้ารับบริการ');
-    if (!serviceTime) missing.push('เวลาที่สะดวก');
-    if (!selectedCenter) missing.push('ศูนย์บริการ');
-    if (!model) missing.push('รุ่นรถ');
+
+    if (formType === 'test_drive') {
+      // Test drive validation: name, phone, car, date, time, center
+      if (!name.trim()) missing.push('ชื่อ-นามสกุล');
+      if (!phone.trim()) missing.push('เบอร์โทร');
+      if (!model) missing.push('รุ่นรถ');
+      if (!driveDate) missing.push('วันทดลองขับ');
+      if (!driveTime) missing.push('เวลาทดลองขับ');
+      if (!selectedCenter) missing.push('ศูนย์บริการ');
+    } else {
+      // Purchase validation
+      if (!name.trim()) missing.push('ชื่อ-นามสกุล');
+      if (!phone.trim()) missing.push('เบอร์โทร');
+      if (!province) missing.push('จังหวัด');
+      if (!serviceDate) missing.push('วันที่จะเข้ารับบริการ');
+      if (!serviceTime) missing.push('เวลาที่สะดวก');
+      if (!selectedCenter) missing.push('ศูนย์บริการ');
+      if (!model) missing.push('รุ่นรถ');
+    }
 
     if (missing.length > 0) {
       toast.error(`กรุณากรอกข้อมูลให้ครบถ้วน: ${missing.join(', ')}`);
@@ -212,6 +242,9 @@ export default function ACardPage() {
     { key: 'lineId', label: 'LINE ID', icon: 'chat', type: 'text', ph: '@lineid', value: lineId, setter: setLineId },
   ];
 
+  // Test drive form only shows name + phone
+  const testDriveFields = fields.filter(f => f.key === 'name' || f.key === 'phone');
+
   const saveACard = () => {
     if (!validate()) return;
 
@@ -219,42 +252,85 @@ export default function ACardPage() {
     const colors = ['#DC2626', '#8B5CF6', '#F59E0B', '#10B981', '#2563EB', '#EC4899'];
     const color = colors[Math.floor(Math.random() * colors.length)];
 
-    const leadData = {
-      name: name.trim(),
-      phone: phone.trim(),
-      email: email.trim(),
-      lineId: lineId.trim(),
-      province,
-      serviceDate,
-      serviceTime,
-      serviceCenter: selectedCenter,
-      source,
-      level: interest,
-      car: model || undefined,
-      selectedColor: selectedColor || undefined,
-      notes: notes.trim(),
-      init: initChar,
-      color,
-    };
+    if (formType === 'test_drive') {
+      const leadData = {
+        leadType: 'test_drive',
+        name: name.trim(),
+        phone: phone.trim(),
+        car: model || undefined,
+        testDriveDate: driveDate,
+        testDriveTime: driveTime,
+        serviceCenter: selectedCenter,
+        notes: notes.trim(),
+        level: 'scheduled',
+        source: 'Walk-in',
+        init: initChar,
+        color,
+      };
 
-    if (editId) {
-      const result = updateLead(editId, leadData, readTimestamp.current);
-      if (result?.conflict) {
-        toast((t) => (
-          <div className="flex items-center gap-3">
-            <span className="text-sm">{result.message}</span>
-            <button onClick={() => { readTimestamp.current = Date.now(); forceUpdate(n => n + 1); toast.dismiss(t.id); }} className="text-xs px-2 py-1 bg-primary text-white rounded whitespace-nowrap">โหลดใหม่</button>
-          </div>
-        ), { duration: 5000, icon: '\u26A0\uFE0F' });
-        return;
+      if (editId) {
+        const result = updateLead(editId, leadData, readTimestamp.current);
+        if (result?.conflict) {
+          toast((t) => (
+            <div className="flex items-center gap-3">
+              <span className="text-sm">{result.message}</span>
+              <button onClick={() => { readTimestamp.current = Date.now(); forceUpdate(n => n + 1); toast.dismiss(t.id); }} className="text-xs px-2 py-1 bg-primary text-white rounded whitespace-nowrap">โหลดใหม่</button>
+            </div>
+          ), { duration: 5000, icon: '\u26A0\uFE0F' });
+          return;
+        }
+        addNotification({ title: 'แก้ไขนัดทดลองขับ', body: name.trim() + ' อัปเดตข้อมูลเรียบร้อย', type: 'success' });
+        navigate(`/lead/${editId}`);
+      } else {
+        addLead(leadData);
+        draftStore.clearAcardDraft();
+        addNotification({
+          title: 'นัดทดลองขับใหม่',
+          body: `${name.trim()} — ${CARS[model]?.name || ''} ${driveDate} ${driveTime}`,
+          type: 'test_drive',
+        });
+        navigate('/sales-dash');
       }
-      addNotification({ title: 'แก้ไข Lead สำเร็จ', body: name.trim() + ' อัปเดตข้อมูลเรียบร้อย', type: 'success' });
-      navigate(`/lead/${editId}`);
     } else {
-      addLead(leadData);
-      draftStore.clearAcardDraft();
-      addNotification({ title: 'Lead ใหม่!', body: name.trim() + ' เพิ่มลงระบบเรียบร้อย', type: 'success' });
-      navigate('/sales-dash');
+      // Purchase lead
+      const leadData = {
+        leadType: 'purchase',
+        name: name.trim(),
+        phone: phone.trim(),
+        email: email.trim(),
+        lineId: lineId.trim(),
+        province,
+        serviceDate,
+        serviceTime,
+        serviceCenter: selectedCenter,
+        source,
+        level: interest,
+        car: model || undefined,
+        selectedColor: selectedColor || undefined,
+        notes: notes.trim(),
+        init: initChar,
+        color,
+      };
+
+      if (editId) {
+        const result = updateLead(editId, leadData, readTimestamp.current);
+        if (result?.conflict) {
+          toast((t) => (
+            <div className="flex items-center gap-3">
+              <span className="text-sm">{result.message}</span>
+              <button onClick={() => { readTimestamp.current = Date.now(); forceUpdate(n => n + 1); toast.dismiss(t.id); }} className="text-xs px-2 py-1 bg-primary text-white rounded whitespace-nowrap">โหลดใหม่</button>
+            </div>
+          ), { duration: 5000, icon: '\u26A0\uFE0F' });
+          return;
+        }
+        addNotification({ title: 'แก้ไข Lead สำเร็จ', body: name.trim() + ' อัปเดตข้อมูลเรียบร้อย', type: 'success' });
+        navigate(`/lead/${editId}`);
+      } else {
+        addLead(leadData);
+        draftStore.clearAcardDraft();
+        addNotification({ title: 'Lead ใหม่!', body: name.trim() + ' เพิ่มลงระบบเรียบร้อย', type: 'success' });
+        navigate('/sales-dash');
+      }
     }
   };
 
@@ -262,16 +338,37 @@ export default function ACardPage() {
   const inputStyle = { fontFamily: "'Sarabun', sans-serif" };
   const labelCls = "block text-[10px] font-extrabold text-t2 tracking-wider uppercase mb-[5px]";
 
+  const isTestDrive = formType === 'test_drive';
+
   return (
     <div className="screen-enter flex flex-col h-full">
       {/* Header */}
       <div className="bg-white px-4 py-[13px] flex items-center gap-[11px] border-b border-border flex-shrink-0">
         <button onClick={() => navigate(-1)} className="w-9 h-9 rounded-full flex items-center justify-center bg-bg border border-border text-t1 cursor-pointer"><Icon name="back" size={18} /></button>
-        <div className="flex-1"><h2 className="text-[15px] font-extrabold text-t1">{editId ? 'แก้ไขข้อมูลลูกค้า' : 'ลงทะเบียนลูกค้า'}</h2><p className="text-[11px] text-t2 mt-[1px]">{editId ? 'Edit Lead — A-Card Digital' : 'New Lead — A-Card Digital'}</p></div>
+        <div className="flex-1">
+          <h2 className="text-[15px] font-extrabold text-t1">
+            {editId ? (isTestDrive ? 'แก้ไขนัดทดลองขับ' : 'แก้ไขข้อมูลลูกค้า') : (isTestDrive ? 'นัดทดลองขับ' : 'ลงทะเบียนลูกค้า')}
+          </h2>
+          <p className="text-[11px] text-t2 mt-[1px]">
+            {editId ? 'Edit' : 'New'} {isTestDrive ? 'Test Drive' : 'Lead'} — A-Card Digital
+          </p>
+        </div>
         <span className="text-t2"><Icon name="clip" size={20} /></span>
       </div>
 
       <div className="flex-1 overflow-y-auto px-4 pt-4 pb-24" style={{ WebkitOverflowScrolling: 'touch' }}>
+
+        {/* Type indicator (read-only) */}
+        <div className="card-base">
+          <div className="flex gap-2">
+            <div className={`flex-1 py-2 rounded-lg text-center text-[12px] font-bold ${formType === 'purchase' ? 'bg-primary text-white' : 'bg-white border border-border text-t2'}`}>
+              ลงทะเบียนลูกค้า
+            </div>
+            <div className={`flex-1 py-2 rounded-lg text-center text-[12px] font-bold ${formType === 'test_drive' ? 'bg-primary text-white' : 'bg-white border border-border text-t2'}`}>
+              นัดทดลองขับ
+            </div>
+          </div>
+        </div>
 
         {/* ====== Service Center Selection ====== */}
         <div className="card-base">
@@ -372,7 +469,7 @@ export default function ACardPage() {
         {/* ====== Customer Info ====== */}
         <div className="card-base">
           <div className="card-hd"><span className="card-title">ข้อมูลลูกค้า | Customer Info</span></div>
-          {fields.map((f) => (
+          {(isTestDrive ? testDriveFields : fields).map((f) => (
             <div key={f.label} className="mb-3">
               <label className={labelCls}>{f.label}</label>
               <div className="relative">
@@ -383,81 +480,118 @@ export default function ACardPage() {
             </div>
           ))}
 
-          {/* Province dropdown-search */}
-          <div className="mb-3 relative">
-            <label className={labelCls}>จังหวัด / Province *</label>
-            <div className="relative">
-              <span className="absolute left-[13px] top-1/2 -translate-y-1/2 text-t3"><Icon name="location" size={15} /></span>
-              <input
-                type="text"
-                placeholder="เลือกจังหวัด..."
-                value={province || customerProvinceSearch}
-                onChange={(e) => { setCustomerProvinceSearch(e.target.value); setProvince(''); setCustomerProvinceOpen(true); }}
-                onFocus={() => setCustomerProvinceOpen(true)}
-                onBlur={() => setTimeout(() => setCustomerProvinceOpen(false), 200)}
-                className="w-full py-3 pl-[38px] pr-3 bg-white border border-border rounded-md text-[13px] text-t1 outline-none focus:border-primary"
-                style={inputStyle}
-              />
+          {/* Province dropdown-search (purchase only) */}
+          {!isTestDrive && (
+            <div className="mb-3 relative">
+              <label className={labelCls}>จังหวัด / Province *</label>
+              <div className="relative">
+                <span className="absolute left-[13px] top-1/2 -translate-y-1/2 text-t3"><Icon name="location" size={15} /></span>
+                <input
+                  type="text"
+                  placeholder="เลือกจังหวัด..."
+                  value={province || customerProvinceSearch}
+                  onChange={(e) => { setCustomerProvinceSearch(e.target.value); setProvince(''); setCustomerProvinceOpen(true); }}
+                  onFocus={() => setCustomerProvinceOpen(true)}
+                  onBlur={() => setTimeout(() => setCustomerProvinceOpen(false), 200)}
+                  className="w-full py-3 pl-[38px] pr-3 bg-white border border-border rounded-md text-[13px] text-t1 outline-none focus:border-primary"
+                  style={inputStyle}
+                />
+              </div>
+              {customerProvinceOpen && (
+                <div className="absolute z-20 left-0 right-0 mt-1 bg-white border border-border rounded-md shadow-lg max-h-40 overflow-y-auto">
+                  {filteredCustomerProvinces.map((p) => (
+                    <button key={p.name} className="w-full text-left px-3 py-2 text-[12px] hover:bg-green-50 cursor-pointer" onMouseDown={() => { setProvince(p.name); setCustomerProvinceSearch(''); setCustomerProvinceOpen(false); }}>
+                      {p.name} ({p.nameEn})
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
-            {customerProvinceOpen && (
-              <div className="absolute z-20 left-0 right-0 mt-1 bg-white border border-border rounded-md shadow-lg max-h-40 overflow-y-auto">
-                {filteredCustomerProvinces.map((p) => (
-                  <button key={p.name} className="w-full text-left px-3 py-2 text-[12px] hover:bg-green-50 cursor-pointer" onMouseDown={() => { setProvince(p.name); setCustomerProvinceSearch(''); setCustomerProvinceOpen(false); }}>
-                    {p.name} ({p.nameEn})
+          )}
+
+          {/* Date + Time row (purchase only) */}
+          {!isTestDrive && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+              <div>
+                <label className={labelCls}>วันที่จะเข้ารับบริการ / Date *</label>
+                <div className="relative">
+                  <span className="absolute left-[13px] top-1/2 -translate-y-1/2 text-t3"><Icon name="calendar" size={15} /></span>
+                  <input type="date" value={serviceDate} onChange={(e) => setServiceDate(e.target.value)} className="w-full py-3 pl-[38px] pr-3 bg-white border border-border rounded-md text-[13px] text-t1 outline-none focus:border-primary" style={inputStyle} />
+                </div>
+              </div>
+              <div>
+                <label className={labelCls}>เวลาที่สะดวก / Time *</label>
+                <div className="relative">
+                  <span className="absolute left-[13px] top-1/2 -translate-y-1/2 text-t3"><Icon name="clock" size={15} /></span>
+                  <input type="time" value={serviceTime} onChange={(e) => setServiceTime(e.target.value)} className="w-full py-3 pl-[38px] pr-3 bg-white border border-border rounded-md text-[13px] text-t1 outline-none focus:border-primary" style={inputStyle} />
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* ====== Test Drive Date/Time (test_drive only) ====== */}
+        {isTestDrive && (
+          <div className="card-base">
+            <div className="card-hd"><span className="card-title flex items-center gap-2"><Icon name="calendar" size={14} /> วัน-เวลาทดลองขับ | Test Drive Schedule</span></div>
+            <div className="mb-3">
+              <label className={labelCls}>วันทดลองขับ / Date *</label>
+              <div className="relative">
+                <span className="absolute left-[13px] top-1/2 -translate-y-1/2 text-t3"><Icon name="calendar" size={15} /></span>
+                <input type="date" value={driveDate} onChange={(e) => setDriveDate(e.target.value)} className="w-full py-3 pl-[38px] pr-3 bg-white border border-border rounded-md text-[13px] text-t1 outline-none focus:border-primary" style={inputStyle} />
+              </div>
+            </div>
+            <div>
+              <label className={labelCls}>เวลา / Time Slot *</label>
+              <div className="flex flex-wrap gap-2">
+                {TIME_SLOTS.map(slot => (
+                  <button
+                    key={slot}
+                    onClick={() => setDriveTime(slot)}
+                    className={`px-4 py-2 rounded-lg text-[12px] font-bold cursor-pointer transition-all border ${driveTime === slot ? 'border-primary bg-primary-light text-primary' : 'border-border bg-white text-t2 hover:border-gray-300'}`}
+                  >
+                    {slot}
                   </button>
                 ))}
               </div>
-            )}
-          </div>
-
-          {/* Date + Time row — stacked on mobile, side-by-side on md+ */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
-            <div>
-              <label className={labelCls}>วันที่จะเข้ารับบริการ / Date *</label>
-              <div className="relative">
-                <span className="absolute left-[13px] top-1/2 -translate-y-1/2 text-t3"><Icon name="calendar" size={15} /></span>
-                <input type="date" value={serviceDate} onChange={(e) => setServiceDate(e.target.value)} className="w-full py-3 pl-[38px] pr-3 bg-white border border-border rounded-md text-[13px] text-t1 outline-none focus:border-primary" style={inputStyle} />
-              </div>
-            </div>
-            <div>
-              <label className={labelCls}>เวลาที่สะดวก / Time *</label>
-              <div className="relative">
-                <span className="absolute left-[13px] top-1/2 -translate-y-1/2 text-t3"><Icon name="clock" size={15} /></span>
-                <input type="time" value={serviceTime} onChange={(e) => setServiceTime(e.target.value)} className="w-full py-3 pl-[38px] pr-3 bg-white border border-border rounded-md text-[13px] text-t1 outline-none focus:border-primary" style={inputStyle} />
-              </div>
+              {driveTime && <p className="text-[11px] text-primary mt-2 font-bold">เลือก: {driveTime} น.</p>}
             </div>
           </div>
-        </div>
+        )}
 
-        {/* ====== Lead Source ====== */}
-        <div className="card-base">
-          <div className="card-hd"><span className="card-title">ช่องทาง | Lead Source</span></div>
-          <div className="flex flex-wrap gap-[7px]">
-            {LEAD_SOURCES.map((s) => (
-              <button key={s} onClick={() => setSource(s)} className={`pill-filter ${source === s ? 'on' : ''}`}>{s}</button>
-            ))}
+        {/* ====== Lead Source (purchase only) ====== */}
+        {!isTestDrive && (
+          <div className="card-base">
+            <div className="card-hd"><span className="card-title">ช่องทาง | Lead Source</span></div>
+            <div className="flex flex-wrap gap-[7px]">
+              {LEAD_SOURCES.map((s) => (
+                <button key={s} onClick={() => setSource(s)} className={`pill-filter ${source === s ? 'on' : ''}`}>{s}</button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
-        {/* ====== Interest Level ====== */}
-        <div className="card-base">
-          <div className="card-hd"><span className="card-title">ระดับความสนใจ | Interest Level</span></div>
-          <div className="grid grid-cols-3 gap-2">
-            {[
-              { id: 'hot', icon: 'flame', label: 'HOT', sub: 'พร้อมซื้อ', sel: 'border-hot bg-red-50' },
-              { id: 'warm', icon: 'sun', label: 'WARM', sub: 'สนใจ', sel: 'border-warm bg-amber-50' },
-              { id: 'cool', icon: 'snow', label: 'COOL', sub: 'สำรวจ', sel: 'border-cool bg-blue-50' },
-            ].map((l) => (
-              <button key={l.id} onClick={() => setInterest(l.id)} className={`p-3 rounded-md text-center border-[1.5px] transition-all cursor-pointer ${interest === l.id ? l.sel : 'border-border bg-white'}`} style={inputStyle}>
-                <div className="flex justify-center mb-[3px]"><Icon name={l.icon} size={20} /></div>
-                <div className="text-[12px] font-extrabold text-t1">{l.label}</div>
-                <div className="text-[10px] text-t2">{l.sub}</div>
-              </button>
-            ))}
+        {/* ====== Interest Level (purchase only) ====== */}
+        {!isTestDrive && (
+          <div className="card-base">
+            <div className="card-hd"><span className="card-title">ระดับความสนใจ | Interest Level</span></div>
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { id: 'hot', icon: 'flame', label: 'HOT', sub: 'พร้อมซื้อ', sel: 'border-hot bg-red-50' },
+                { id: 'warm', icon: 'sun', label: 'WARM', sub: 'สนใจ', sel: 'border-warm bg-amber-50' },
+                { id: 'cool', icon: 'snow', label: 'COOL', sub: 'สำรวจ', sel: 'border-cool bg-blue-50' },
+              ].map((l) => (
+                <button key={l.id} onClick={() => setInterest(l.id)} className={`p-3 rounded-md text-center border-[1.5px] transition-all cursor-pointer ${interest === l.id ? l.sel : 'border-border bg-white'}`} style={inputStyle}>
+                  <div className="flex justify-center mb-[3px]"><Icon name={l.icon} size={20} /></div>
+                  <div className="text-[12px] font-extrabold text-t1">{l.label}</div>
+                  <div className="text-[10px] text-t2">{l.sub}</div>
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
-        {/* ====== Model + Budget ====== */}
+        {/* ====== Model ====== */}
         <div className="card-base">
           <div className="card-hd"><span className="card-title">รุ่นรถที่สนใจ | Model of Interest</span></div>
 
@@ -481,8 +615,8 @@ export default function ACardPage() {
                 </select>
               </div>
 
-              {/* Color picker */}
-              {model && (
+              {/* Color picker (purchase only) */}
+              {!isTestDrive && model && (
                 <div className="mb-3">
                   <label className={labelCls}>เลือกสี / Choose Color</label>
                   <div className="flex gap-[10px] flex-wrap">
@@ -493,8 +627,6 @@ export default function ACardPage() {
                   {selectedColor && <p className="text-[11px] text-t2 mt-1">{selectedColor}</p>}
                 </div>
               )}
-
-              {/* Budget removed per 2.2.3.2 */}
             </div>
 
             {/* Right: car preview card */}
@@ -518,7 +650,7 @@ export default function ACardPage() {
                       {selectedCar.avail}
                     </span>
                   </div>
-                  {selectedColor && (
+                  {!isTestDrive && selectedColor && (
                     <div className="flex items-center gap-1.5 mt-[5px]">
                       <span className="w-3 h-3 rounded-full border border-gray-300 flex-shrink-0" style={{ background: COLOR_OPTIONS.find(c => c.name === selectedColor)?.hex || '#ccc' }} />
                       <span className="text-[10px] text-t2 font-medium">{selectedColor}</span>
@@ -545,7 +677,7 @@ export default function ACardPage() {
                       {selectedCar.avail}
                     </span>
                   </div>
-                  {selectedColor && (
+                  {!isTestDrive && selectedColor && (
                     <div className="flex items-center gap-1.5 mt-[5px]">
                       <span className="w-3 h-3 rounded-full border border-gray-300 flex-shrink-0" style={{ background: COLOR_OPTIONS.find(c => c.name === selectedColor)?.hex || '#ccc' }} />
                       <span className="text-[10px] text-t2 font-medium">{selectedColor}</span>
@@ -572,7 +704,7 @@ export default function ACardPage() {
         </div>
 
         <button onClick={saveACard} className="btn-p cursor-pointer mb-4">
-          <Icon name="check" size={16} /> {editId ? 'บันทึกการแก้ไข / Update A-Card' : 'บันทึก Lead / Save A-Card'}
+          <Icon name="check" size={16} /> {editId ? (isTestDrive ? 'บันทึกการแก้ไข / Update Test Drive' : 'บันทึกการแก้ไข / Update A-Card') : (isTestDrive ? 'นัดทดลองขับ / Save Test Drive' : 'บันทึก Lead / Save A-Card')}
         </button>
       </div>
     </div>
