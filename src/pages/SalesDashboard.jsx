@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
 import { useLeadStore } from '../stores/leadStore';
 import { useBookingStore } from '../stores/bookingStore';
-import { useUiStore } from '../stores/uiStore';
 import { CARS, carPlaceholder } from '../lib/mockData';
 import { formatNumber, formatCurrency } from '../lib/formats';
 import Icon from '../components/icons/Icon';
@@ -17,10 +16,7 @@ export default function SalesDashboard() {
   const leads = useLeadStore((s) => s.leads);
   const getLeadStats = useLeadStore((s) => s.getLeadStats);
   const bookings = useBookingStore((s) => s.bookings);
-  const getUnreadCount = useUiStore((s) => s.getUnreadCount);
-
   const stats = getLeadStats();
-  const unreadCount = getUnreadCount();
 
   // Commission reveal state
   const [showCommission, setShowCommission] = useState(false);
@@ -149,12 +145,6 @@ export default function SalesDashboard() {
           <h2 className="text-[15px] font-extrabold text-t1">สวัสดี {user?.name || 'มาลี'}</h2>
           <p className="text-[11px] text-t2 mt-[1px]">วรจักร์ยนต์ · มีนาคม 2026</p>
         </div>
-        <button onClick={() => navigate('/notifications')} className="relative text-t2 cursor-pointer">
-          <Icon name="bell" size={22} />
-          {unreadCount > 0 && (
-            <span className="absolute top-0 right-0 w-[7px] h-[7px] rounded-full bg-hot" style={{ border: '1.5px solid white' }} />
-          )}
-        </button>
       </div>
 
       <div className="flex-1 overflow-y-auto px-4 pt-4 pb-24" style={{ WebkitOverflowScrolling: 'touch' }}>
