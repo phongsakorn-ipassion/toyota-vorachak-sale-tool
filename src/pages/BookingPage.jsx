@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import Icon from '../components/icons/Icon';
-import { CARS, COLOR_OPTIONS } from '../lib/mockData';
+import { CARS, COLOR_OPTIONS, LEAD_SOURCES } from '../lib/mockData';
 import { DOWN_PAYMENT_OPTIONS, LOAN_TERM_RANGE, DEFAULT_INTEREST_RATE } from '../lib/constants';
 import { formatNumber, flatRateMonthly } from '../lib/formats';
 import { useBookingStore } from '../stores/bookingStore';
@@ -10,6 +10,7 @@ import { useLeadStore } from '../stores/leadStore';
 import { useUiStore } from '../stores/uiStore';
 import { useDraftStore } from '../stores/draftStore';
 import { useVisibilityRefresh } from '../hooks/useVisibilityRefresh';
+import { SERVICE_CENTERS, THAI_PROVINCES } from '../lib/thaiProvinces';
 
 function defaultDeliveryDate() {
   const d = new Date();
@@ -44,6 +45,12 @@ export default function BookingPage() {
     customerName: '',
     customerPhone: '',
     customerEmail: '',
+    lineId: '',
+    province: '',
+    serviceDate: '',
+    serviceTime: '',
+    source: 'Walk-in',
+    selectedCenter: null,
     // Step 2 — confirmation / finance
     downPaymentPct: 15,
     interestRate: DEFAULT_INTEREST_RATE,
@@ -90,6 +97,23 @@ export default function BookingPage() {
     }
   }, [leadId]);
 
+  // Pre-fill from calculator store (when coming from PaymentCalcPage)
+  useEffect(() => {
+    const bkStore = useBookingStore.getState();
+    if (bkStore.interestRate && bkStore.interestRate !== 2.79) {
+      updateForm({ interestRate: bkStore.interestRate });
+    }
+    if (bkStore.downPaymentPct && bkStore.downPaymentPct !== 20) {
+      updateForm({ downPaymentPct: bkStore.downPaymentPct });
+    }
+    if (bkStore.loanTermMonths && bkStore.loanTermMonths !== 60) {
+      updateForm({ loanTermMonths: bkStore.loanTermMonths });
+    }
+    if (bkStore.selectedColor && bkStore.selectedColor !== 'Pearl White') {
+      updateForm({ selectedColor: bkStore.selectedColor });
+    }
+  }, []);
+
   // Save draft on every change (small object, no debounce needed)
   useEffect(() => {
     if (formData.step < 4) {
@@ -123,11 +147,18 @@ export default function BookingPage() {
   // ---- Step navigation ----
 
   const goToStep2 = () => {
-    if (!lead && (!formData.customerName.trim() || !formData.customerPhone.trim())) {
-      toast.error('กรุณากรอกชื่อและเบอร์โทร');
-      return;
-    }
     if (!lead) {
+      const missing = [];
+      if (!formData.customerName?.trim()) missing.push('ชื่อ-นามสกุล');
+      if (!formData.customerPhone?.trim()) missing.push('เบอร์โทร');
+      if (!formData.selectedCenter) missing.push('ศูนย์บริการ');
+      if (!formData.province) missing.push('จังหวัด');
+      if (!formData.serviceDate) missing.push('วันที่เข้ารับบริการ');
+      if (!formData.serviceTime) missing.push('เวลาที่สะดวก');
+      if (missing.length > 0) {
+        toast.error(`กรุณากรอกข้อมูล: ${missing.join(', ')}`);
+        return;
+      }
       setCustomerInfo({ name: formData.customerName.trim(), phone: formData.customerPhone.trim(), email: formData.customerEmail.trim() });
     }
     updateForm({ step: 2 });
@@ -176,6 +207,13 @@ export default function BookingPage() {
       customerName: formData.customerName || (lead ? lead.name : ''),
       customerPhone: formData.customerPhone || (lead ? lead.phone : ''),
       customerEmail: formData.customerEmail || (lead ? lead.email : ''),
+      // New fields from enhanced Step 1
+      lineId: formData.lineId,
+      province: formData.province,
+      serviceDate: formData.serviceDate,
+      serviceTime: formData.serviceTime,
+      source: formData.source,
+      selectedCenter: formData.selectedCenter,
     });
 
     if (result?.conflict) {
@@ -239,6 +277,9 @@ export default function BookingPage() {
     { n: 3, label: 'ชำระเงิน' },
     { n: 4, label: 'สำเร็จ' },
   ];
+
+  // Find selected center object for display
+  const selectedCenterObj = formData.selectedCenter ? SERVICE_CENTERS.find(c => c.id === formData.selectedCenter) : null;
 
   return (
     <div className="screen-enter flex flex-col h-full">
@@ -326,42 +367,181 @@ export default function BookingPage() {
                 )}
               </>
             ) : (
-              /* Direct booking — customer form */
-              <div className="card-base">
-                <div className="card-hd"><span className="card-title">ข้อมูลลูกค้า</span></div>
-                <div className="space-y-3 py-2">
-                  <div>
-                    <label className="text-[11px] font-bold text-t2 mb-1 block">ชื่อลูกค้า <span className="text-red-500">*</span></label>
-                    <input
-                      type="text"
-                      value={formData.customerName}
-                      onChange={(e) => updateForm({ customerName: e.target.value })}
-                      placeholder="ชื่อ-นามสกุล"
-                      className="w-full h-[42px] bg-bg border border-border rounded-md px-3 text-[13px] text-t1 outline-none focus:border-primary"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-[11px] font-bold text-t2 mb-1 block">เบอร์โทร <span className="text-red-500">*</span></label>
-                    <input
-                      type="tel"
-                      value={formData.customerPhone}
-                      onChange={(e) => updateForm({ customerPhone: e.target.value })}
-                      placeholder="0XX-XXX-XXXX"
-                      className="w-full h-[42px] bg-bg border border-border rounded-md px-3 text-[13px] text-t1 outline-none focus:border-primary"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-[11px] font-bold text-t2 mb-1 block">อีเมล</label>
-                    <input
-                      type="email"
-                      value={formData.customerEmail}
-                      onChange={(e) => updateForm({ customerEmail: e.target.value })}
-                      placeholder="email@example.com"
-                      className="w-full h-[42px] bg-bg border border-border rounded-md px-3 text-[13px] text-t1 outline-none focus:border-primary"
-                    />
+              /* Direct booking — full customer form matching ACardPage structure */
+              <>
+                {/* 1. Service Center Selection */}
+                <div className="card-base">
+                  <div className="card-hd"><span className="card-title">ศูนย์บริการ <span className="text-red-500">*</span></span></div>
+                  <div className="space-y-2 py-2">
+                    {SERVICE_CENTERS.map((center) => (
+                      <button
+                        key={center.id}
+                        onClick={() => updateForm({ selectedCenter: center.id })}
+                        className={`w-full text-left border-2 rounded-[10px] p-3 cursor-pointer transition-all ${
+                          formData.selectedCenter === center.id
+                            ? 'border-primary bg-emerald-50'
+                            : 'border-border bg-white hover:border-primary/40'
+                        }`}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-[2px] ${
+                            formData.selectedCenter === center.id ? 'bg-primary text-white' : 'bg-primary-light text-primary'
+                          }`}>
+                            <Icon name="pin" size={14} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className={`text-[12px] font-bold ${formData.selectedCenter === center.id ? 'text-primary' : 'text-t1'}`}>{center.name}</p>
+                            <p className="text-[10px] text-t3 mt-[2px] leading-relaxed">{center.address}</p>
+                            <p className="text-[10px] text-t3 mt-[1px]">{center.phone} | {center.hours}</p>
+                          </div>
+                          {formData.selectedCenter === center.id && (
+                            <div className="text-primary flex-shrink-0 mt-1">
+                              <Icon name="check" size={16} />
+                            </div>
+                          )}
+                        </div>
+                      </button>
+                    ))}
                   </div>
                 </div>
-              </div>
+
+                {/* 2. Customer Info — expanded form */}
+                <div className="card-base">
+                  <div className="card-hd"><span className="card-title">ข้อมูลลูกค้า</span></div>
+                  <div className="space-y-3 py-2">
+                    <div>
+                      <label className="text-[11px] font-bold text-t2 mb-1 block">ชื่อลูกค้า <span className="text-red-500">*</span></label>
+                      <input
+                        type="text"
+                        value={formData.customerName}
+                        onChange={(e) => updateForm({ customerName: e.target.value })}
+                        placeholder="ชื่อ-นามสกุล"
+                        className="w-full h-[42px] bg-bg border border-border rounded-md px-3 text-[13px] text-t1 outline-none focus:border-primary"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[11px] font-bold text-t2 mb-1 block">เบอร์โทร <span className="text-red-500">*</span></label>
+                      <input
+                        type="tel"
+                        value={formData.customerPhone}
+                        onChange={(e) => updateForm({ customerPhone: e.target.value })}
+                        placeholder="0XX-XXX-XXXX"
+                        className="w-full h-[42px] bg-bg border border-border rounded-md px-3 text-[13px] text-t1 outline-none focus:border-primary"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[11px] font-bold text-t2 mb-1 block">อีเมล</label>
+                      <input
+                        type="email"
+                        value={formData.customerEmail}
+                        onChange={(e) => updateForm({ customerEmail: e.target.value })}
+                        placeholder="email@example.com"
+                        className="w-full h-[42px] bg-bg border border-border rounded-md px-3 text-[13px] text-t1 outline-none focus:border-primary"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[11px] font-bold text-t2 mb-1 block">LINE ID</label>
+                      <input
+                        type="text"
+                        value={formData.lineId}
+                        onChange={(e) => updateForm({ lineId: e.target.value })}
+                        placeholder="@line-id"
+                        className="w-full h-[42px] bg-bg border border-border rounded-md px-3 text-[13px] text-t1 outline-none focus:border-primary"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[11px] font-bold text-t2 mb-1 block">จังหวัด <span className="text-red-500">*</span></label>
+                      <select
+                        value={formData.province}
+                        onChange={(e) => updateForm({ province: e.target.value })}
+                        className="w-full h-[42px] bg-bg border border-border rounded-md px-3 text-[13px] text-t1 outline-none focus:border-primary cursor-pointer"
+                      >
+                        <option value="">-- เลือกจังหวัด --</option>
+                        {THAI_PROVINCES.map((p) => (
+                          <option key={p.name} value={p.name}>{p.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-[11px] font-bold text-t2 mb-1 block">วันที่เข้ารับบริการ <span className="text-red-500">*</span></label>
+                        <input
+                          type="date"
+                          value={formData.serviceDate}
+                          onChange={(e) => updateForm({ serviceDate: e.target.value })}
+                          className="w-full h-[42px] bg-bg border border-border rounded-md px-3 text-[13px] text-t1 outline-none focus:border-primary cursor-pointer"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[11px] font-bold text-t2 mb-1 block">เวลาที่สะดวก <span className="text-red-500">*</span></label>
+                        <input
+                          type="time"
+                          value={formData.serviceTime}
+                          onChange={(e) => updateForm({ serviceTime: e.target.value })}
+                          className="w-full h-[42px] bg-bg border border-border rounded-md px-3 text-[13px] text-t1 outline-none focus:border-primary cursor-pointer"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 3. Lead Source */}
+                <div className="card-base">
+                  <div className="card-hd"><span className="card-title">ช่องทาง</span></div>
+                  <div className="flex flex-wrap gap-2 py-2">
+                    {LEAD_SOURCES.map((src) => (
+                      <button
+                        key={src}
+                        onClick={() => updateForm({ source: src })}
+                        className={`px-4 py-[7px] rounded-full text-[12px] font-bold transition-all cursor-pointer border ${
+                          formData.source === src
+                            ? 'bg-primary text-white border-primary shadow-sm'
+                            : 'bg-white text-t2 border-border hover:border-primary hover:text-primary'
+                        }`}
+                      >
+                        {src}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 4. Car Interest — read-only preview */}
+                {car && (
+                  <div className="card-base">
+                    <div className="card-hd"><span className="card-title">รุ่นรถที่สนใจ</span></div>
+                    <div className="flex items-center gap-3 py-2">
+                      <div className="w-[72px] h-[56px] rounded-md border border-border flex items-center justify-center flex-shrink-0 overflow-hidden p-1" style={{ background: car.bg }}>
+                        <img
+                          src={car.img}
+                          alt={car.name}
+                          className="w-full h-full object-contain"
+                          onError={(e) => { e.target.style.display = 'none'; }}
+                        />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[13px] font-extrabold text-t1">{car.name}</p>
+                        <p className="text-[11px] text-t2">{car.type} | {car.fuel}</p>
+                        <p className="text-[13px] font-extrabold text-primary mt-[2px]">{car.priceLabel}</p>
+                      </div>
+                    </div>
+                    {formData.selectedColor && (
+                      <div className="flex items-center gap-2 pt-2 border-t border-border text-[12px]">
+                        <span className="text-t2 font-semibold">สี:</span>
+                        {(() => {
+                          const colorObj = COLOR_OPTIONS.find(c => c.name === formData.selectedColor);
+                          return colorObj ? (
+                            <span
+                              className="w-4 h-4 rounded-full border border-border inline-block"
+                              style={{ backgroundColor: colorObj.hex }}
+                            />
+                          ) : null;
+                        })()}
+                        <span className="text-t1 font-bold">{formData.selectedColor}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </>
             )}
 
             <button onClick={goToStep2} className="btn-p cursor-pointer mt-2">

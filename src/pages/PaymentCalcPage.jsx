@@ -2,7 +2,7 @@ import React, { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Icon from '../components/icons/Icon';
 import InlineCalculator from '../components/car/InlineCalculator';
-import { CARS } from '../lib/mockData';
+import { CARS, COLOR_OPTIONS } from '../lib/mockData';
 import { useBookingStore } from '../stores/bookingStore';
 import { useVisibilityRefresh } from '../hooks/useVisibilityRefresh';
 
@@ -13,8 +13,20 @@ export default function PaymentCalcPage() {
 
   const bkCarId = useBookingStore((s) => s.carId);
   const setCarIdStore = useBookingStore((s) => s.setCarId);
+  const selectedColor = useBookingStore((s) => s.selectedColor) || 'Pearl White';
+  const setDownPayment = useBookingStore((s) => s.setDownPayment);
+  const setInterestRate = useBookingStore((s) => s.setInterestRate);
+  const setLoanTermMonths = useBookingStore((s) => s.setLoanTermMonths);
 
   const car = bkCarId ? CARS[bkCarId] : CARS.corolla;
+
+  const colorObj = COLOR_OPTIONS.find(c => c.name === selectedColor);
+
+  const handleCalcValuesChange = useCallback(({ downPaymentPct, interestRate, loanTermMonths }) => {
+    if (downPaymentPct !== undefined) setDownPayment(downPaymentPct);
+    if (interestRate !== undefined) setInterestRate(interestRate);
+    if (loanTermMonths !== undefined) setLoanTermMonths(loanTermMonths);
+  }, [setDownPayment, setInterestRate, setLoanTermMonths]);
 
   const handleBookNow = () => {
     if (!bkCarId) setCarIdStore(car.id);
@@ -44,7 +56,22 @@ export default function PaymentCalcPage() {
             </div>
             <div className="flex-1">
               <p className="text-[14px] font-extrabold text-t1">{car.name}</p>
-              <p className="text-[11px] text-t2">{car.type} · {car.fuel}</p>
+              <div className="flex items-center gap-1 text-[11px] text-t2">
+                <span>{car.type} · {car.fuel}</span>
+                {selectedColor && (
+                  <>
+                    <span className="mx-1">·</span>
+                    <span>สี:</span>
+                    {colorObj && (
+                      <span
+                        className="w-3 h-3 rounded-full border border-border inline-block"
+                        style={{ backgroundColor: colorObj.hex }}
+                      />
+                    )}
+                    <span className="font-semibold text-t1">{selectedColor}</span>
+                  </>
+                )}
+              </div>
               <p className="text-[13px] font-extrabold text-primary mt-[2px]">{car.priceLabel}</p>
             </div>
           </div>
@@ -53,7 +80,7 @@ export default function PaymentCalcPage() {
         {/* Calculator */}
         <div className="card-base">
           <div className="card-hd"><span className="card-title">คำนวณสินเชื่อ / Calculate Installment</span></div>
-          <InlineCalculator carPrice={car.price} carName={car.name} />
+          <InlineCalculator carPrice={car.price} carName={car.name} onValuesChange={handleCalcValuesChange} />
         </div>
 
         {/* Actions */}

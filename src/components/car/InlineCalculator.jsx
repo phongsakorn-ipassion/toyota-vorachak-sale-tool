@@ -1,16 +1,28 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect, useRef } from 'react'
 import Icon from '../icons/Icon'
 import { formatNumber, flatRateMonthly } from '../../lib/formats'
 import { DOWN_PAYMENT_OPTIONS, LOAN_TERM_RANGE, DEFAULT_INTEREST_RATE } from '../../lib/constants'
 
 /**
  * InlineCalculator — embedded flat-rate loan calculator for CarDetailPage
- * Props: carPrice (number), carName (string)
+ * Props: carPrice (number), carName (string), onValuesChange (optional callback)
  */
-export default function InlineCalculator({ carPrice, carName }) {
+export default function InlineCalculator({ carPrice, carName, onValuesChange }) {
   const [interestRate, setInterestRate] = useState(DEFAULT_INTEREST_RATE)
   const [downPaymentPct, setDownPaymentPct] = useState(15)
   const [loanTermMonths, setLoanTermMonths] = useState(LOAN_TERM_RANGE.default)
+
+  // Fire callback when values change
+  const isFirstRender = useRef(true)
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false
+      return
+    }
+    if (onValuesChange) {
+      onValuesChange({ downPaymentPct, interestRate, loanTermMonths })
+    }
+  }, [downPaymentPct, interestRate, loanTermMonths])
 
   const calc = useMemo(() => {
     const downPayment = Math.round(carPrice * downPaymentPct / 100)
