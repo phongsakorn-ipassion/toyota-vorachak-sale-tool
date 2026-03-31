@@ -325,7 +325,7 @@ export default function SalesDashboard() {
                   </p>
                 </div>
                 <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold" style={{ backgroundColor: statusInfo.bg, color: statusInfo.color }}>
+                  <span className={`badge-${lead.level}`}>
                     {statusInfo.label || lead.level}
                   </span>
                   <span className="text-[10px] text-t3">
@@ -350,7 +350,7 @@ export default function SalesDashboard() {
                   <p className="text-[12px] font-bold text-t1">{td.name}</p>
                   <p className="text-[10px] text-t3">{CARS[td.car]?.name || td.car}</p>
                 </div>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold" style={{ backgroundColor: (TEST_DRIVE_STATUSES[td.level] || {}).bg, color: (TEST_DRIVE_STATUSES[td.level] || {}).color }}>
+                <span className={`badge-${td.level}`}>
                   {(TEST_DRIVE_STATUSES[td.level] || {}).label || td.level}
                 </span>
               </div>
