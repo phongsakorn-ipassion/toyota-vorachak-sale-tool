@@ -4,7 +4,7 @@ import { monthlyPayment } from '../lib/formats'
 import { CARS } from '../lib/mockData'
 import { useLeadStore } from './leadStore'
 import { stampRecord } from '../lib/concurrentCheck'
-import { pushBooking, syncBookings } from '../lib/dataSync'
+import { syncTable, pushRecord, bookingToRemote, remoteToBooking } from '../lib/dataSync'
 
 function generateBookingRef() {
   const now = new Date()
@@ -197,8 +197,8 @@ export const useBookingStore = create(persist((set, get) => ({
       savedBooking: booking,
     }))
 
-    // Push to Supabase if available
-    pushBooking(booking)
+    // Async push to Supabase
+    pushRecord('bookings', booking, bookingToRemote);
 
     // Update lead status if linked
     if (booking.leadId) {
@@ -224,16 +224,27 @@ export const useBookingStore = create(persist((set, get) => ({
     return get().bookings.find((b) => b.id === id || b.ref === id) || null
   },
 
-  cancelBooking: (id) =>
+  cancelBooking: (id) => {
     set((state) => ({
       bookings: state.bookings.map((b) =>
         b.id === id || b.ref === id ? { ...b, status: 'cancelled', _updatedAt: Date.now() } : b
       ),
-    })),
+    }));
+    // Async push cancelled booking to Supabase
+    const cancelled = get().bookings.find((b) => b.id === id || b.ref === id);
+    if (cancelled) pushRecord('bookings', cancelled, bookingToRemote);
+  },
 
   syncFromServer: async () => {
-    const merged = await syncBookings(get().bookings);
-    set({ bookings: merged });
+    const result = await syncTable({
+      tableName: 'bookings',
+      localData: get().bookings,
+      mapToRemote: bookingToRemote,
+      mapToLocal: remoteToBooking,
+    });
+    if (result.pulled > 0 || result.pushed > 0) {
+      set({ bookings: result.data });
+    }
   },
 }), {
   name: 'toyota-bookings',

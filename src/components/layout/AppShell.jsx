@@ -5,17 +5,20 @@ import { useVisibilityRefresh } from '../../hooks/useVisibilityRefresh';
 import { hasSupabase } from '../../lib/supabase';
 import { useLeadStore } from '../../stores/leadStore';
 import { useBookingStore } from '../../stores/bookingStore';
+import { useUiStore } from '../../stores/uiStore';
 
 export default function AppShell() {
   const syncLeads = useLeadStore((s) => s.syncFromServer);
   const syncBookings = useBookingStore((s) => s.syncFromServer);
+  const syncNotifications = useUiStore((s) => s.syncFromServer);
 
   useVisibilityRefresh(useCallback(() => {
     if (hasSupabase) {
       syncLeads();
       syncBookings();
+      syncNotifications();
     }
-  }, [syncLeads, syncBookings]));
+  }, [syncLeads, syncBookings, syncNotifications]));
 
   return (
     <div className="min-h-screen bg-bg flex flex-col">

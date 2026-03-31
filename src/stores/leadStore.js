@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { LEADS, LEADS_LIST } from '../lib/mockData'
 import { stampRecord, hasConflict, conflictMessage } from '../lib/concurrentCheck'
-import { pushLead, syncLeads } from '../lib/dataSync'
+import { syncTable, pushRecord, deleteRecord, leadToRemote, remoteToLead } from '../lib/dataSync'
 
 export const useLeadStore = create(persist((set, get) => ({
   leads: LEADS_LIST,
@@ -50,7 +50,8 @@ export const useLeadStore = create(persist((set, get) => ({
     set((state) => ({
       leads: [newLead, ...state.leads],
     }));
-    pushLead(newLead);
+    // Async push to Supabase
+    pushRecord('leads', newLead, leadToRemote);
     return newLead;
   },
 
@@ -70,15 +71,19 @@ export const useLeadStore = create(persist((set, get) => ({
       selectedLead:
         state.selectedLead?.id === id ? updated : state.selectedLead,
     })
-    pushLead(updated);
+    // Async push to Supabase
+    pushRecord('leads', updated, leadToRemote);
     return { success: true }
   },
 
-  deleteLead: (id) =>
+  deleteLead: (id) => {
     set((state) => ({
       leads: state.leads.filter((l) => l.id !== id),
       selectedLead: state.selectedLead?.id === id ? null : state.selectedLead,
-    })),
+    }));
+    // Async delete from Supabase
+    deleteRecord('leads', id);
+  },
 
   // ---------------------------------------------------------------------------
   // Specific field mutations
@@ -119,14 +124,14 @@ export const useLeadStore = create(persist((set, get) => ({
   // Activities
   // ---------------------------------------------------------------------------
 
-  addActivity: (leadId, activity) =>
+  addActivity: (leadId, activity) => {
+    const newActivity = {
+      id: `a${Date.now()}`,
+      time: new Date().toISOString(),
+      createdBy: activity.createdBy || 'system',
+      ...activity,
+    }
     set((state) => {
-      const newActivity = {
-        id: `a${Date.now()}`,
-        time: new Date().toISOString(),
-        createdBy: activity.createdBy || 'system',
-        ...activity,
-      }
       const updatedLeads = state.leads.map((l) => {
         if (l.id !== leadId) return l
         return {
@@ -145,21 +150,35 @@ export const useLeadStore = create(persist((set, get) => ({
             }
           : state.selectedLead
       return { leads: updatedLeads, selectedLead: updatedSelected }
-    }),
+    });
+    // Push parent lead to Supabase (activities stored in JSONB)
+    const parentLead = get().leads.find((l) => l.id === leadId);
+    if (parentLead) pushRecord('leads', parentLead, leadToRemote);
+  },
 
-  editActivity: (leadId, activityId, updates) => set((state) => ({
-    leads: state.leads.map(l => l.id === leadId ? {
-      ...l,
-      activities: (l.activities || []).map(a => a.id === activityId ? { ...a, ...updates, _updatedAt: Date.now() } : a)
-    } : l)
-  })),
+  editActivity: (leadId, activityId, updates) => {
+    set((state) => ({
+      leads: state.leads.map(l => l.id === leadId ? {
+        ...l,
+        activities: (l.activities || []).map(a => a.id === activityId ? { ...a, ...updates, _updatedAt: Date.now() } : a)
+      } : l)
+    }));
+    // Push parent lead to Supabase
+    const parentLead = get().leads.find((l) => l.id === leadId);
+    if (parentLead) pushRecord('leads', parentLead, leadToRemote);
+  },
 
-  deleteActivity: (leadId, activityId) => set((state) => ({
-    leads: state.leads.map(l => l.id === leadId ? {
-      ...l,
-      activities: (l.activities || []).filter(a => a.id !== activityId)
-    } : l)
-  })),
+  deleteActivity: (leadId, activityId) => {
+    set((state) => ({
+      leads: state.leads.map(l => l.id === leadId ? {
+        ...l,
+        activities: (l.activities || []).filter(a => a.id !== activityId)
+      } : l)
+    }));
+    // Push parent lead to Supabase
+    const parentLead = get().leads.find((l) => l.id === leadId);
+    if (parentLead) pushRecord('leads', parentLead, leadToRemote);
+  },
 
   // ---------------------------------------------------------------------------
   // Getters / computed
@@ -251,19 +270,29 @@ export const useLeadStore = create(persist((set, get) => ({
     });
 
     // Update original test drive lead to completed
+    const updatedTdLead = stampRecord({ ...tdLead, level: 'completed' });
     set((state) => ({
       leads: [newLead, ...state.leads.map(l =>
-        l.id === leadId ? { ...l, level: 'completed', _updatedAt: Date.now() } : l
+        l.id === leadId ? updatedTdLead : l
       )],
     }));
 
-    pushLead(newLead);
+    // Push BOTH the new purchase lead AND the updated test drive lead
+    pushRecord('leads', newLead, leadToRemote);
+    pushRecord('leads', updatedTdLead, leadToRemote);
     return newLead;
   },
 
   syncFromServer: async () => {
-    const merged = await syncLeads(get().leads);
-    set({ leads: merged });
+    const result = await syncTable({
+      tableName: 'leads',
+      localData: get().leads,
+      mapToRemote: leadToRemote,
+      mapToLocal: remoteToLead,
+    });
+    if (result.pulled > 0 || result.pushed > 0) {
+      set({ leads: result.data });
+    }
   },
 }), {
   name: 'toyota-leads',

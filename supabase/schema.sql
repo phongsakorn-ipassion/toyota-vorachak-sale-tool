@@ -657,7 +657,65 @@ END $$;
 
 
 -- ============================================================================
--- DONE! Schema + seed data complete.
+-- SCHEMA UPDATES: Extended fields for leads and bookings
+-- Run this AFTER the initial schema if tables already exist.
+-- Safe to run multiple times (IF NOT EXISTS / IF EXISTS guards).
+-- ============================================================================
+
+-- ---------------------------------------------------------------------------
+-- Leads: relax level CHECK to support test-drive statuses and lost
+-- ---------------------------------------------------------------------------
+ALTER TABLE leads DROP CONSTRAINT IF EXISTS leads_level_check;
+ALTER TABLE leads ADD CONSTRAINT leads_level_check
+  CHECK (level IN ('hot', 'warm', 'cool', 'won', 'lost', 'scheduled', 'confirmed', 'completed'));
+
+-- Leads: extended columns
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS lead_type TEXT DEFAULT 'purchase';
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS selected_color TEXT;
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS service_center TEXT;
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS province TEXT;
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS service_date DATE;
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS service_time TEXT;
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS line_id TEXT;
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS test_drive_date DATE;
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS test_drive_time TEXT;
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS activities JSONB DEFAULT '[]'::jsonb;
+
+CREATE INDEX IF NOT EXISTS idx_leads_lead_type ON leads(lead_type);
+
+-- ---------------------------------------------------------------------------
+-- Lead activities: relax type CHECK to support app activity types
+-- ---------------------------------------------------------------------------
+ALTER TABLE lead_activities DROP CONSTRAINT IF EXISTS lead_activities_type_check;
+ALTER TABLE lead_activities ADD CONSTRAINT lead_activities_type_check
+  CHECK (type IN ('call', 'meeting', 'email', 'note', 'booking', 'status_change', 'test_drive', 'won', 'lost'));
+
+-- ---------------------------------------------------------------------------
+-- Bookings: relax NOT NULL on optional FKs (app creates bookings without them)
+-- ---------------------------------------------------------------------------
+ALTER TABLE bookings ALTER COLUMN lead_id DROP NOT NULL;
+ALTER TABLE bookings ALTER COLUMN branch_id DROP NOT NULL;
+ALTER TABLE bookings ALTER COLUMN salesperson_id DROP NOT NULL;
+
+-- Bookings: relax payment_method CHECK to match app values
+ALTER TABLE bookings DROP CONSTRAINT IF EXISTS bookings_payment_method_check;
+ALTER TABLE bookings ADD CONSTRAINT bookings_payment_method_check
+  CHECK (payment_method IN ('cash', 'bank_loan', 'company_lease', 'installment', 'qr', 'transfer', 'credit'));
+
+-- Bookings: extended columns
+ALTER TABLE bookings ADD COLUMN IF NOT EXISTS customer_name TEXT;
+ALTER TABLE bookings ADD COLUMN IF NOT EXISTS customer_phone TEXT;
+ALTER TABLE bookings ADD COLUMN IF NOT EXISTS customer_email TEXT;
+ALTER TABLE bookings ADD COLUMN IF NOT EXISTS color TEXT DEFAULT 'Pearl White';
+ALTER TABLE bookings ADD COLUMN IF NOT EXISTS delivery_date DATE;
+ALTER TABLE bookings ADD COLUMN IF NOT EXISTS car_name TEXT;
+ALTER TABLE bookings ADD COLUMN IF NOT EXISTS car_price DECIMAL(12,2);
+ALTER TABLE bookings ADD COLUMN IF NOT EXISTS down_payment_pct INTEGER DEFAULT 15;
+ALTER TABLE bookings ADD COLUMN IF NOT EXISTS customer_info JSONB DEFAULT '{}'::jsonb;
+
+
+-- ============================================================================
+-- DONE! Schema + seed data + extended columns complete.
 -- ============================================================================
 -- Next steps:
 -- 1. Create demo users via Supabase Auth Dashboard (see header comments)

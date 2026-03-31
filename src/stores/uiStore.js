@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { NOTIFICATIONS } from '../lib/mockData'
+import { syncTable, pushRecord, notificationToRemote, remoteToNotification } from '../lib/dataSync'
 
 export const useUiStore = create(persist((set, get) => ({
   device: 'phone', // 'phone' | 'tablet' | 'desktop'
@@ -50,14 +51,20 @@ export const useUiStore = create(persist((set, get) => ({
     set({
       notifications: [newNotification, ...state.notifications],
     })
+    // Push to Supabase
+    pushRecord('notifications', newNotification, notificationToRemote);
   },
 
-  markRead: (id) =>
+  markRead: (id) => {
     set((state) => ({
       notifications: state.notifications.map((n) =>
         n.id === id ? { ...n, read: true } : n
       ),
-    })),
+    }));
+    // Push updated notification to Supabase
+    const updated = get().notifications.find((n) => n.id === id);
+    if (updated) pushRecord('notifications', updated, notificationToRemote);
+  },
 
   markAllRead: () =>
     set((state) => ({
@@ -70,6 +77,18 @@ export const useUiStore = create(persist((set, get) => ({
     })),
 
   clearAllNotifications: () => set({ notifications: [] }),
+
+  syncFromServer: async () => {
+    const result = await syncTable({
+      tableName: 'notifications',
+      localData: get().notifications,
+      mapToRemote: notificationToRemote,
+      mapToLocal: remoteToNotification,
+    });
+    if (result.pulled > 0 || result.pushed > 0) {
+      set({ notifications: result.data });
+    }
+  },
 
   getUnreadCount: () => {
     return get().notifications.filter((n) => !n.read).length

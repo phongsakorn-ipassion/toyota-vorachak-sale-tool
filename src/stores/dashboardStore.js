@@ -84,6 +84,10 @@ export const useDashboardStore = create(persist((set, get) => ({
     }
   },
 
+  syncFromServer: async () => {
+    // Dashboard data is derived from leads/bookings — no dedicated sync needed
+  },
+
   getManagerKpis: (leadStore, bookingStore) => {
     const leads = leadStore ? leadStore.leads : []
     const bookings = bookingStore ? bookingStore.bookings : []
