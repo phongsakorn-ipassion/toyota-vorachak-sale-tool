@@ -24,6 +24,8 @@ export default function SalesDashboard() {
   // Commission reveal state
   const [showCommission, setShowCommission] = useState(false);
   const commissionTimerRef = useRef(null);
+  const carouselRef = useRef(null);
+  const [carouselIdx, setCarouselIdx] = useState(0);
 
   // Dashboard lead type filter
   const [dashLeadType, setDashLeadType] = useState('purchase');
@@ -229,36 +231,63 @@ export default function SalesDashboard() {
           <button onClick={() => navigate('/leads')} className="text-[12px] font-bold text-primary cursor-pointer">ดูทั้งหมด &rarr;</button>
         </div>
 
-        {/* Featured Lead */}
-        {featLead && featCar && (
-          <div onClick={() => navigate(`/lead/${featLead.id}`)} className="bg-white border border-border rounded-lg overflow-hidden mb-3 cursor-pointer active:opacity-80 transition-opacity">
-            <div className="relative h-[160px] flex items-center justify-center border-b border-border" style={{ background: 'linear-gradient(135deg,#F0FAF3 0%,#E8F5EC 50%,#DCF0E2 100%)' }}>
-              <img
-                src={featCar.img}
-                alt={featCar.name}
-                className="w-[65%] max-w-[220px] object-cover"
-                style={{ filter: 'drop-shadow(0 6px 20px rgba(0,0,0,.12))' }}
-                onError={(e) => handleImgError(e, featCar.name)}
-              />
-              <span className="absolute top-3 left-3 px-[10px] py-1 rounded-pill text-[10px] font-bold text-white bg-transit flex items-center gap-1"><Icon name="flame" size={10} /> HOT</span>
-              <span className="absolute top-3 right-3 px-[10px] py-1 rounded-pill text-[10px] font-bold text-white bg-primary">ตัดสินใจวันนี้</span>
+        {/* Hot Leads Carousel */}
+        {hotLeads.length > 0 && (
+          <>
+            <div
+              ref={carouselRef}
+              className="flex gap-3 overflow-x-auto pb-2 mb-1"
+              style={{ scrollSnapType: 'x mandatory', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+              onScroll={() => {
+                if (!carouselRef.current) return;
+                const idx = Math.round(carouselRef.current.scrollLeft / carouselRef.current.offsetWidth);
+                setCarouselIdx(idx);
+              }}
+            >
+              {hotLeads.slice(0, 8).map((hl) => {
+                const hlCar = CARS[hl.car];
+                return (
+                  <div
+                    key={hl.id}
+                    onClick={() => navigate(`/lead/${hl.id}`)}
+                    className="bg-white border border-border rounded-lg overflow-hidden cursor-pointer active:opacity-80 transition-opacity flex-shrink-0"
+                    style={{ scrollSnapAlign: 'start', width: 'calc(100% - 16px)', minWidth: 'calc(100% - 16px)' }}
+                  >
+                    <div className="relative h-[140px] flex items-center justify-center border-b border-border" style={{ background: 'linear-gradient(135deg,#F0FAF3 0%,#E8F5EC 50%,#DCF0E2 100%)' }}>
+                      {hlCar && (
+                        <img
+                          src={hlCar.img}
+                          alt={hlCar.name}
+                          className="w-[60%] max-w-[200px] object-cover"
+                          style={{ filter: 'drop-shadow(0 6px 20px rgba(0,0,0,.12))' }}
+                          onError={(e) => handleImgError(e, hlCar.name)}
+                        />
+                      )}
+                      <span className="absolute top-3 left-3 px-[10px] py-1 rounded-pill text-[10px] font-bold text-white bg-transit flex items-center gap-1"><Icon name="flame" size={10} /> HOT</span>
+                    </div>
+                    <div className="p-[12px]">
+                      <p className="text-[15px] font-extrabold text-t1">{hl.name}</p>
+                      <p className="text-[11px] text-t2 mt-[2px] flex items-center gap-1"><Icon name="walk" size={11} /> {hl.source || 'Walk-in'}</p>
+                      <div className="flex items-center justify-between mt-[8px]">
+                        <span className="badge-hot">HOT</span>
+                        <span className="text-[10px] text-t3">
+                          {hl.serviceTime ? `${hl.serviceTime} น.` : ''}{hl.serviceDate ? ` ${hl.serviceDate.slice(5)}` : ''}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-            <div className="p-[14px]">
-              <p className="text-[16px] font-extrabold text-t1">{featLead.name}</p>
-              <p className="text-[12px] text-t2 mt-[2px] flex items-center gap-1"><Icon name="walk" size={12} /> {featLead.source || 'Walk-in · สาขาลาดพร้าว'}</p>
-              <div className="flex items-center justify-between mt-[10px] mb-2">
-                <span className="badge-hot">HOT</span>
-                <span className="text-[10px] text-t3">
-                  {featLead.serviceTime ? `${featLead.serviceTime} น.` : '10:30 น.'} วันนี้
-                </span>
-              </div>
-              <div className="flex gap-[6px] flex-wrap">
-                {['งบ 800K', 'Toyota Leasing', 'วันนี้'].map(t => (
-                  <span key={t} className="inline-flex items-center gap-1 px-[9px] py-1 rounded-[20px] text-[11px] font-semibold text-t2 bg-bg border border-border">{t}</span>
+            {/* Dot indicators */}
+            {hotLeads.length > 1 && (
+              <div className="flex justify-center gap-[6px] mb-3">
+                {hotLeads.slice(0, 8).map((_, i) => (
+                  <span key={i} className={`w-[6px] h-[6px] rounded-full transition-colors ${i === carouselIdx ? 'bg-primary' : 'bg-border'}`} />
                 ))}
               </div>
-            </div>
-          </div>
+            )}
+          </>
         )}
 
         {/* 3.2.1: รายการล่าสุด (Latest Records) with filter tabs */}
