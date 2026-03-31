@@ -18,6 +18,7 @@ export default function CarDetailPage() {
   const [galleryIdx, setGalleryIdx] = useState(0);
   const [color, setColor] = useState(colorParam || 'Pearl White');
   const [openSpec, setOpenSpec] = useState('engine');
+  const [showLightbox, setShowLightbox] = useState(false);
 
   const setCarId = useBookingStore((s) => s.setCarId);
   const selectCar = useCarStore((s) => s.selectCar);
@@ -54,7 +55,10 @@ export default function CarDetailPage() {
       <div className="flex-1 overflow-y-auto pb-24" style={{ WebkitOverflowScrolling: 'touch' }}>
         {/* Gallery */}
         <div className="relative flex-shrink-0 overflow-hidden" style={{ background: isVideo ? '#111827' : currentView.bg }}>
-          <div className="w-full h-[210px] flex items-center justify-center relative">
+          <div
+            className="w-full h-[210px] flex items-center justify-center relative cursor-pointer"
+            onClick={() => setShowLightbox(true)}
+          >
             {isVideo ? (
               <iframe src={`https://www.youtube.com/embed/${car.video}?autoplay=0`} className="w-full h-full border-none" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
             ) : (
@@ -65,7 +69,7 @@ export default function CarDetailPage() {
             <>
               <span className="absolute bottom-[10px] left-[14px] text-[11px] font-bold text-t2 bg-white/[.85] px-[10px] py-[3px] rounded-pill backdrop-blur">{currentView.label}</span>
               <span className="absolute bottom-[10px] right-[14px] text-[11px] font-semibold text-t3 bg-white/[.85] px-[10px] py-[3px] rounded-pill backdrop-blur">{galleryIdx + 1}/{views.length}</span>
-              <button onClick={() => alert('360° view coming soon')} className="absolute top-3 right-3 text-[11px] font-bold text-primary bg-white/90 border border-primary-medium px-3 py-1 rounded-pill cursor-pointer flex items-center gap-1 backdrop-blur">
+              <button onClick={(e) => { e.stopPropagation(); alert('360° view coming soon'); }} className="absolute top-3 right-3 text-[11px] font-bold text-primary bg-white/90 border border-primary-medium px-3 py-1 rounded-pill cursor-pointer flex items-center gap-1 backdrop-blur">
                 <Icon name="rotate" size={12} /> 360°
               </button>
             </>
@@ -99,7 +103,40 @@ export default function CarDetailPage() {
             <p className="text-[11px] text-primary font-medium leading-relaxed">ก่อนจอง กรุณาตรวจสอบสต็อคและสีที่ต้องการก่อนทำการจอง</p>
           </div>
 
-          {/* Spec Grid */}
+          {/* Color Picker */}
+          <div className="card-base">
+            <div className="card-hd"><span className="card-title">เลือกสี | Choose Color</span></div>
+            <div className="flex gap-[10px] flex-wrap">
+              {COLOR_OPTIONS.map(c => (
+                <button key={c.name} onClick={() => setColor(c.name)} className={`w-7 h-7 rounded-full cursor-pointer transition-all border-2 ${color === c.name ? 'border-primary scale-[1.2]' : 'border-transparent'}`} style={{ background: c.hex }} />
+              ))}
+            </div>
+            <p className="text-[11px] text-t2 mt-2">{color}</p>
+          </div>
+
+          {/* Stock & Availability */}
+          <div className="card-base">
+            <div className="card-hd"><span className="card-title">Stock & Availability</span></div>
+            <p className={`inline-flex items-center gap-[5px] text-[11px] font-bold mb-3 ${car.avail === 'In Stock' ? 'text-avail' : 'text-transit'}`}>
+              <span className="w-[7px] h-[7px] rounded-full" style={{ background: 'currentColor' }} /> {car.avail}
+            </p>
+            <p className="text-[11px] text-t2 mb-3">{car.stock}</p>
+            {[
+              { icon: 'shield', label: 'ประกัน / Warranty', val: car.warranty },
+              { icon: 'wrench', label: 'ฟรีเซอร์วิส / Free Service', val: '5 ครั้ง / 5 times' },
+              { icon: 'camera', label: 'กล้องบันทึก / Dash Camera', val: 'ติดตั้งฟรี' },
+              { icon: 'shield', label: 'กันสาดหน้าต่าง / Window Visor', val: 'อุปกรณ์เสริม' },
+              { icon: 'star', label: 'โปรโมชั่นดาวน์ต่ำ / Low Down Promo', val: 'ดาวน์เริ่มต้น 5%' },
+            ].map(p => (
+              <div key={p.label} className="flex items-center gap-3 py-3 border-b border-border last:border-b-0">
+                <div className="w-9 h-9 bg-primary-light rounded-sm flex items-center justify-center text-primary flex-shrink-0"><Icon name={p.icon} size={16} /></div>
+                <div className="flex-1"><p className="text-[13px] font-bold text-t1">{p.label}</p><p className="text-[11px] text-t2 mt-[1px]">{p.val}</p></div>
+                <span className="text-t3 cursor-pointer"><Icon name="chevronRight" size={16} /></span>
+              </div>
+            ))}
+          </div>
+
+          {/* Car Specifications */}
           <div className="card-base">
             <div className="card-hd"><span className="card-title">Car Specifications</span></div>
             <div className="grid grid-cols-2 gap-[10px] mb-3">
@@ -150,44 +187,11 @@ export default function CarDetailPage() {
             ))}
           </div>
 
-          {/* Color Picker */}
-          <div className="card-base">
-            <div className="card-hd"><span className="card-title">เลือกสี | Choose Color</span></div>
-            <div className="flex gap-[10px] flex-wrap">
-              {COLOR_OPTIONS.map(c => (
-                <button key={c.name} onClick={() => setColor(c.name)} className={`w-7 h-7 rounded-full cursor-pointer transition-all border-2 ${color === c.name ? 'border-primary scale-[1.2]' : 'border-transparent'}`} style={{ background: c.hex }} />
-              ))}
-            </div>
-            <p className="text-[11px] text-t2 mt-2">{color}</p>
-          </div>
-
-          {/* Stock */}
-          <div className="card-base">
-            <div className="card-hd"><span className="card-title">Stock & Availability</span></div>
-            <p className={`inline-flex items-center gap-[5px] text-[11px] font-bold mb-3 ${car.avail === 'In Stock' ? 'text-avail' : 'text-transit'}`}>
-              <span className="w-[7px] h-[7px] rounded-full" style={{ background: 'currentColor' }} /> {car.avail}
-            </p>
-            <p className="text-[11px] text-t2 mb-3">{car.stock}</p>
-            {[
-              { icon: 'shield', label: 'ประกัน / Warranty', val: car.warranty },
-              { icon: 'wrench', label: 'ฟรีเซอร์วิส / Free Service', val: '5 ครั้ง / 5 times' },
-              { icon: 'leaf', label: 'อัตราสิ้นเปลือง / Economy', val: car.eco },
-            ].map(p => (
-              <div key={p.label} className="flex items-center gap-3 py-3 border-b border-border last:border-b-0">
-                <div className="w-9 h-9 bg-primary-light rounded-sm flex items-center justify-center text-primary flex-shrink-0"><Icon name={p.icon} size={16} /></div>
-                <div className="flex-1"><p className="text-[13px] font-bold text-t1">{p.label}</p><p className="text-[11px] text-t2 mt-[1px]">{p.val}</p></div>
-                <span className="text-t3 cursor-pointer"><Icon name="chevronRight" size={16} /></span>
-              </div>
-            ))}
-          </div>
-
-          {/* CTA */}
+          {/* CTA Buttons — responsive 3-button layout */}
           {!isReadonly && (
-            <div className="flex flex-col gap-[10px] mt-1 mb-4">
-              <div className="flex gap-[10px]">
-                <button onClick={handleCalc} className="rounded-xl border-2 border-primary text-primary bg-white py-3 px-4 font-bold flex-1 flex items-center justify-center gap-2 cursor-pointer text-[13px] hover:bg-green-50 transition-colors"><Icon name="calc" size={16} /> คำนวณผ่อน</button>
-                <button onClick={handleBook} className="rounded-xl bg-primary text-white py-3 px-4 font-bold flex-1 flex items-center justify-center gap-2 cursor-pointer text-[13px] hover:bg-primary/90 transition-colors"><Icon name="book" size={16} /> จองรถ / Book Now</button>
-              </div>
+            <div className="flex flex-col gap-2 md:grid md:grid-cols-3 md:gap-3 mt-1 mb-4">
+              <button onClick={handleCalc} className="rounded-xl border-2 border-primary text-primary bg-white py-3 px-4 font-bold flex items-center justify-center gap-2 cursor-pointer text-[13px] hover:bg-green-50 transition-colors"><Icon name="calc" size={16} /> คำนวณผ่อน</button>
+              <button onClick={handleBook} className="rounded-xl bg-primary text-white py-3 px-4 font-bold flex items-center justify-center gap-2 cursor-pointer text-[13px] hover:bg-primary/90 transition-colors"><Icon name="book" size={16} /> จองรถ / Book Now</button>
               <button
                 onClick={() => { setCarId(id); navigate('/acard?type=test_drive'); }}
                 className="rounded-xl border-2 border-blue-500 text-blue-500 bg-white py-3 px-4 font-bold flex items-center justify-center gap-2 cursor-pointer text-[13px] hover:bg-blue-50 transition-colors"
@@ -198,6 +202,38 @@ export default function CarDetailPage() {
           )}
         </div>
       </div>
+
+      {/* Fullscreen Lightbox */}
+      {showLightbox && (
+        <div
+          className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center"
+          onClick={() => setShowLightbox(false)}
+        >
+          <button
+            onClick={() => setShowLightbox(false)}
+            className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white cursor-pointer z-10 hover:bg-white/20 transition-colors"
+          >
+            <Icon name="close" size={24} />
+          </button>
+          <div onClick={(e) => e.stopPropagation()} className="flex items-center justify-center w-full h-full p-4">
+            {isVideo ? (
+              <iframe
+                src={`https://www.youtube.com/embed/${car.video}?autoplay=1`}
+                className="w-full max-w-[90vw] max-h-[85vh] border-none aspect-video"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+            ) : (
+              <img
+                src={car.imgs?.[currentView.id] || car.img}
+                alt={currentView.label}
+                className="max-w-[90vw] max-h-[85vh] object-contain"
+                style={{ filter: 'drop-shadow(0 8px 24px rgba(0,0,0,.3))' }}
+              />
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

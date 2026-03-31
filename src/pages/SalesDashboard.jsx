@@ -5,6 +5,7 @@ import { useLeadStore } from '../stores/leadStore';
 import { useBookingStore } from '../stores/bookingStore';
 import { CARS, carPlaceholder } from '../lib/mockData';
 import { TEST_DRIVE_STATUSES } from '../lib/constants';
+import { SERVICE_CENTERS } from '../lib/thaiProvinces';
 import { formatNumber, formatCurrency } from '../lib/formats';
 import Icon from '../components/icons/Icon';
 import { useVisibilityRefresh } from '../hooks/useVisibilityRefresh';
@@ -16,12 +17,16 @@ export default function SalesDashboard() {
   const user = useAuthStore((s) => s.user);
   const leads = useLeadStore((s) => s.leads);
   const getLeadStats = useLeadStore((s) => s.getLeadStats);
+  const setFilterType = useLeadStore((s) => s.setFilterType);
   const bookings = useBookingStore((s) => s.bookings);
   const stats = getLeadStats();
 
   // Commission reveal state
   const [showCommission, setShowCommission] = useState(false);
   const commissionTimerRef = useRef(null);
+
+  // Dashboard lead type filter
+  const [dashLeadType, setDashLeadType] = useState('purchase');
 
   useEffect(() => {
     return () => {
@@ -73,12 +78,23 @@ export default function SalesDashboard() {
     }
   };
 
-  // Compute live data
-  const wonLeads = useMemo(() => leads.filter((l) => l.level === 'won'), [leads]);
+  // 3.1.1: Commission from actual Won purchase leads only
+  const wonLeads = useMemo(() =>
+    leads.filter((l) => (l.leadType || 'purchase') === 'purchase' && l.level === 'won'),
+    [leads]
+  );
   const unitsSold = wonLeads.length;
   const personalTarget = 70;
   const remaining = Math.max(0, personalTarget - unitsSold);
   const progressPct = personalTarget > 0 ? Math.round((unitsSold / personalTarget) * 100) : 0;
+
+  // Commission: 2% of total car prices for won purchase leads
+  const commission = useMemo(() => {
+    return wonLeads.reduce((sum, l) => {
+      const car = l.car ? CARS[l.car] : null;
+      return sum + (car ? Math.round(car.price * 0.02) : 0);
+    }, 0);
+  }, [wonLeads]);
 
   // Today's bookings
   const todayBookings = useMemo(() => {
@@ -93,14 +109,6 @@ export default function SalesDashboard() {
       .filter((l) => l.leadType === 'test_drive' && l.testDriveDate === today && l.level !== 'cancelled' && l.level !== 'no_show')
       .sort((a, b) => (a.testDriveTime || '').localeCompare(b.testDriveTime || ''));
   }, [leads]);
-
-  // Commission: 2% of total car prices for won leads
-  const commission = useMemo(() => {
-    return wonLeads.reduce((sum, l) => {
-      const car = l.car ? CARS[l.car] : null;
-      return sum + (car ? Math.round(car.price * 0.02) : 0);
-    }, 0);
-  }, [wonLeads]);
 
   // Sort helper: by serviceDate+serviceTime ascending (upcoming first), fallback to createdAt
   const sortByServiceDate = (a, b) => {
@@ -129,18 +137,45 @@ export default function SalesDashboard() {
   const featLead = hotLeads[0] || leads[0];
   const featCar = featLead ? CARS[featLead.car] : null;
 
-  // Lead list: sorted by serviceDate+serviceTime, take top 3
-  const leadList = useMemo(() => {
-    return [...leads]
-      .filter((l) => l.level !== 'won' && l.level !== 'lost')
-      .sort(sortByServiceDate)
-      .slice(0, 3);
-  }, [leads]);
+  // 3.2.1: Filtered lead list for "รายการล่าสุด" section
+  const purchaseLeads = useMemo(() =>
+    leads.filter((l) => (l.leadType || 'purchase') === 'purchase' && ['hot', 'warm', 'cool'].includes(l.level))
+      .sort(sortByServiceDate),
+    [leads]
+  );
+
+  const testDriveLeads = useMemo(() =>
+    leads.filter((l) => l.leadType === 'test_drive' && ['scheduled', 'confirmed'].includes(l.level))
+      .sort((a, b) => {
+        // Sort by testDriveDate + testDriveTime ascending
+        const dateA = a.testDriveDate || '';
+        const dateB = b.testDriveDate || '';
+        if (dateA !== dateB) return dateA.localeCompare(dateB);
+        return (a.testDriveTime || '').localeCompare(b.testDriveTime || '');
+      }),
+    [leads]
+  );
+
+  const dashLeadList = dashLeadType === 'purchase' ? purchaseLeads.slice(0, 5) : testDriveLeads.slice(0, 5);
+  const purchaseCount = purchaseLeads.length;
+  const testDriveCount = testDriveLeads.length;
 
   // Image error fallback handler
   const handleImgError = (e, carName) => {
     e.target.onerror = null;
     e.target.src = carPlaceholder(carName || 'Toyota', '#f0f0f0');
+  };
+
+  // Helper: get service center name by id
+  const getCenterName = (centerId) => {
+    const center = SERVICE_CENTERS.find(c => c.id === centerId);
+    return center ? center.name.replace('โตโยต้า วรจักร์ยนต์ ', '') : '';
+  };
+
+  // Navigate to leads with filter type set
+  const handleViewAll = () => {
+    setFilterType(dashLeadType);
+    navigate('/leads');
   };
 
   return (
@@ -226,13 +261,38 @@ export default function SalesDashboard() {
           </div>
         )}
 
-        {/* Lead List */}
+        {/* 3.2.1: รายการล่าสุด (Latest Records) with filter tabs */}
         <div className="card-base">
           <div className="card-hd">
-            <span className="card-title">Lead ทั้งหมดวันนี้</span>
-            <button onClick={() => navigate('/leads')} className="text-[12px] font-bold text-primary cursor-pointer">ดูทั้งหมด</button>
+            <span className="card-title">รายการล่าสุด</span>
+            <button onClick={handleViewAll} className="text-[12px] font-bold text-primary cursor-pointer">ดูทั้งหมด</button>
           </div>
-          {leadList.map((lead) => {
+
+          {/* Toggle filter tabs */}
+          <div className="flex gap-2 mb-3">
+            <button
+              onClick={() => setDashLeadType('purchase')}
+              className={`flex-1 py-[7px] rounded-lg text-[11px] font-bold text-center cursor-pointer transition-all ${dashLeadType === 'purchase' ? 'bg-primary text-white' : 'bg-white border border-border text-t2'}`}
+            >
+              ลูกค้า ({purchaseCount})
+            </button>
+            <button
+              onClick={() => setDashLeadType('test_drive')}
+              className={`flex-1 py-[7px] rounded-lg text-[11px] font-bold text-center cursor-pointer transition-all ${dashLeadType === 'test_drive' ? 'bg-primary text-white' : 'bg-white border border-border text-t2'}`}
+            >
+              ทดลองขับ ({testDriveCount})
+            </button>
+          </div>
+
+          {/* Filtered lead list */}
+          {dashLeadList.length === 0 && (
+            <div className="py-6 text-center">
+              <Icon name={dashLeadType === 'test_drive' ? 'steering' : 'users'} size={24} className="text-t3 mx-auto mb-2" />
+              <p className="text-[12px] text-t3">ไม่มีรายการ</p>
+            </div>
+          )}
+
+          {dashLeadType === 'purchase' && dashLeadList.map((lead) => {
             const car = lead.car ? CARS[lead.car] : null;
             return (
               <div key={lead.id} onClick={() => navigate(`/lead/${lead.id}`)} className="flex items-center gap-[11px] py-[11px] border-b border-border last:border-b-0 cursor-pointer">
@@ -242,9 +302,34 @@ export default function SalesDashboard() {
                   <p className="text-[11px] text-t2 mt-[2px] flex items-center gap-1"><Icon name="car" size={11} /> {car ? car.name : 'N/A'} · {car ? car.priceLabel : ''}</p>
                 </div>
                 <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                  <span className={`badge-${lead.level}`}>{lead.level === 'won' ? 'Won' : lead.level === 'hot' ? 'Hot' : lead.level === 'cool' ? 'Cool' : 'Warm'}</span>
+                  <span className={`badge-${lead.level}`}>{lead.level === 'hot' ? 'Hot' : lead.level === 'cool' ? 'Cool' : 'Warm'}</span>
                   <span className="text-[10px] text-t3">
                     {lead.serviceTime || ''}{lead.serviceDate ? ` · ${lead.serviceDate.slice(5)}` : ''}
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+
+          {dashLeadType === 'test_drive' && dashLeadList.map((lead) => {
+            const car = lead.car ? CARS[lead.car] : null;
+            const statusInfo = TEST_DRIVE_STATUSES[lead.level] || {};
+            return (
+              <div key={lead.id} onClick={() => navigate(`/lead/${lead.id}`)} className="flex items-center gap-[11px] py-[11px] border-b border-border last:border-b-0 cursor-pointer">
+                <div className="w-[42px] h-[42px] rounded-full flex items-center justify-center text-[15px] font-extrabold text-white flex-shrink-0" style={{ background: lead.color || '#6B7280' }}>{lead.init || lead.name?.charAt(0) || '?'}</div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[13px] font-bold text-t1">{lead.name}</p>
+                  <p className="text-[11px] text-t2 mt-[2px] flex items-center gap-1"><Icon name="car" size={11} /> {car ? car.name : 'N/A'}</p>
+                  <p className="text-[10px] text-t3 mt-[1px] flex items-center gap-1">
+                    <Icon name="pin" size={10} /> {getCenterName(lead.serviceCenter) || 'สาขาลาดพร้าว'}
+                  </p>
+                </div>
+                <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold" style={{ backgroundColor: statusInfo.bg, color: statusInfo.color }}>
+                    {statusInfo.label || lead.level}
+                  </span>
+                  <span className="text-[10px] text-t3">
+                    {lead.testDriveTime || ''}{lead.testDriveDate ? ` · ${lead.testDriveDate.slice(5)}` : ''}
                   </span>
                 </div>
               </div>

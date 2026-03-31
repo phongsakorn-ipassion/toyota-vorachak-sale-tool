@@ -5,6 +5,7 @@ import Icon from '../components/icons/Icon';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import { CARS, COLOR_OPTIONS } from '../lib/mockData';
 import { TEST_DRIVE_STATUSES } from '../lib/constants';
+import { SERVICE_CENTERS } from '../lib/thaiProvinces';
 import { formatNumber } from '../lib/formats';
 import { useLeadStore } from '../stores/leadStore';
 import { useBookingStore } from '../stores/bookingStore';
@@ -112,7 +113,7 @@ export default function LeadDetailPage() {
       title: 'ยืนยันเปลี่ยนสถานะ',
       message: `เปลี่ยนสถานะเป็น "${statusLabel}"`,
       showNotes: true,
-      requireNotes: false,
+      requireNotes: newStatus === 'cancelled',
       confirmLabel: `ยืนยัน ${statusLabel}`,
       confirmColor: TEST_DRIVE_STATUSES[newStatus]?.color || '#2563EB',
       onConfirm: (note) => {
@@ -133,6 +134,7 @@ export default function LeadDetailPage() {
           description: note || `สถานะทดลองขับเปลี่ยนเป็น ${statusLabel}`,
         });
         addNotification({ title: 'เปลี่ยนสถานะทดลองขับ', body: `${lead.name} — ${statusLabel}`, type: 'info' });
+        toast.success('เปลี่ยนสถานะแล้ว');
         readTimestamp.current = Date.now();
         setConfirmOpen(false);
       },
@@ -189,6 +191,7 @@ export default function LeadDetailPage() {
             return;
           }
           addNotification({ title: 'เปลี่ยนสถานะ', body: lead.name + ' เป็น WON', type: 'info' });
+          toast.success('เปลี่ยนสถานะแล้ว');
           readTimestamp.current = Date.now();
           setConfirmOpen(false);
         },
@@ -215,6 +218,7 @@ export default function LeadDetailPage() {
             return;
           }
           addNotification({ title: 'เปลี่ยนสถานะ', body: lead.name + ' เป็น LOST', type: 'info' });
+          toast.success('เปลี่ยนสถานะแล้ว');
           readTimestamp.current = Date.now();
           setConfirmOpen(false);
         },
@@ -241,6 +245,7 @@ export default function LeadDetailPage() {
             return;
           }
           addNotification({ title: 'เปลี่ยนสถานะ', body: lead.name + ' เป็น ' + newLevel.toUpperCase(), type: 'info' });
+          toast.success('เปลี่ยนสถานะแล้ว');
           readTimestamp.current = Date.now();
           setConfirmOpen(false);
         },
@@ -252,6 +257,7 @@ export default function LeadDetailPage() {
   const handleAddNote = () => {
     if (!noteText.trim()) return;
     addActivity(lead.id, { type: 'note', title: 'บันทึก', description: noteText.trim() });
+    toast.success('บันทึกเรียบร้อย');
     setNoteText('');
   };
 
@@ -264,6 +270,7 @@ export default function LeadDetailPage() {
   const handleSaveEditActivity = (actId) => {
     if (editingText.trim()) {
       editActivity(lead.id, actId, { description: editingText.trim() });
+      toast.success('แก้ไขเรียบร้อย');
     }
     setEditingActivityId(null);
     setEditingText('');
@@ -279,6 +286,7 @@ export default function LeadDetailPage() {
       confirmColor: '#DC2626',
       onConfirm: () => {
         deleteActivity(lead.id, act.id);
+        toast.success('ลบเรียบร้อย');
         setConfirmOpen(false);
       },
     });
@@ -350,6 +358,17 @@ export default function LeadDetailPage() {
             <span className={badgeClass}>{badgeInfo.label}</span>
           )}
         </div>
+
+        {/* Converted from test drive banner */}
+        {lead.convertedFrom && (
+          <div className="mx-4 mt-3 card-base bg-blue-50 border-blue-200">
+            <div className="flex items-center gap-2 text-[12px]">
+              <Icon name="steering" size={14} className="text-blue-500" />
+              <span className="text-blue-700 font-bold">แปลงจากทดลองขับ</span>
+              <button onClick={() => navigate(`/lead/${lead.convertedFrom}`)} className="text-blue-500 underline cursor-pointer ml-auto">ดูข้อมูลทดลองขับ</button>
+            </div>
+          </div>
+        )}
 
         {/* Customer Info Card */}
         <div className="bg-white px-4 py-3 border-b border-border">
@@ -464,6 +483,21 @@ export default function LeadDetailPage() {
           </div>
         )}
 
+        {/* Status Change Notes */}
+        {lead.activities?.filter(a => a.type === 'status_change').length > 0 && (
+          <div className="px-4 pt-3">
+            <div className="card-base">
+              <div className="card-hd"><span className="card-title">บันทึกการเปลี่ยนสถานะ</span></div>
+              {lead.activities.filter(a => a.type === 'status_change').map(a => (
+                <div key={a.id} className="py-2 border-b border-gray-100 last:border-b-0">
+                  <p className="text-[11px] text-t3">{a.title}</p>
+                  {a.description && <p className="text-[12px] text-t1 mt-1">{a.description}</p>}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div className="px-4 pt-4">
           {/* Test drive info card */}
           {isTestDrive && (lead.testDriveDate || lead.testDriveTime || lead.serviceCenter) && (
@@ -485,7 +519,7 @@ export default function LeadDetailPage() {
                 {lead.serviceCenter && (
                   <div className="flex items-center justify-between text-[12px]">
                     <span className="text-t3 flex items-center gap-1"><Icon name="location" size={12} /> ศูนย์บริการ</span>
-                    <span className="text-t1 font-bold">{lead.serviceCenter}</span>
+                    <span className="text-t1 font-bold">{SERVICE_CENTERS.find(c => c.id === lead.serviceCenter)?.name || lead.serviceCenter || '-'}</span>
                   </div>
                 )}
                 {lead.notes && (
@@ -746,7 +780,7 @@ export default function LeadDetailPage() {
             )}
 
             {/* Add Note */}
-            <div className="flex gap-2 mt-3 pt-3 border-t border-border">
+            <div className="flex gap-2 mt-3 pt-3">
               <input
                 type="text"
                 placeholder="เพิ่มบันทึก..."

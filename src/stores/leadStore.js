@@ -178,6 +178,7 @@ export const useLeadStore = create(persist((set, get) => ({
     // Push parent lead to Supabase
     const parentLead = get().leads.find((l) => l.id === leadId);
     if (parentLead) pushRecord('leads', parentLead, leadToRemote);
+    return true;
   },
 
   // ---------------------------------------------------------------------------
@@ -244,8 +245,9 @@ export const useLeadStore = create(persist((set, get) => ({
     if (!tdLead || tdLead.leadType !== 'test_drive') return null;
 
     // Create new purchase lead from test drive data
+    const newLeadId = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : `lead_${Date.now()}`;
     const newLead = stampRecord({
-      id: (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : `lead_${Date.now()}`,
+      id: newLeadId,
       leadType: 'purchase',
       name: tdLead.name,
       phone: tdLead.phone,
@@ -258,6 +260,7 @@ export const useLeadStore = create(persist((set, get) => ({
       level: 'hot',
       stage: 'negotiation',
       notes: `แปลงจากทดลองขับ ${tdLead.testDriveDate}`,
+      convertedFrom: leadId, // link back to original test drive lead
       createdAt: new Date().toISOString(),
       activities: [{
         id: `act_${Date.now()}`,
@@ -269,8 +272,8 @@ export const useLeadStore = create(persist((set, get) => ({
       }],
     });
 
-    // Update original test drive lead to completed
-    const updatedTdLead = stampRecord({ ...tdLead, level: 'completed' });
+    // Update original test drive lead to completed + link to new purchase lead
+    const updatedTdLead = stampRecord({ ...tdLead, level: 'completed', convertedTo: newLeadId });
     set((state) => ({
       leads: [newLead, ...state.leads.map(l =>
         l.id === leadId ? updatedTdLead : l

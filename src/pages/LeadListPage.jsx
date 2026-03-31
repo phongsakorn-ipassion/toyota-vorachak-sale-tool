@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import PageHeader from '../components/layout/PageHeader';
 import Icon from '../components/icons/Icon';
 import { useLeadStore } from '../stores/leadStore';
@@ -71,12 +72,14 @@ export default function LeadListPage() {
     e.stopPropagation();
     window.location.href = 'tel:' + lead.phone;
     addActivity(lead.id, { type: 'call', title: 'โทรหาลูกค้า', description: 'โทรติดตาม ' + lead.name });
+    toast.success('บันทึกกิจกรรมแล้ว');
   };
 
   const handleLine = (e, lead) => {
     e.stopPropagation();
     window.open('https://line.me/R/', '_blank');
     addActivity(lead.id, { type: 'line', title: 'ส่ง LINE', description: 'ส่งข้อความ LINE ถึง ' + lead.name });
+    toast.success('บันทึกกิจกรรมแล้ว');
   };
 
   const handleTypeSwitch = (type) => {
@@ -171,62 +174,77 @@ export default function LeadListPage() {
                 // Test drive card layout
                 const tdStatus = TEST_DRIVE_STATUSES[lead.level] || TEST_DRIVE_STATUSES.scheduled;
                 return (
-                  <button
-                    key={lead.id}
-                    onClick={() => navigate(`/lead/${lead.id}`)}
-                    className="card-base flex items-center gap-3 cursor-pointer hover:shadow-sm transition-shadow text-left"
-                    style={{ marginBottom: 0 }}
-                  >
-                    {/* Avatar */}
-                    <div
-                      className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0"
-                      style={{ backgroundColor: color }}
+                  <React.Fragment key={lead.id}>
+                    <button
+                      onClick={() => navigate(`/lead/${lead.id}`)}
+                      className="card-base flex items-center gap-3 cursor-pointer hover:shadow-sm transition-shadow text-left"
+                      style={{ marginBottom: 0 }}
                     >
-                      {initial}
-                    </div>
-
-                    {/* Info */}
-                    <div className="flex-1 min-w-0">
-                      <span className="text-sm font-bold text-t1 truncate flex items-center gap-1">
-                        {lead.name}
-                      </span>
-                      <div className="flex items-center gap-1.5 mt-0.5">
-                        {carName && (
-                          <span className="text-xs text-t3 truncate">
-                            <Icon name="car" size={11} className="inline mr-0.5 -mt-px" />
-                            {carName}
-                          </span>
-                        )}
+                      {/* Avatar */}
+                      <div
+                        className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0"
+                        style={{ backgroundColor: color }}
+                      >
+                        {initial}
                       </div>
-                      {(lead.testDriveDate || lead.testDriveTime) && (
-                        <div className="flex items-center gap-1 mt-0.5">
-                          <Icon name="calendar" size={10} className="text-t3" />
-                          <span className="text-[10px] text-t3">
-                            {lead.testDriveDate && new Date(lead.testDriveDate).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' })}
-                            {lead.testDriveTime && ` ${lead.testDriveTime}`}
-                          </span>
-                          {lead.serviceCenter && (
-                            <span className="text-[10px] text-t3 ml-1 truncate">
-                              <Icon name="location" size={10} className="inline -mt-px" /> {lead.serviceCenter}
+
+                      {/* Info */}
+                      <div className="flex-1 min-w-0">
+                        <span className="text-sm font-bold text-t1 truncate flex items-center gap-1">
+                          {lead.name}
+                        </span>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          {carName && (
+                            <span className="text-xs text-t3 truncate">
+                              <Icon name="car" size={11} className="inline mr-0.5 -mt-px" />
+                              {carName}
                             </span>
                           )}
                         </div>
-                      )}
-                    </div>
+                        {(lead.testDriveDate || lead.testDriveTime) && (
+                          <div className="flex items-center gap-1 mt-0.5">
+                            <Icon name="calendar" size={10} className="text-t3" />
+                            <span className="text-[10px] text-t3">
+                              {lead.testDriveDate && new Date(lead.testDriveDate).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' })}
+                              {lead.testDriveTime && ` ${lead.testDriveTime}`}
+                            </span>
+                            {lead.serviceCenter && (
+                              <span className="text-[10px] text-t3 ml-1 truncate">
+                                <Icon name="location" size={10} className="inline -mt-px" /> {lead.serviceCenter}
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
 
-                    {/* Status badge + quick actions */}
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      <span className={`badge-${lead.level}`} style={{ backgroundColor: tdStatus.bg, color: tdStatus.color }}>
-                        {tdStatus.label}
-                      </span>
-                      <span
-                        onClick={(e) => handleCall(e, lead)}
-                        className="w-7 h-7 rounded-full flex items-center justify-center bg-green-50 text-green-600 active:opacity-60 cursor-pointer"
+                      {/* Status badge + quick actions */}
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <span className={`badge-${lead.level}`}>
+                          {tdStatus.label}
+                        </span>
+                        <span
+                          onClick={(e) => handleCall(e, lead)}
+                          className="w-7 h-7 rounded-full flex items-center justify-center bg-green-50 text-green-600 active:opacity-60 cursor-pointer"
+                        >
+                          <Icon name="phone" size={12} />
+                        </span>
+                        <span
+                          onClick={(e) => handleLine(e, lead)}
+                          className="w-7 h-7 rounded-full flex items-center justify-center bg-emerald-50 text-emerald-600 active:opacity-60 cursor-pointer"
+                        >
+                          <Icon name="chat" size={12} />
+                        </span>
+                      </div>
+                    </button>
+                    {lead.convertedTo && (
+                      <button
+                        onClick={() => navigate(`/lead/${lead.convertedTo}`)}
+                        className="w-full text-left px-4 py-1.5 -mt-1 bg-blue-50 border border-blue-200 rounded-b-xl text-[10px] text-blue-600 font-bold flex items-center gap-1 cursor-pointer hover:bg-blue-100 transition-colors"
                       >
-                        <Icon name="phone" size={12} />
-                      </span>
-                    </div>
-                  </button>
+                        <Icon name="users" size={10} /> แปลงเป็นลูกค้าแล้ว
+                      </button>
+                    )}
+                  </React.Fragment>
                 );
               }
 
@@ -305,8 +323,8 @@ export default function LeadListPage() {
 
       {/* Type selector popup */}
       {showTypePopup && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4" onClick={() => setShowTypePopup(false)}>
-          <div className="bg-white rounded-xl p-5 w-full max-w-xs shadow-xl" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowTypePopup(false)}>
+          <div className="bg-white rounded-2xl p-5 max-w-sm w-full" onClick={(e) => e.stopPropagation()}>
             <h3 className="text-[15px] font-extrabold text-t1 mb-4">เลือกประเภท</h3>
             <div className="flex flex-col gap-3">
               <button

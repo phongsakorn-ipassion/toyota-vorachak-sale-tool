@@ -26,7 +26,6 @@ export default function ConfirmDialog({
 
   // Default icon based on confirmColor (red = alert, otherwise check)
   const resolvedIcon = titleIcon || (confirmColor === '#DC2626' ? 'alert' : 'check');
-  const iconColor = confirmColor === '#DC2626' ? 'text-red-500' : 'text-primary';
 
   return (
     <div
@@ -38,16 +37,16 @@ export default function ConfirmDialog({
 
       {/* Dialog */}
       <div
-        className="relative bg-white rounded-2xl w-full max-w-sm shadow-xl overflow-hidden"
+        className="relative bg-white border border-gray-200 rounded-xl w-full max-w-sm shadow-xl overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="px-5 pt-5 pb-4">
-          <h3 className="text-[15px] font-extrabold text-t1 mb-1 flex items-center gap-2">
-            <Icon name={resolvedIcon} size={18} className={iconColor} />
+        <div className="p-5">
+          <h3 className="text-[15px] font-extrabold text-gray-800 mb-1 flex items-center gap-2">
+            <Icon name={resolvedIcon} size={18} className="text-gray-400" />
             {title}
           </h3>
           {message && (
-            <p className="text-[12px] text-t2 leading-relaxed">{message}</p>
+            <p className="text-[12px] text-gray-600 leading-relaxed">{message}</p>
           )}
 
           {showNotes && (
@@ -56,27 +55,24 @@ export default function ConfirmDialog({
               onChange={(e) => setNotes(e.target.value)}
               placeholder="เพิ่มหมายเหตุ..."
               rows={3}
-              className="mt-3 w-full px-3 py-2 bg-bg border border-border rounded-lg text-[12px] text-t1 placeholder:text-t3 outline-none focus:border-primary resize-none"
+              className="mt-3 w-full px-3 py-2 border border-gray-200 bg-gray-50 rounded-lg text-[12px] text-gray-800 placeholder:text-gray-400 outline-none focus:border-gray-400 resize-none"
               style={{ fontFamily: "'Sarabun', sans-serif" }}
             />
           )}
         </div>
 
-        <div className="flex border-t border-border">
+        <div className="flex gap-3 px-5 pb-5">
           <button
             onClick={onClose}
-            className="flex-1 py-3 text-[13px] font-bold text-t2 border-r border-border active:bg-gray-50 cursor-pointer flex items-center justify-center gap-1.5"
+            className="flex-1 py-2.5 text-[13px] font-bold text-gray-600 bg-white border border-gray-300 rounded-lg active:bg-gray-50 cursor-pointer flex items-center justify-center gap-1.5"
           >
-            <Icon name="close" size={14} />
             {cancelLabel}
           </button>
           <button
             onClick={() => onConfirm(notes.trim())}
             disabled={isConfirmDisabled}
-            className="flex-1 py-3 text-[13px] font-bold active:opacity-70 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
-            style={{ color: isConfirmDisabled ? '#9CA3AF' : confirmColor }}
+            className="flex-1 py-2.5 text-[13px] font-bold text-white bg-gray-800 rounded-lg active:opacity-70 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
           >
-            <Icon name="check" size={14} />
             {confirmLabel}
           </button>
         </div>
