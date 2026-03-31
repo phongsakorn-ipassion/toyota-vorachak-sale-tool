@@ -1,6 +1,10 @@
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ['./index.html', './src/**/*.{js,jsx}'],
+  safelist: [
+    'badge-scheduled', 'badge-confirmed', 'badge-completed', 'badge-cancelled', 'badge-no_show',
+    'badge-hot', 'badge-warm', 'badge-cool', 'badge-won', 'badge-lost',
+  ],
   theme: {
     extend: {
       colors: {
