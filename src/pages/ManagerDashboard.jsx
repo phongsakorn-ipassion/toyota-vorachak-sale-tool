@@ -33,17 +33,27 @@ export default function ManagerDashboard() {
 
   const stats = getLeadStats();
 
-  // Filter leads by branch
+  // Filter leads by branch AND month/year
   const filteredLeads = useMemo(() => {
-    if (selectedBranch === 'all') return leads;
     return leads.filter((l) => {
-      const src = (l.source || '').toLowerCase();
-      if (selectedBranch === 'lp') return src.includes('ลาดพร้าว');
-      if (selectedBranch === 'on') return src.includes('อ่อนนุช');
-      if (selectedBranch === 'bn') return src.includes('บางนา');
+      // Branch filter
+      if (selectedBranch !== 'all') {
+        const src = (l.source || '').toLowerCase();
+        if (selectedBranch === 'lp' && !src.includes('ลาดพร้าว')) return false;
+        if (selectedBranch === 'on' && !src.includes('อ่อนนุช')) return false;
+        if (selectedBranch === 'bn' && !src.includes('บางนา')) return false;
+      }
+      // Month/Year filter — check createdAt, serviceDate, or testDriveDate
+      const dateStr = l.createdAt || l.serviceDate || l.testDriveDate;
+      if (dateStr) {
+        const d = new Date(dateStr);
+        if (!isNaN(d.getTime())) {
+          if (d.getMonth() !== filterMonth || d.getFullYear() !== filterYear) return false;
+        }
+      }
       return true;
     });
-  }, [leads, selectedBranch]);
+  }, [leads, selectedBranch, filterMonth, filterYear]);
 
   // Computed KPIs
   const kpis = useMemo(() => {
@@ -57,8 +67,18 @@ export default function ManagerDashboard() {
     return { teamTotal, teamTarget, pct, remainingUnits, newLeads, hotLeads };
   }, [filteredLeads, teamMembers]);
 
+  // Enhance team data with actual won leads from filtered data
+  const enhancedTeam = useMemo(() => {
+    const wonLeads = filteredLeads.filter(l => (l.leadType || 'purchase') === 'purchase' && l.level === 'won');
+    const tdCompleted = filteredLeads.filter(l => l.leadType === 'test_drive' && l.level === 'completed');
+    return teamMembers.map(m => ({
+      ...m,
+      units: m.units + wonLeads.length + Math.floor(tdCompleted.length * 0.5),
+    }));
+  }, [teamMembers, filteredLeads]);
+
   // Sorted leaderboard
-  const sortedTeam = useMemo(() => [...teamMembers].sort((a, b) => b.units - a.units), [teamMembers]);
+  const sortedTeam = useMemo(() => [...enhancedTeam].sort((a, b) => b.units - a.units), [enhancedTeam]);
 
   // Dynamic insights
   const insights = useMemo(() => {

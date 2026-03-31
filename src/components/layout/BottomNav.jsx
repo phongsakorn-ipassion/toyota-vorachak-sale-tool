@@ -17,8 +17,8 @@ const SALES_TABS = [
 const MGR_TABS = [
   { label: 'Dashboard', path: '/mgr-dash', icon: 'chart' },
   { label: 'Pipeline', path: '/pipeline', icon: 'pipeline' },
-  { label: 'แจ้งเตือน', path: '/notifications', icon: 'bell', badge: true },
   { label: 'Reports', path: '/reports', icon: 'report' },
+  { label: 'แจ้งเตือน', path: '/notifications', icon: 'bell', badge: true },
   { label: 'Profile', path: '/profile', icon: 'user' },
 ];
 
