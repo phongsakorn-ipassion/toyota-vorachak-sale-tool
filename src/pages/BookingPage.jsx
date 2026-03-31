@@ -147,16 +147,22 @@ export default function BookingPage() {
     }
   };
 
+  const handleCreditCardPay = () => {
+    const errors = [];
+    if (!formData.cardNumber?.trim()) errors.push('หมายเลขบัตร');
+    if (!formData.cardExpiry?.trim()) errors.push('วันหมดอายุ');
+    if (!formData.cardCvv?.trim()) errors.push('CVV');
+    if (!formData.cardName?.trim()) errors.push('ชื่อบนบัตร');
+
+    if (errors.length > 0) {
+      toast.error(`กรุณากรอกข้อมูล: ${errors.join(', ')}`);
+      return;
+    }
+    goToStep4();
+  };
+
   const goToStep4 = () => {
     if (timerRef.current) clearInterval(timerRef.current);
-
-    // Validate credit card form if credit method
-    if (formData.paymentMethod === 'credit') {
-      if (!formData.cardNumber.trim() || !formData.cardExpiry.trim() || !formData.cardCvv.trim() || !formData.cardName.trim()) {
-        toast.error('กรุณากรอกข้อมูลบัตรเครดิตให้ครบ');
-        return;
-      }
-    }
 
     // Save the booking with ALL data
     const result = saveBooking({
@@ -545,7 +551,7 @@ export default function BookingPage() {
               <>
                 <div className="flex flex-col items-center bg-white rounded-lg p-5 shadow-sm mb-3">
                   <img
-                    src={`https://chart.googleapis.com/chart?cht=qr&chs=200x200&chl=promptpay%3A0000000000%26amount%3D5000`}
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent('promptpay:0000000000&amount=5000')}`}
                     alt="QR"
                     className="w-[180px] h-[180px] rounded-lg"
                   />
@@ -679,7 +685,7 @@ export default function BookingPage() {
                 </div>
                 <div className="flex gap-[10px]">
                   <button onClick={goBack} className="btn-o flex-1 cursor-pointer">ย้อนกลับ</button>
-                  <button onClick={goToStep4} className="btn-p flex-1 cursor-pointer">
+                  <button onClick={handleCreditCardPay} className="btn-p flex-1 cursor-pointer">
                     <Icon name="card" size={16} /> ชำระเงิน ฿5,000
                   </button>
                 </div>
@@ -734,8 +740,8 @@ export default function BookingPage() {
 
             {/* Share Modal */}
             {showShareModal && (
-              <div className="fixed inset-0 bg-black/50 flex items-end justify-center z-50" onClick={() => setShowShareModal(false)}>
-                <div className="bg-white rounded-t-2xl w-full max-w-md p-5 pb-8 animate-slide-up" onClick={(e) => e.stopPropagation()}>
+              <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowShareModal(false)}>
+                <div className="bg-white rounded-2xl p-5 max-w-sm w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
                   <div className="flex justify-between items-center mb-4">
                     <h3 className="text-[15px] font-extrabold text-t1">แชร์ Booking</h3>
                     <button onClick={() => setShowShareModal(false)} className="w-8 h-8 rounded-full bg-bg flex items-center justify-center cursor-pointer">
@@ -770,7 +776,7 @@ export default function BookingPage() {
 
                   <div className="flex justify-center mb-4">
                     <img
-                      src={`https://chart.googleapis.com/chart?cht=qr&chs=180x180&chl=${encodeURIComponent(`${window.location.origin}${import.meta.env.BASE_URL || '/'}#/booking-view/${bookingRef}`)}`}
+                      src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(`${window.location.origin}${import.meta.env.BASE_URL || '/'}#/booking-view/${bookingRef}`)}`}
                       alt="Booking QR"
                       className="w-[160px] h-[160px] rounded-lg border border-border"
                     />

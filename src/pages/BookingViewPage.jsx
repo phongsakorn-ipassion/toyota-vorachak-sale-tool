@@ -12,6 +12,14 @@ export default function BookingViewPage() {
   const car = booking?.carId ? CARS[booking.carId] : null;
   const fmt = (n) => formatNumber(n);
 
+  const formatThaiDate = (dateStr) => {
+    if (!dateStr) return '-';
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return dateStr;
+    const months = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+    return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear() + 543}`;
+  };
+
   const statusBadge = {
     confirmed: { label: 'ยืนยันแล้ว', bg: '#F0FDF4', color: '#16A34A', border: '#BBF7D0' },
     pending: { label: 'รอดำเนินการ', bg: '#FFFBEB', color: '#D97706', border: '#FDE68A' },
@@ -74,6 +82,10 @@ export default function BookingViewPage() {
               {st.label}
             </span>
           </div>
+          <div className="flex items-center justify-between mt-3">
+            <span className="text-[11px] text-gray-400 font-semibold">วันที่จอง</span>
+            <span className="text-[13px] font-bold text-gray-900">{formatThaiDate(booking.createdAt)}</span>
+          </div>
         </div>
 
         {/* Car details */}
@@ -106,13 +118,43 @@ export default function BookingViewPage() {
           ))}
         </div>
 
+        {/* ศูนย์บริการ */}
+        <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+          <h3 className="text-[13px] font-extrabold text-gray-900 mb-3">ศูนย์บริการ</h3>
+          <div className="flex justify-between py-2 text-[12px]">
+            <span className="text-gray-500">สาขา</span>
+            <span className="text-gray-900 font-bold">{booking.customerInfo?.selectedCenter || 'วรจักร์ยนต์ สาขาลาดพร้าว'}</span>
+          </div>
+        </div>
+
         {/* Customer */}
         <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
           <h3 className="text-[13px] font-extrabold text-gray-900 mb-3">ลูกค้า</h3>
-          <div className="flex justify-between py-2 text-[12px]">
-            <span className="text-gray-500">ชื่อ</span>
-            <span className="text-gray-900 font-bold">{booking.customerName || booking.customerInfo?.name || '-'}</span>
-          </div>
+          {[
+            ['ชื่อ', booking.customerName || booking.customerInfo?.name || '-'],
+            ['โทร', booking.customerPhone || booking.customerInfo?.phone || '-'],
+            ['อีเมล', booking.customerEmail || booking.customerInfo?.email || '-'],
+          ].map(([label, value]) => (
+            <div key={label} className="flex justify-between py-2 border-b border-gray-100 last:border-b-0 text-[12px]">
+              <span className="text-gray-500">{label}</span>
+              <span className="text-gray-900 font-bold">{value}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* พนักงานขาย */}
+        <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+          <h3 className="text-[13px] font-extrabold text-gray-900 mb-3">พนักงานขาย</h3>
+          {[
+            ['ชื่อ', 'มาลี รักดี'],
+            ['โทร', '081-234-5678'],
+            ['อีเมล', 'malee@vorachak.co.th'],
+          ].map(([label, value]) => (
+            <div key={label} className="flex justify-between py-2 border-b border-gray-100 last:border-b-0 text-[12px]">
+              <span className="text-gray-500">{label}</span>
+              <span className="text-gray-900 font-bold">{value}</span>
+            </div>
+          ))}
         </div>
       </div>
 

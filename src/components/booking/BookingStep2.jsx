@@ -12,9 +12,9 @@ export default function BookingStep2() {
     []
   )
 
-  // QR data for Google Charts API
+  // QR data
   const qrData = `${refNumber} THB5000 VORACHAKYONT`
-  const qrUrl = `https://chart.googleapis.com/chart?cht=qr&chs=200x200&chl=${encodeURIComponent(qrData)}&choe=UTF-8`
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrData)}`
 
   // 15-minute countdown
   const { formatted, isExpired } = useCountdown(15 * 60)

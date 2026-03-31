@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import PageHeader from '../components/layout/PageHeader';
 import Icon from '../components/icons/Icon';
 import { useLeadStore } from '../stores/leadStore';
-import { useBookingStore } from '../stores/bookingStore';
 import { CARS } from '../lib/mockData';
 import { useVisibilityRefresh } from '../hooks/useVisibilityRefresh';
 
@@ -46,8 +45,6 @@ export default function LeadListPage() {
   const setSearch = useLeadStore((s) => s.setSearch);
   const getFilteredLeads = useLeadStore((s) => s.getFilteredLeads);
   const addActivity = useLeadStore((s) => s.addActivity);
-  const setCarId = useBookingStore((s) => s.setCarId);
-  const setLeadId = useBookingStore((s) => s.setLeadId);
 
   const leads = getFilteredLeads();
 
@@ -63,12 +60,6 @@ export default function LeadListPage() {
     addActivity(lead.id, { type: 'line', title: 'ส่ง LINE', description: 'ส่งข้อความ LINE ถึง ' + lead.name });
   };
 
-  const handleBook = (e, lead) => {
-    e.stopPropagation();
-    if (lead.car) setCarId(lead.car);
-    setLeadId(lead.id);
-    navigate('/booking');
-  };
 
   return (
     <div className="screen-enter flex flex-col h-full">
@@ -203,12 +194,6 @@ export default function LeadListPage() {
                       className="w-7 h-7 rounded-full flex items-center justify-center bg-emerald-50 text-emerald-600 active:opacity-60 cursor-pointer"
                     >
                       <Icon name="chat" size={12} />
-                    </span>
-                    <span
-                      onClick={(e) => handleBook(e, lead)}
-                      className="w-7 h-7 rounded-full flex items-center justify-center bg-blue-50 text-blue-600 active:opacity-60 cursor-pointer"
-                    >
-                      <Icon name="book" size={12} />
                     </span>
                   </div>
                 </button>
