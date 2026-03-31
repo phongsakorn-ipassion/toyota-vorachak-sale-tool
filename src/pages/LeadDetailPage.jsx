@@ -447,27 +447,8 @@ export default function LeadDetailPage() {
           /* Purchase lead level change pills */
           <div className="bg-white px-4 py-2 border-b border-border flex gap-2 overflow-x-auto">
             {isTerminal ? (
-              <div className="flex flex-col gap-2">
-                <div className="flex items-center gap-2">
-                  <span className={badgeClass}>{badgeInfo.label} (ถาวร)</span>
-                </div>
-                {statusNote && (
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => setShowStatusNote(!showStatusNote)}
-                      className="flex items-center gap-1 text-[10px] text-t3 hover:text-t1 cursor-pointer"
-                    >
-                      <Icon name="edit" size={10} />
-                      <span>{showStatusNote ? 'ซ่อนบันทึก' : 'ดูบันทึก'}</span>
-                      <Icon name="chevronDown" size={10} className={`transition-transform ${showStatusNote ? 'rotate-180' : ''}`} />
-                    </button>
-                  </div>
-                )}
-                {showStatusNote && statusNote && (
-                  <div className="bg-bg border border-border rounded-md p-2">
-                    <p className="text-[11px] text-t2">{statusNote}</p>
-                  </div>
-                )}
+              <div className="flex items-center gap-2">
+                <span className={badgeClass}>{badgeInfo.label} (ถาวร)</span>
               </div>
             ) : (
               levelButtons.map((lb) => (
