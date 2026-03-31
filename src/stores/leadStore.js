@@ -47,6 +47,7 @@ export const useLeadStore = create(persist((set, get) => ({
       leads: [newLead, ...state.leads],
     }));
     pushLead(newLead);
+    return newLead;
   },
 
   updateLead: (id, data, _readAt) => {

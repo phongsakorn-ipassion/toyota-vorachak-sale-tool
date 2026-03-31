@@ -31,6 +31,8 @@ export default function BookingPage() {
   const setCustomerInfo = useBookingStore((s) => s.setCustomerInfo);
   const reset = useBookingStore((s) => s.reset);
   const getLeadById = useLeadStore((s) => s.getLeadById);
+  const addLead = useLeadStore((s) => s.addLead);
+  const setLeadId = useBookingStore((s) => s.setLeadId);
   const addNotification = useUiStore((s) => s.addNotification);
 
   // Draft store for persistence
@@ -194,6 +196,31 @@ export default function BookingPage() {
 
   const goToStep4 = () => {
     if (timerRef.current) clearInterval(timerRef.current);
+
+    // If no lead exists (direct booking), create one from customer info
+    let effectiveLeadId = leadId;
+    if (!lead && formData.customerName) {
+      const newLead = addLead({
+        name: formData.customerName,
+        phone: formData.customerPhone,
+        email: formData.customerEmail,
+        lineId: formData.lineId,
+        province: formData.province,
+        serviceDate: formData.serviceDate,
+        serviceTime: formData.serviceTime,
+        serviceCenter: formData.selectedCenter,
+        source: formData.source || 'Walk-in',
+        level: 'hot',
+        car: carId,
+        selectedColor: formData.selectedColor,
+        notes: '',
+      });
+      if (newLead?.id) {
+        effectiveLeadId = newLead.id;
+        setLeadId(newLead.id);
+        addNotification({ title: 'ลีดใหม่', body: formData.customerName + ' — สร้างจากการจอง', type: 'lead_update' });
+      }
+    }
 
     // Save the booking with ALL data
     const result = saveBooking({
