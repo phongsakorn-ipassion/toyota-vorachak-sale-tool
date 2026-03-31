@@ -2,6 +2,22 @@
 // Mock data matching Toyota-SaleTool-Prototype-v5.html exactly
 // ============================================================================
 
+// SVG placeholder generator for reliable car images
+export function carPlaceholder(name, color) {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="640" height="480" viewBox="0 0 640 480"><rect width="640" height="480" fill="${color || '#f5f5f5'}"/><text x="320" y="200" text-anchor="middle" font-family="sans-serif" font-size="28" font-weight="bold" fill="#333">${name}</text><text x="320" y="240" text-anchor="middle" font-family="sans-serif" font-size="16" fill="#666">Toyota</text><path d="M180 320 Q220 280 260 300 L280 310 Q300 290 340 290 Q380 290 400 310 L420 300 Q460 280 500 320 L500 340 Q500 360 480 360 L200 360 Q180 360 180 340 Z" fill="#999" opacity="0.3"/><circle cx="240" cy="360" r="25" fill="#666"/><circle cx="240" cy="360" r="12" fill="#999"/><circle cx="440" cy="360" r="25" fill="#666"/><circle cx="440" cy="360" r="12" fill="#999"/></svg>`;
+  return `data:image/svg+xml,${encodeURIComponent(svg)}`;
+}
+
+// Unsplash free car images (CORS-friendly, reliable CDN)
+const CAR_IMAGES = {
+  corolla: 'https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?w=640&h=480&fit=crop',
+  yaris: 'https://images.unsplash.com/photo-1609521263047-f8f205293f24?w=640&h=480&fit=crop',
+  lc: 'https://images.unsplash.com/photo-1519641471654-76ce0107ad1b?w=640&h=480&fit=crop',
+  bz4x: 'https://images.unsplash.com/photo-1560958089-b8a1929cea89?w=640&h=480&fit=crop',
+  hilux: 'https://images.unsplash.com/photo-1559416523-140ddc3d238c?w=640&h=480&fit=crop',
+  gr86: 'https://images.unsplash.com/photo-1544636331-e26879cd4d9b?w=640&h=480&fit=crop',
+};
+
 export const CARS = {
   corolla: {
     id: 'corolla', name: 'Corolla Altis 2026', type: 'Sedan', cat: 'sedan',
@@ -10,12 +26,12 @@ export const CARS = {
     avail: 'In Stock', stock: '3 units — สาขาลาดพร้าว',
     warranty: '3 ปี / 100,000 กม.', eco: '23.3 km/L', bg: '#EEF2FF',
     shape: 'sedan',
-    img: 'https://tmna.aemassets.toyota.com/is/image/toyota/toyota_2025_camry_702_exterior_1?wid=640&hei=480&fmt=webp',
+    img: CAR_IMAGES.corolla,
     imgs: {
-      ext: 'https://tmna.aemassets.toyota.com/is/image/toyota/toyota_2025_camry_702_exterior_1?wid=640&hei=480&fmt=webp',
-      side: 'https://tmna.aemassets.toyota.com/is/image/toyota/toyota_2025_camry_702_exterior_2?wid=640&hei=480&fmt=webp',
-      rear: 'https://tmna.aemassets.toyota.com/is/image/toyota/toyota_2025_camry_702_exterior_3?wid=640&hei=480&fmt=webp',
-      int: 'https://tmna.aemassets.toyota.com/is/image/toyota/toyota_2025_camry_702_interior_1?wid=640&hei=480&fmt=webp',
+      ext: CAR_IMAGES.corolla,
+      side: CAR_IMAGES.corolla,
+      rear: CAR_IMAGES.corolla,
+      int: CAR_IMAGES.corolla,
     },
     video: 'suqtQAPxiBM',
     specs: {
@@ -32,12 +48,12 @@ export const CARS = {
     avail: 'In Transit', stock: 'คาดว่าถึง 2 สัปดาห์',
     warranty: '3 ปี / 100,000 กม.', eco: '30.2 km/L', bg: '#FEF3C7',
     shape: 'cross',
-    img: 'https://tmna.aemassets.toyota.com/is/image/toyota/toyota_2025_corollacross_702_exterior_1?wid=640&hei=480&fmt=webp',
+    img: CAR_IMAGES.yaris,
     imgs: {
-      ext: 'https://tmna.aemassets.toyota.com/is/image/toyota/toyota_2025_corollacross_702_exterior_1?wid=640&hei=480&fmt=webp',
-      side: 'https://tmna.aemassets.toyota.com/is/image/toyota/toyota_2025_corollacross_702_exterior_2?wid=640&hei=480&fmt=webp',
-      rear: 'https://tmna.aemassets.toyota.com/is/image/toyota/toyota_2025_corollacross_702_exterior_3?wid=640&hei=480&fmt=webp',
-      int: 'https://tmna.aemassets.toyota.com/is/image/toyota/toyota_2025_corollacross_702_interior_1?wid=640&hei=480&fmt=webp',
+      ext: CAR_IMAGES.yaris,
+      side: CAR_IMAGES.yaris,
+      rear: CAR_IMAGES.yaris,
+      int: CAR_IMAGES.yaris,
     },
     video: 'Yj1YmRrAQao',
     specs: {
@@ -54,12 +70,12 @@ export const CARS = {
     avail: 'In Stock', stock: '1 unit — สาขาบางนา',
     warranty: '5 ปี / 150,000 กม.', eco: '12.5 km/L', bg: '#FEE2E2',
     shape: 'suv',
-    img: 'https://tmna.aemassets.toyota.com/is/image/toyota/toyota_2024_landcruiser_702_exterior_1?wid=640&hei=480&fmt=webp',
+    img: CAR_IMAGES.lc,
     imgs: {
-      ext: 'https://tmna.aemassets.toyota.com/is/image/toyota/toyota_2024_landcruiser_702_exterior_1?wid=640&hei=480&fmt=webp',
-      side: 'https://tmna.aemassets.toyota.com/is/image/toyota/toyota_2024_landcruiser_702_exterior_2?wid=640&hei=480&fmt=webp',
-      rear: 'https://tmna.aemassets.toyota.com/is/image/toyota/toyota_2024_landcruiser_702_exterior_3?wid=640&hei=480&fmt=webp',
-      int: 'https://tmna.aemassets.toyota.com/is/image/toyota/toyota_2024_landcruiser_702_interior_1?wid=640&hei=480&fmt=webp',
+      ext: CAR_IMAGES.lc,
+      side: CAR_IMAGES.lc,
+      rear: CAR_IMAGES.lc,
+      int: CAR_IMAGES.lc,
     },
     video: 'ZE6MkxVRKXM',
     specs: {
@@ -76,12 +92,12 @@ export const CARS = {
     avail: 'In Stock', stock: '2 units — สาขาลาดพร้าว',
     warranty: '5 ปี / 150,000 กม.', eco: '6.2 km/kWh', bg: '#DBEAFE',
     shape: 'ev',
-    img: 'https://tmna.aemassets.toyota.com/is/image/toyota/toyota_2024_bz4x_702_exterior_1?wid=640&hei=480&fmt=webp',
+    img: CAR_IMAGES.bz4x,
     imgs: {
-      ext: 'https://tmna.aemassets.toyota.com/is/image/toyota/toyota_2024_bz4x_702_exterior_1?wid=640&hei=480&fmt=webp',
-      side: 'https://tmna.aemassets.toyota.com/is/image/toyota/toyota_2024_bz4x_702_exterior_2?wid=640&hei=480&fmt=webp',
-      rear: 'https://tmna.aemassets.toyota.com/is/image/toyota/toyota_2024_bz4x_702_exterior_3?wid=640&hei=480&fmt=webp',
-      int: 'https://tmna.aemassets.toyota.com/is/image/toyota/toyota_2024_bz4x_702_interior_1?wid=640&hei=480&fmt=webp',
+      ext: CAR_IMAGES.bz4x,
+      side: CAR_IMAGES.bz4x,
+      rear: CAR_IMAGES.bz4x,
+      int: CAR_IMAGES.bz4x,
     },
     video: 'Yj1YmRrAQao',
     specs: {
@@ -98,12 +114,12 @@ export const CARS = {
     avail: 'In Stock', stock: '5 units — หลายสาขา',
     warranty: '3 ปี / 100,000 กม.', eco: '11.6 km/L', bg: '#F0FDF4',
     shape: 'pickup',
-    img: 'https://tmna.aemassets.toyota.com/is/image/toyota/toyota_2024_tacoma_702_exterior_1?wid=640&hei=480&fmt=webp',
+    img: CAR_IMAGES.hilux,
     imgs: {
-      ext: 'https://tmna.aemassets.toyota.com/is/image/toyota/toyota_2024_tacoma_702_exterior_1?wid=640&hei=480&fmt=webp',
-      side: 'https://tmna.aemassets.toyota.com/is/image/toyota/toyota_2024_tacoma_702_exterior_2?wid=640&hei=480&fmt=webp',
-      rear: 'https://tmna.aemassets.toyota.com/is/image/toyota/toyota_2024_tacoma_702_exterior_3?wid=640&hei=480&fmt=webp',
-      int: 'https://tmna.aemassets.toyota.com/is/image/toyota/toyota_2024_tacoma_702_interior_1?wid=640&hei=480&fmt=webp',
+      ext: CAR_IMAGES.hilux,
+      side: CAR_IMAGES.hilux,
+      rear: CAR_IMAGES.hilux,
+      int: CAR_IMAGES.hilux,
     },
     video: 'suqtQAPxiBM',
     specs: {
@@ -120,12 +136,12 @@ export const CARS = {
     avail: 'In Stock', stock: '1 unit — Limited Edition',
     warranty: '3 ปี / 100,000 กม.', eco: '12.0 km/L', bg: '#FDF2F8',
     shape: 'sport',
-    img: 'https://tmna.aemassets.toyota.com/is/image/toyota/toyota_2024_gr86_702_exterior_1?wid=640&hei=480&fmt=webp',
+    img: CAR_IMAGES.gr86,
     imgs: {
-      ext: 'https://tmna.aemassets.toyota.com/is/image/toyota/toyota_2024_gr86_702_exterior_1?wid=640&hei=480&fmt=webp',
-      side: 'https://tmna.aemassets.toyota.com/is/image/toyota/toyota_2024_gr86_702_exterior_2?wid=640&hei=480&fmt=webp',
-      rear: 'https://tmna.aemassets.toyota.com/is/image/toyota/toyota_2024_gr86_702_exterior_3?wid=640&hei=480&fmt=webp',
-      int: 'https://tmna.aemassets.toyota.com/is/image/toyota/toyota_2024_gr86_702_interior_1?wid=640&hei=480&fmt=webp',
+      ext: CAR_IMAGES.gr86,
+      side: CAR_IMAGES.gr86,
+      rear: CAR_IMAGES.gr86,
+      int: CAR_IMAGES.gr86,
     },
     video: 'ZE6MkxVRKXM',
     specs: {
