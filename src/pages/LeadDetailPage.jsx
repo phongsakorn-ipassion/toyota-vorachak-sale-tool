@@ -425,9 +425,14 @@ export default function LeadDetailPage() {
                 </button>
               </div>
             )}
-            {lead.level === 'completed' && (
+            {lead.level === 'completed' && !lead.convertedTo && (
               <button onClick={handleConvertToCustomer} className="w-full py-2.5 rounded-lg text-[12px] font-bold text-center cursor-pointer bg-primary text-white active:opacity-70">
                 <span className="flex items-center justify-center gap-1"><Icon name="users" size={14} /> แปลงเป็นลูกค้า</span>
+              </button>
+            )}
+            {lead.level === 'completed' && lead.convertedTo && (
+              <button onClick={() => navigate(`/lead/${lead.convertedTo}`)} className="w-full py-2.5 rounded-lg text-[12px] font-bold text-center cursor-pointer bg-blue-50 text-blue-600 border border-blue-200 active:opacity-70">
+                <span className="flex items-center justify-center gap-1"><Icon name="users" size={14} /> แปลงเป็นลูกค้าแล้ว — ดูรายละเอียด</span>
               </button>
             )}
             {(lead.level === 'cancelled' || lead.level === 'no_show') && (
@@ -484,11 +489,11 @@ export default function LeadDetailPage() {
         )}
 
         {/* Status Change Notes */}
-        {lead.activities?.filter(a => a.type === 'status_change').length > 0 && (
+        {lead.activities?.filter(a => a.type === 'status_change' || a.type === 'won' || a.type === 'lost').length > 0 && (
           <div className="px-4 pt-3">
             <div className="card-base">
               <div className="card-hd"><span className="card-title">บันทึกการเปลี่ยนสถานะ</span></div>
-              {lead.activities.filter(a => a.type === 'status_change').map(a => (
+              {lead.activities.filter(a => a.type === 'status_change' || a.type === 'won' || a.type === 'lost').map(a => (
                 <div key={a.id} className="py-2 border-b border-gray-100 last:border-b-0">
                   <p className="text-[11px] text-t3">{a.title}</p>
                   {a.description && <p className="text-[12px] text-t1 mt-1">{a.description}</p>}

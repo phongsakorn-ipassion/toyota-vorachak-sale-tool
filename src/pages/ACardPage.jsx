@@ -24,6 +24,7 @@ export default function ACardPage() {
   const [searchParams] = useSearchParams();
   const editId = searchParams.get('edit');
   const typeParam = searchParams.get('type');
+  const carIdParam = searchParams.get('carId');
 
   const addLead = useLeadStore((s) => s.addLead);
   const updateLead = useLeadStore((s) => s.updateLead);
@@ -73,6 +74,15 @@ export default function ACardPage() {
       setFormType(typeParam);
     }
   }, [typeParam]);
+
+  // Pre-fill car from carId URL param (e.g., from Vehicle Detail page)
+  useEffect(() => {
+    if (carIdParam && CARS[carIdParam]) {
+      const car = CARS[carIdParam];
+      setModel(carIdParam);
+      setCarType(car.cat || 'all');
+    }
+  }, [carIdParam]);
 
   // Load lead data for edit mode
   useEffect(() => {

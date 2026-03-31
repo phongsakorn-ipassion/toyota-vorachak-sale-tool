@@ -193,7 +193,7 @@ export default function CarDetailPage() {
               <button onClick={handleCalc} className="rounded-xl border-2 border-primary text-primary bg-white py-3 px-4 font-bold flex items-center justify-center gap-2 cursor-pointer text-[13px] hover:bg-green-50 transition-colors"><Icon name="calc" size={16} /> คำนวณผ่อน</button>
               <button onClick={handleBook} className="rounded-xl bg-primary text-white py-3 px-4 font-bold flex items-center justify-center gap-2 cursor-pointer text-[13px] hover:bg-primary/90 transition-colors"><Icon name="book" size={16} /> จองรถ / Book Now</button>
               <button
-                onClick={() => { setCarId(id); navigate('/acard?type=test_drive'); }}
+                onClick={() => { setCarId(id); navigate(`/acard?type=test_drive&carId=${id}`); }}
                 className="rounded-xl border-2 border-blue-500 text-blue-500 bg-white py-3 px-4 font-bold flex items-center justify-center gap-2 cursor-pointer text-[13px] hover:bg-blue-50 transition-colors"
               >
                 <Icon name="steering" size={16} /> ทดลองขับ
