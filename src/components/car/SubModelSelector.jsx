@@ -7,7 +7,10 @@ export default function SubModelSelector({ subModels, selectedGrade, onSelectGra
 
   return (
     <div className="overflow-x-auto scrollbar-hide -mx-4 px-4 pb-2">
-      <div className="flex gap-3 snap-x snap-mandatory" style={{ minWidth: 'min-content' }}>
+      <div
+        className={`flex gap-2 pb-1 ${subModels.length <= 2 ? 'justify-center' : ''}`}
+        style={{ scrollSnapType: 'x mandatory', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none' }}
+      >
         {subModels.map((grade) => {
           const isSelected = selectedGrade === grade.id
           const fc = GRADE_FEATURE_CLASSES[grade.featureClass] || GRADE_FEATURE_CLASSES.standard
@@ -24,12 +27,17 @@ export default function SubModelSelector({ subModels, selectedGrade, onSelectGra
               key={grade.id}
               onClick={() => onSelectGrade(grade.id)}
               className={`
-                snap-start flex-shrink-0 w-[200px] rounded-xl border-2 p-4 text-left transition-all relative
+                snap-start flex-shrink-0 rounded-xl border-2 p-4 text-left transition-all relative
                 ${isSelected
                   ? 'border-green-500 bg-green-50 shadow-md'
                   : 'border-gray-200 bg-white hover:border-gray-300'
                 }
               `}
+              style={{
+                scrollSnapAlign: 'start',
+                width: subModels.length <= 2 ? 'calc(50% - 4px)' : '160px',
+                minWidth: '140px',
+              }}
             >
               {/* Check icon */}
               {isSelected && (
