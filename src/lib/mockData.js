@@ -10,12 +10,12 @@ export function carPlaceholder(name, color) {
 
 // Unsplash free car images (CORS-friendly, reliable CDN)
 const CAR_IMAGES = {
-  corolla: 'https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?w=640&h=480&fit=crop',
-  yaris: 'https://images.unsplash.com/photo-1609521263047-f8f205293f24?w=640&h=480&fit=crop',
-  lc: 'https://images.unsplash.com/photo-1519641471654-76ce0107ad1b?w=640&h=480&fit=crop',
-  bz4x: 'https://images.unsplash.com/photo-1560958089-b8a1929cea89?w=640&h=480&fit=crop',
-  hilux: 'https://images.unsplash.com/photo-1559416523-140ddc3d238c?w=640&h=480&fit=crop',
-  gr86: 'https://images.unsplash.com/photo-1544636331-e26879cd4d9b?w=640&h=480&fit=crop',
+  corolla: 'https://toyotavorachakyont.com/image/model/COROLLA%20ALTIS/line-up/HEV%20Premium_HEV%20Premium%20Cement%20Gray%20Metallic.webp',
+  yaris: 'https://toyotavorachakyont.com/image/model/YARIS%20CROSS/line-up/HEV%20Premium%20Luxury_HEV%20Premium%20Luxury_Platinum%20White%20Pearl.webp',
+  lc: 'https://toyotavorachakyont.com/image/model/Land%20Cruiser%20FJ/line-up/Land%20Cruiser%20FJ%204WD%202.7_Land%20Cruiser_FJ_4WD_2.7_Platinum%20White%20Pearl%20Mica.webp',
+  bz4x: 'https://toyotavorachakyont.com/image/model/bZ4X/line-up/FWD_FWD_Platinum%20White%20Pearl%20Black%20Roof.webp',
+  hilux: 'https://toyotavorachakyont.com/image/model/HILUX%20REVO%20Z%20EDITION/line-up/Double%20Cab%20Z%20Edition%204x2%202.4%20Mid%20AT_Double%20Cab%20Z%20Edition%204x2%202.4%20Mid%20AT_Super%20White.webp',
+  gr86: 'https://toyotavorachakyont.com/image/model/GR%2086/line-up/GR%2086_gr86_Crystal%20White%20Pearl.webp',
 };
 
 export const CARS = {
@@ -28,10 +28,10 @@ export const CARS = {
     shape: 'sedan',
     img: CAR_IMAGES.corolla,
     imgs: {
-      ext: CAR_IMAGES.corolla,
-      side: CAR_IMAGES.corolla,
-      rear: CAR_IMAGES.corolla,
-      int: CAR_IMAGES.corolla,
+      ext: 'https://toyotavorachakyont.com/image/model/COROLLA%20ALTIS/Exterior/1773043306_Exterior_1.webp',
+      side: 'https://toyotavorachakyont.com/image/model/COROLLA%20ALTIS/Exterior/1773043306_Exterior_2.webp',
+      rear: 'https://toyotavorachakyont.com/image/model/COROLLA%20ALTIS/Performance/1773043320_Performance_1.webp',
+      int: 'https://toyotavorachakyont.com/image/model/COROLLA%20ALTIS/Interior/1773043306_Interior_1.webp',
     },
     video: 'suqtQAPxiBM',
     subModels: [
@@ -55,10 +55,10 @@ export const CARS = {
     shape: 'cross',
     img: CAR_IMAGES.yaris,
     imgs: {
-      ext: CAR_IMAGES.yaris,
-      side: CAR_IMAGES.yaris,
-      rear: CAR_IMAGES.yaris,
-      int: CAR_IMAGES.yaris,
+      ext: 'https://toyotavorachakyont.com/image/model/YARIS%20CROSS/Exterior/1756715306_Exterior_1.webp',
+      side: 'https://toyotavorachakyont.com/image/model/YARIS%20CROSS/Exterior/1756715306_Exterior_2.webp',
+      rear: 'https://toyotavorachakyont.com/image/model/YARIS%20CROSS/Performance/1756715319_Performance_1.webp',
+      int: 'https://toyotavorachakyont.com/image/model/YARIS%20CROSS/Interior/1756715312_Interior_1.webp',
     },
     video: 'Yj1YmRrAQao',
     subModels: [
@@ -82,10 +82,10 @@ export const CARS = {
     shape: 'suv',
     img: CAR_IMAGES.lc,
     imgs: {
-      ext: CAR_IMAGES.lc,
-      side: CAR_IMAGES.lc,
-      rear: CAR_IMAGES.lc,
-      int: CAR_IMAGES.lc,
+      ext: 'https://toyotavorachakyont.com/image/model/Land%20Cruiser%20FJ/Exterior/1774247695_Exterior_landcruiser_fj_1.webp',
+      side: 'https://toyotavorachakyont.com/image/model/Land%20Cruiser%20FJ/Exterior/1774247695_Exterior_landcruiser_fj_2.webp',
+      rear: 'https://toyotavorachakyont.com/image/model/Land%20Cruiser%20FJ/Performance/1774247710_Performance_landcruiser_fj_1.webp',
+      int: 'https://toyotavorachakyont.com/image/model/Land%20Cruiser%20FJ/Interior/1774247695_Interior_landcruiser_fj_1.webp',
     },
     video: 'ZE6MkxVRKXM',
     subModels: [
@@ -108,10 +108,10 @@ export const CARS = {
     shape: 'ev',
     img: CAR_IMAGES.bz4x,
     imgs: {
-      ext: CAR_IMAGES.bz4x,
-      side: CAR_IMAGES.bz4x,
-      rear: CAR_IMAGES.bz4x,
-      int: CAR_IMAGES.bz4x,
+      ext: 'https://toyotavorachakyont.com/image/model/bZ4X/Exterior/1762506378_Exterior_1.webp',
+      side: 'https://toyotavorachakyont.com/image/model/bZ4X/Exterior/1762506378_Exterior_2.webp',
+      rear: 'https://toyotavorachakyont.com/image/model/bZ4X/Performance/1762506391_Performance_1.webp',
+      int: 'https://toyotavorachakyont.com/image/model/bZ4X/Interior/1762506384_Interior_1.webp',
     },
     video: 'Yj1YmRrAQao',
     subModels: [
@@ -134,10 +134,10 @@ export const CARS = {
     shape: 'pickup',
     img: CAR_IMAGES.hilux,
     imgs: {
-      ext: CAR_IMAGES.hilux,
-      side: CAR_IMAGES.hilux,
-      rear: CAR_IMAGES.hilux,
-      int: CAR_IMAGES.hilux,
+      ext: 'https://toyotavorachakyont.com/image/model/HILUX%20REVO%20Z%20EDITION/Exterior/1757491530_Exterior_double_1.webp',
+      side: 'https://toyotavorachakyont.com/image/model/HILUX%20REVO%20Z%20EDITION/Exterior/1757491530_Exterior_double_2.webp',
+      rear: 'https://toyotavorachakyont.com/image/model/HILUX%20REVO%20Z%20EDITION/Engine/1757491561_Engine_double_1.webp',
+      int: 'https://toyotavorachakyont.com/image/model/HILUX%20REVO%20Z%20EDITION/Utility/1757491538_Utility_double_1.webp',
     },
     video: 'suqtQAPxiBM',
     subModels: [
@@ -161,10 +161,10 @@ export const CARS = {
     shape: 'sport',
     img: CAR_IMAGES.gr86,
     imgs: {
-      ext: CAR_IMAGES.gr86,
-      side: CAR_IMAGES.gr86,
-      rear: CAR_IMAGES.gr86,
-      int: CAR_IMAGES.gr86,
+      ext: 'https://toyotavorachakyont.com/image/model/GR%2086/Exterior/1758609881_Exterior_1.webp',
+      side: 'https://toyotavorachakyont.com/image/model/GR%2086/Exterior/1758609881_Exterior_2.webp',
+      rear: 'https://toyotavorachakyont.com/image/model/GR%2086/Performance/1758609893_Performance_1.webp',
+      int: 'https://toyotavorachakyont.com/image/model/GR%2086/Interior/1758609887_Interior_1.webp',
     },
     video: 'ZE6MkxVRKXM',
     subModels: [
