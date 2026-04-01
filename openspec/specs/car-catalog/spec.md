@@ -759,7 +759,64 @@ The following items are **out of scope** for v1.0 and deferred to future release
 
 ---
 
-**Spec Version:** 2.0
-**Last Updated:** 2026-03-30
+## IMPLEMENTED: Sub-Model / Grade Hierarchy (Sprint 5)
+
+### Sub-Model Data Structure
+Each car may have a `subModels` array representing trim levels / grades:
+
+```javascript
+subModels: [
+  {
+    id: string,           // unique grade ID (e.g., "corolla-smart")
+    name: string,         // display name (e.g., "Smart 1.8")
+    price: number,        // THB price for this grade
+    stock: string,        // optional stock info override
+    specDiffs: {          // optional spec overrides vs base model
+      fuel: string,
+      seats: number,
+      gearbox: string,
+      power: string,
+    },
+  },
+  // ... more grades
+]
+```
+
+### Grade Compare Modal
+- `GradeCompareModal` component shows side-by-side comparison of all grades for a car
+- Accessible via "เปรียบเทียบรุ่นย่อย / Compare Grades" button on CarDetailPage
+- Displays price, key specs, and differences between grades
+
+### SubModelSelector Component
+- Horizontal scrollable card selector below the car info bar on CarDetailPage
+- Each card shows grade name and price
+- Selected grade updates: displayed price, stock info, and quick specs
+- Falls back to car.price if no grades exist
+
+### Flow: Model -> Grade -> Color -> Price
+1. User browses catalog (CatalogPage shows "เริ่มต้น" starting price via `getStartingPrice()`)
+2. User opens CarDetailPage, selects a grade from SubModelSelector
+3. Price, specs, and stock update to reflect the selected grade
+4. User proceeds to calculator or booking; grade selection carries through via bookingStore.selectedGrade
+5. ACardPage includes sub-model dropdown for lead creation/edit
+6. BookingPage Step 2 shows grade name and uses grade price for calculations
+7. BookingViewPage displays grade name if present
+8. LeadDetailPage, PipelinePage, SalesDashboard show grade info on lead/card displays
+
+### Pages Integrated
+- **CarDetailPage**: SubModelSelector, GradeCompareModal, grade-aware price/specs/stock
+- **CatalogPage**: Starting price display via `getStartingPrice()`
+- **PaymentCalcPage**: Uses grade price for calculations, shows grade name
+- **ACardPage**: Sub-model dropdown in model selection for both purchase and test drive
+- **BookingPage**: Grade row in Step 2 confirm, grade price for finance calculations
+- **BookingViewPage**: Grade name row in booking details
+- **LeadDetailPage**: Grade name in car interest card
+- **PipelinePage**: Grade name on pipeline cards
+- **SalesDashboard**: Grade name on hot lead carousel cards
+
+---
+
+**Spec Version:** 3.0
+**Last Updated:** 2026-04-01
 **Status:** Implemented
 

@@ -30,6 +30,12 @@ export const DEFAULT_INTEREST_RATE = 2.49
 export const DOWN_PAYMENT_OPTIONS = [5, 10, 15, 20, 25]
 export const LOAN_TERM_RANGE = { min: 12, max: 84, step: 12, default: 48 }
 
+export const GRADE_FEATURE_CLASSES = {
+  standard: { label: 'มาตรฐาน', bg: '#F3F4F6', color: '#6B7280' },
+  mid: { label: 'อัพเกรด', bg: '#EFF6FF', color: '#3B82F6' },
+  top: { label: 'ท็อป', bg: '#FDF4FF', color: '#A855F7' },
+};
+
 export const LEAD_SOURCES = ['Walk-in', 'LINE OA', 'Facebook', 'Instagram', 'Event', 'Referral']
 
 export const LEAD_TYPES = {

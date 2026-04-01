@@ -708,7 +708,7 @@ export default function LeadDetailPage() {
                   <img src={car.img} alt={car.name} className="w-full h-full object-cover" onError={(e) => { e.target.style.display = 'none'; e.target.parentElement.innerHTML = '<div class="flex items-center justify-center w-full h-full text-t3"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 17h1m12 0h1M6 17H3V12l2.5-5h13L21 12v5h-3M6 17a2 2 0 104 0m4 0a2 2 0 104 0"/></svg></div>'; }} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-[14px] font-extrabold text-t1">{car.name}</p>
+                  <p className="text-[14px] font-extrabold text-t1">{car.name}{lead.selectedGrade && <span className="text-[10px] text-t3"> · {car?.subModels?.find(g => g.id === lead.selectedGrade)?.name || lead.selectedGrade}</span>}</p>
                   <p className="text-[11px] text-t2">{car.type} · {car.priceLabel}</p>
                   {lead.selectedColor && (
                     <div className="flex items-center gap-1.5 mt-1">

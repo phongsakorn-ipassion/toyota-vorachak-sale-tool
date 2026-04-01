@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Icon from '../components/icons/Icon';
 import InlineCalculator from '../components/car/InlineCalculator';
 import { CARS, COLOR_OPTIONS } from '../lib/mockData';
+import { formatNumber } from '../lib/formats';
 import { useBookingStore } from '../stores/bookingStore';
 import { useVisibilityRefresh } from '../hooks/useVisibilityRefresh';
 
@@ -14,12 +15,15 @@ export default function PaymentCalcPage() {
   const bkCarId = useBookingStore((s) => s.carId);
   const setCarIdStore = useBookingStore((s) => s.setCarId);
   const selectedColor = useBookingStore((s) => s.selectedColor) || 'Pearl White';
+  const selectedGradeId = useBookingStore((s) => s.selectedGrade);
   const setDownPayment = useBookingStore((s) => s.setDownPayment);
   const setInterestRate = useBookingStore((s) => s.setInterestRate);
   const setLoanTermMonths = useBookingStore((s) => s.setLoanTermMonths);
   const setLeadId = useBookingStore((s) => s.setLeadId);
 
   const car = bkCarId ? CARS[bkCarId] : CARS.corolla;
+  const grade = car?.subModels?.find(g => g.id === selectedGradeId);
+  const calcPrice = grade?.price || car?.price || 0;
 
   const colorObj = COLOR_OPTIONS.find(c => c.name === selectedColor);
 
@@ -58,6 +62,7 @@ export default function PaymentCalcPage() {
             </div>
             <div className="flex-1">
               <p className="text-[14px] font-extrabold text-t1">{car.name}</p>
+              {grade && <p className="text-[11px] text-t3 mt-[1px]">{grade.name}</p>}
               <div className="flex items-center gap-1 text-[11px] text-t2">
                 <span>{car.type} · {car.fuel}</span>
                 {selectedColor && (
@@ -74,7 +79,7 @@ export default function PaymentCalcPage() {
                   </>
                 )}
               </div>
-              <p className="text-[13px] font-extrabold text-primary mt-[2px]">{car.priceLabel}</p>
+              <p className="text-[13px] font-extrabold text-primary mt-[2px]">฿{formatNumber(calcPrice)}</p>
             </div>
           </div>
         )}
@@ -82,7 +87,7 @@ export default function PaymentCalcPage() {
         {/* Calculator */}
         <div className="card-base">
           <div className="card-hd"><span className="card-title">คำนวณสินเชื่อ / Calculate Installment</span></div>
-          <InlineCalculator carPrice={car.price} carName={car.name} onValuesChange={handleCalcValuesChange} />
+          <InlineCalculator carPrice={calcPrice} carName={car.name} onValuesChange={handleCalcValuesChange} />
         </div>
 
         {/* Actions */}

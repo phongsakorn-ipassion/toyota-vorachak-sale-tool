@@ -268,6 +268,9 @@ export default function SalesDashboard() {
                     <div className="p-[12px]">
                       <p className="text-[15px] font-extrabold text-t1">{hl.name}</p>
                       <p className="text-[11px] text-t2 mt-[2px] flex items-center gap-1"><Icon name="walk" size={11} /> {hl.source || 'Walk-in'}</p>
+                      {hlCar && hl.selectedGrade && (
+                        <p className="text-[10px] text-t3 mt-[1px]">{hlCar.subModels?.find(g => g.id === hl.selectedGrade)?.name || ''}</p>
+                      )}
                       <div className="flex items-center justify-between mt-[8px]">
                         <span className="badge-hot">HOT</span>
                         <span className="text-[10px] text-t3">

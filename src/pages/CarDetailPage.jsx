@@ -1,7 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import Icon from '../components/icons/Icon';
+import SubModelSelector from '../components/car/SubModelSelector';
+import GradeCompareModal from '../components/car/GradeCompareModal';
 import { CARS, GALLERY_VIEWS, COLOR_OPTIONS } from '../lib/mockData';
+import { formatNumber } from '../lib/formats';
 import { useBookingStore } from '../stores/bookingStore';
 import { useCarStore } from '../stores/carStore';
 import { useVisibilityRefresh } from '../hooks/useVisibilityRefresh';
@@ -19,16 +22,28 @@ export default function CarDetailPage() {
   const [color, setColor] = useState(colorParam || 'Pearl White');
   const [openSpec, setOpenSpec] = useState('engine');
   const [showLightbox, setShowLightbox] = useState(false);
+  const [selectedGradeId, setSelectedGradeId] = useState(null);
+  const [showCompare, setShowCompare] = useState(false);
 
   const setCarId = useBookingStore((s) => s.setCarId);
   const setLeadId = useBookingStore((s) => s.setLeadId);
+  const setSelectedGradeStore = useBookingStore((s) => s.setSelectedGrade);
   const selectCar = useCarStore((s) => s.selectCar);
 
   useEffect(() => {
     if (id) selectCar(id);
   }, [id]);
 
+  useEffect(() => {
+    if (car?.subModels?.length > 0 && !selectedGradeId) {
+      setSelectedGradeId(car.subModels[0].id);
+    }
+  }, [car]);
+
   if (!car) return <div className="p-4 text-t2">Car not found</div>;
+
+  const selectedGrade = car?.subModels?.find(g => g.id === selectedGradeId) || car?.subModels?.[0];
+  const displayPrice = selectedGrade?.price || car?.price;
 
   const views = GALLERY_VIEWS;
   const currentView = views[galleryIdx];
@@ -37,11 +52,13 @@ export default function CarDetailPage() {
   const handleBook = () => {
     setCarId(id);
     setLeadId(null);
+    if (setSelectedGradeStore) setSelectedGradeStore(selectedGradeId);
     navigate('/booking');
   };
 
   const handleCalc = () => {
     setCarId(id);
+    if (setSelectedGradeStore) setSelectedGradeStore(selectedGradeId);
     navigate('/calc');
   };
 
@@ -94,9 +111,30 @@ export default function CarDetailPage() {
           <div className="flex gap-4 flex-wrap">
             <div><p className="text-[10px] text-t2 font-semibold">Model</p><p className="text-[15px] font-extrabold text-t1 leading-tight">{car.name}</p></div>
             <div><p className="text-[10px] text-t2 font-semibold">Type</p><p className="text-[15px] font-extrabold text-t1 leading-tight">{car.type}</p></div>
-            <div><p className="text-[10px] text-t2 font-semibold">Price</p><p className="text-[15px] font-extrabold text-primary">{car.priceLabel}</p></div>
+            <div><p className="text-[10px] text-t2 font-semibold">Price</p><p className="text-[15px] font-extrabold text-primary">฿{formatNumber(displayPrice)}</p>{selectedGrade && <p className="text-[10px] text-t3">{selectedGrade.name}</p>}</div>
           </div>
         </div>
+
+        {/* Sub-model / Grade selector */}
+        {car.subModels && car.subModels.length > 0 && (
+          <>
+            <div className="px-4 pt-3">
+              <div className="text-[14px] font-extrabold text-t1 mb-3 flex items-center gap-2">
+                <Icon name="star" size={14} /> รุ่นย่อย / LINE-UP
+              </div>
+              <SubModelSelector
+                subModels={car.subModels}
+                selectedGrade={selectedGradeId}
+                onSelectGrade={(gid) => { setSelectedGradeId(gid); }}
+              />
+            </div>
+            <div className="px-4 pt-2 pb-2">
+              <button onClick={() => setShowCompare(true)} className="w-full flex items-center justify-center gap-2 py-[10px] rounded-[10px] border-[1.5px] border-primary text-primary text-[12px] font-bold cursor-pointer hover:bg-primary-light transition-colors">
+                <Icon name="chart" size={14} /> เปรียบเทียบรุ่นย่อย / Compare Grades
+              </button>
+            </div>
+          </>
+        )}
 
         <div className="px-4 pt-4">
           {/* Advisory */}
@@ -122,7 +160,7 @@ export default function CarDetailPage() {
             <p className={`inline-flex items-center gap-[5px] text-[11px] font-bold mb-3 ${car.avail === 'In Stock' ? 'text-avail' : 'text-transit'}`}>
               <span className="w-[7px] h-[7px] rounded-full" style={{ background: 'currentColor' }} /> {car.avail}
             </p>
-            <p className="text-[11px] text-t2 mb-3">{car.stock}</p>
+            <p className="text-[11px] text-t2 mb-3">{selectedGrade?.stock || car.stock}</p>
             {[
               { icon: 'shield', label: 'ประกัน / Warranty', val: car.warranty },
               { icon: 'wrench', label: 'ฟรีเซอร์วิส / Free Service', val: '5 ครั้ง / 5 times' },
@@ -143,10 +181,10 @@ export default function CarDetailPage() {
             <div className="card-hd"><span className="card-title">Car Specifications</span></div>
             <div className="grid grid-cols-2 gap-[10px] mb-3">
               {[
-                { icon: 'fuel', label: 'Fuel', val: car.fuel },
-                { icon: 'seat', label: 'Capacity', val: `${car.seats} ที่นั่ง` },
-                { icon: 'gear', label: 'Gearbox', val: car.gearbox },
-                { icon: 'power', label: 'Power', val: car.power },
+                { icon: 'fuel', label: 'Fuel', val: selectedGrade?.specDiffs?.fuel || car.fuel },
+                { icon: 'seat', label: 'Capacity', val: `${selectedGrade?.specDiffs?.seats || car.seats} ที่นั่ง` },
+                { icon: 'gear', label: 'Gearbox', val: selectedGrade?.specDiffs?.gearbox || car.gearbox },
+                { icon: 'power', label: 'Power', val: selectedGrade?.specDiffs?.power || car.power },
               ].map(s => (
                 <div key={s.label} className="flex items-center gap-[10px] p-[10px] bg-bg rounded-md">
                   <span className="text-primary flex-shrink-0"><Icon name={s.icon} size={18} /></span>
@@ -195,7 +233,7 @@ export default function CarDetailPage() {
               <button onClick={handleCalc} className="rounded-xl border-2 border-primary text-primary bg-white py-3 px-4 font-bold flex items-center justify-center gap-2 cursor-pointer text-[13px] hover:bg-green-50 transition-colors"><Icon name="calc" size={16} /> คำนวณผ่อน</button>
               <button onClick={handleBook} className="rounded-xl bg-primary text-white py-3 px-4 font-bold flex items-center justify-center gap-2 cursor-pointer text-[13px] hover:bg-primary/90 transition-colors"><Icon name="book" size={16} /> จองรถ / Book Now</button>
               <button
-                onClick={() => { setCarId(id); navigate(`/acard?type=test_drive&carId=${id}`); }}
+                onClick={() => { setCarId(id); if (setSelectedGradeStore) setSelectedGradeStore(selectedGradeId); navigate(`/acard?type=test_drive&carId=${id}`); }}
                 className="rounded-xl border-2 border-blue-500 text-blue-500 bg-white py-3 px-4 font-bold flex items-center justify-center gap-2 cursor-pointer text-[13px] hover:bg-blue-50 transition-colors"
               >
                 <Icon name="steering" size={16} /> ทดลองขับ
@@ -204,6 +242,9 @@ export default function CarDetailPage() {
           )}
         </div>
       </div>
+
+      {/* Grade Compare Modal */}
+      <GradeCompareModal isOpen={showCompare} onClose={() => setShowCompare(false)} car={car} />
 
       {/* Fullscreen Lightbox */}
       {showLightbox && (

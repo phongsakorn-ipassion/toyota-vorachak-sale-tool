@@ -143,7 +143,10 @@ export default function PipelinePage() {
                   <div key={card.id} className={`bg-white border border-border rounded-md p-[11px] mb-2 relative ${isWon ? 'border-l-[3px] border-l-primary' : ''}`}>
                     <div onClick={() => navigate(`/lead/${card.id}`)} className="cursor-pointer">
                       <p className="text-[12px] font-bold text-t1 mb-[2px]">{card.name}</p>
-                      <p className="text-[11px] text-t2 mb-[6px]">{car ? car.name : 'N/A'}</p>
+                      <p className="text-[11px] text-t2 mb-[6px]">
+                        {car ? car.name : 'N/A'}
+                        {card.selectedGrade && car?.subModels && <span className="text-t3"> · {car.subModels.find(g => g.id === card.selectedGrade)?.name || ''}</span>}
+                      </p>
                       {isTestDrive && card.testDriveDate && (
                         <p className="text-[10px] text-t3 mb-[4px] flex items-center gap-1">
                           <Icon name="calendar" size={10} /> {card.testDriveDate} {card.testDriveTime && `${card.testDriveTime}`}

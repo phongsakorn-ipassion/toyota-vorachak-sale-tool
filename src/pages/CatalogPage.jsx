@@ -1,7 +1,8 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Icon from '../components/icons/Icon';
-import { CARS, CARS_LIST, MODEL_FILTERS } from '../lib/mockData';
+import { CARS, CARS_LIST, MODEL_FILTERS, getStartingPrice } from '../lib/mockData';
+import { formatNumber } from '../lib/formats';
 import { CAR_TYPES, BUDGET_RANGES } from '../lib/constants';
 import { useVisibilityRefresh } from '../hooks/useVisibilityRefresh';
 
@@ -114,7 +115,7 @@ export default function CatalogPage() {
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between mb-[2px]">
                 <span className="text-[14px] font-extrabold text-t1">{car.name}</span>
-                <span className="text-[13px] font-extrabold text-t1 whitespace-nowrap">{car.priceLabel} <span className="text-[10px] text-t2 font-medium"></span></span>
+                <span className="text-[13px] font-extrabold text-primary whitespace-nowrap">เริ่มต้น ฿{formatNumber(getStartingPrice(car))}</span>
               </div>
               <p className="text-[11px] text-t2 mb-[7px]">{car.type} · {car.fuel}</p>
               <div className="flex gap-[5px] flex-wrap">

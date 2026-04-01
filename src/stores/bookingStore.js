@@ -32,6 +32,7 @@ export const useBookingStore = create(persist((set, get) => ({
   loanTermMonths: 60, // alias for loanTerm
   interestRate: 2.79, // annual %
   selectedColor: 'Pearl White',
+  selectedGrade: null,
   deliveryDate: '',
 
   // ---------------------------------------------------------------------------
@@ -73,6 +74,8 @@ export const useBookingStore = create(persist((set, get) => ({
 
   setSelectedColor: (color) => set({ selectedColor: color }),
 
+  setSelectedGrade: (grade) => set({ selectedGrade: grade }),
+
   setDeliveryDate: (date) => set({ deliveryDate: date }),
 
   setLoanTermMonths: (months) => set({ loanTermMonths: months, loanTerm: months }),
@@ -93,6 +96,7 @@ export const useBookingStore = create(persist((set, get) => ({
       loanTermMonths: 60,
       interestRate: 2.79,
       selectedColor: 'Pearl White',
+      selectedGrade: null,
       deliveryDate: '',
     }),
 
@@ -252,5 +256,6 @@ export const useBookingStore = create(persist((set, get) => ({
     bookings: state.bookings,
     carId: state.carId,
     leadId: state.leadId,
+    selectedGrade: state.selectedGrade,
   }),
 }))

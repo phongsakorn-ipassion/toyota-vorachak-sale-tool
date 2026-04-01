@@ -34,6 +34,11 @@ export const CARS = {
       int: CAR_IMAGES.corolla,
     },
     video: 'suqtQAPxiBM',
+    subModels: [
+      { id: 'smart', name: 'Smart', price: 909000, keyFeature: 'มาตรฐาน', featureClass: 'standard', specDiffs: { wheels: '16" Alloy', seats: 'ผ้า', display: '7"', driverSeat: 'ปรับมือ 6 ทิศ', ac: '1 โซน', speakers: '6', driveModes: 'Eco / Normal' }, stock: '3 คัน · สาขาลาดพร้าว' },
+      { id: 'premium', name: 'Premium', price: 999000, keyFeature: 'หนังแท้ + จอใหญ่', featureClass: 'mid', specDiffs: { wheels: '17" Alloy', seats: 'หนังแท้', display: '9"', driverSeat: 'ไฟฟ้า 8 ทิศ', ac: '2 โซน', speakers: '8', driveModes: 'Eco / Normal / Sport' }, stock: '2 คัน · สาขาบางนา' },
+      { id: 'luxury', name: 'Premium Luxury', price: 1099000, keyFeature: 'ซันรูฟ + เบาะระบาย', featureClass: 'top', specDiffs: { wheels: '18" Alloy', seats: 'หนังแท้ระบายอากาศ', display: '12.3"', driverSeat: 'ไฟฟ้า 8 ทิศ + Memory', ac: '2 โซน + แอร์หลัง', speakers: '9 JBL', driveModes: 'Eco / Normal / Sport / Custom' }, stock: '1 คัน · สาขาลาดพร้าว' },
+    ],
     specs: {
       engine: [['เครื่องยนต์', '1.8L 4-Cylinder Hybrid'], ['แรงม้า', '140 hp @ 5,200 rpm'], ['แรงบิด', '177 Nm @ 3,600 rpm'], ['ระบบเกียร์', 'CVT อัตโนมัติ'], ['ระบบขับเคลื่อน', 'FWD'], ['อัตราสิ้นเปลือง', '23.3 km/L']],
       dim: [['ความยาว', '4,620 mm'], ['ความกว้าง', '1,780 mm'], ['ความสูง', '1,435 mm'], ['ฐานล้อ', '2,700 mm'], ['ความจุถังน้ำมัน', '50 L'], ['น้ำหนัก', '1,335 kg']],
@@ -56,6 +61,11 @@ export const CARS = {
       int: CAR_IMAGES.yaris,
     },
     video: 'Yj1YmRrAQao',
+    subModels: [
+      { id: 'sport', name: 'Sport', price: 799000, keyFeature: 'สปอร์ต', featureClass: 'standard', specDiffs: { wheels: '17" Alloy', seats: 'ผ้า', display: '7"', driverSeat: 'ปรับมือ 6 ทิศ', ac: '1 โซน', speakers: '6', driveModes: 'Eco / Normal' }, stock: '4 คัน · สาขาลาดพร้าว' },
+      { id: 'premium', name: 'Premium', price: 879000, keyFeature: 'หนังแท้ + BSM', featureClass: 'mid', specDiffs: { wheels: '17" Alloy', seats: 'หนังแท้', display: '9"', driverSeat: 'ไฟฟ้า 8 ทิศ', ac: '2 โซน', speakers: '8', driveModes: 'Eco / Normal / Sport' }, stock: '2 คัน · สาขาบางนา' },
+      { id: 'premium_safety', name: 'Premium Safety', price: 939000, keyFeature: 'กล้อง 360° + RCTA', featureClass: 'top', specDiffs: { wheels: '18" Two-Tone', seats: 'หนังแท้', display: '9"', driverSeat: 'ไฟฟ้า 8 ทิศ', ac: '2 โซน', speakers: '8', driveModes: 'Eco / Normal / Sport' }, stock: '1 คัน · สาขาอ่อนนุช' },
+    ],
     specs: {
       engine: [['เครื่องยนต์', '1.5L 3-Cylinder Hybrid'], ['แรงม้า', '116 hp'], ['แรงบิด', '145 Nm'], ['ระบบเกียร์', 'CVT'], ['ระบบขับเคลื่อน', 'FWD / AWD'], ['อัตราสิ้นเปลือง', '30.2 km/L']],
       dim: [['ความยาว', '4,180 mm'], ['ความกว้าง', '1,765 mm'], ['ความสูง', '1,560 mm'], ['ฐานล้อ', '2,560 mm'], ['ความจุถังน้ำมัน', '36 L'], ['น้ำหนัก', '1,190 kg']],
@@ -78,6 +88,10 @@ export const CARS = {
       int: CAR_IMAGES.lc,
     },
     video: 'ZE6MkxVRKXM',
+    subModels: [
+      { id: 'first_edition', name: 'First Edition', price: 1269000, keyFeature: 'มาตรฐาน', featureClass: 'standard', specDiffs: { wheels: '17" Alloy', seats: 'ผ้ากันน้ำ', display: '8"', driverSeat: 'ปรับมือ 8 ทิศ', ac: '2 โซน', speakers: '6', driveModes: 'Eco / Normal / Rock / Sand' }, stock: '2 คัน · สาขาลาดพร้าว' },
+      { id: 'premium', name: 'Premium', price: 1459000, keyFeature: 'หนัง + ซันรูฟ', featureClass: 'top', specDiffs: { wheels: '18" Alloy', seats: 'หนังแท้', display: '12.3"', driverSeat: 'ไฟฟ้า 8 ทิศ + Memory', ac: '3 โซน', speakers: '10 JBL', driveModes: 'Eco / Normal / Rock / Sand / Mud' }, stock: '1 คัน · สาขาบางนา' },
+    ],
     specs: {
       engine: [['เครื่องยนต์', '2.8L 4-Cylinder Turbo Diesel'], ['แรงม้า', '204 hp @ 3,000 rpm'], ['แรงบิด', '500 Nm @ 1,600 rpm'], ['ระบบเกียร์', '6-Speed Auto'], ['ระบบขับเคลื่อน', '4WD'], ['อัตราสิ้นเปลือง', '12.5 km/L']],
       dim: [['ความยาว', '4,925 mm'], ['ความกว้าง', '1,980 mm'], ['ความสูง', '1,935 mm'], ['ฐานล้อ', '2,850 mm'], ['ความจุถังน้ำมัน', '80 L'], ['น้ำหนัก', '2,490 kg']],
@@ -100,6 +114,10 @@ export const CARS = {
       int: CAR_IMAGES.bz4x,
     },
     video: 'Yj1YmRrAQao',
+    subModels: [
+      { id: 'e_motion', name: 'E-Motion', price: 1529000, keyFeature: 'FWD มาตรฐาน', featureClass: 'standard', specDiffs: { wheels: '18" Aero', seats: 'ผ้า', display: '12.3"', driverSeat: 'ไฟฟ้า 8 ทิศ', ac: '2 โซน', speakers: '6', driveModes: 'Eco / Normal' }, stock: '2 คัน · สาขาลาดพร้าว' },
+      { id: 'e_motion_plus', name: 'E-Motion Plus', price: 1739000, keyFeature: 'AWD + ซันรูฟ', featureClass: 'top', specDiffs: { wheels: '20" Aero', seats: 'หนังแท้', display: '12.3"', driverSeat: 'ไฟฟ้า 8 ทิศ + Memory', ac: '2 โซน', speakers: '9 JBL', driveModes: 'Eco / Normal / X-Mode' }, stock: '1 คัน · สาขาลาดพร้าว' },
+    ],
     specs: {
       engine: [['มอเตอร์', 'Dual Motor AWD'], ['แรงม้า', '218 hp'], ['แรงบิด', '337 Nm'], ['แบตเตอรี่', '71.4 kWh Lithium-ion'], ['ระยะทาง', '500 km (WLTP)'], ['ชาร์จเร็ว', 'DC 150kW (80% ใน 30 นาที)']],
       dim: [['ความยาว', '4,690 mm'], ['ความกว้าง', '1,860 mm'], ['ความสูง', '1,650 mm'], ['ฐานล้อ', '2,850 mm'], ['ความจุเก็บสัมภาระ', '452 L'], ['น้ำหนัก', '2,010 kg']],
@@ -122,6 +140,11 @@ export const CARS = {
       int: CAR_IMAGES.hilux,
     },
     video: 'suqtQAPxiBM',
+    subModels: [
+      { id: 'entry', name: 'Entry', price: 649000, keyFeature: 'ทำงาน', featureClass: 'standard', specDiffs: { wheels: '16" Steel', seats: 'ผ้า', display: '7"', driverSeat: 'ปรับมือ', ac: '1 โซน', speakers: '4', driveModes: 'Eco / Normal' }, stock: '5 คัน · สาขาลาดพร้าว' },
+      { id: 'mid', name: 'Mid', price: 759000, keyFeature: 'อัลลอย + ดีไซน์', featureClass: 'mid', specDiffs: { wheels: '17" Alloy', seats: 'ผ้า', display: '8"', driverSeat: 'ปรับมือ 6 ทิศ', ac: '1 โซน', speakers: '6', driveModes: 'Eco / Normal / Power' }, stock: '3 คัน · สาขาบางนา' },
+      { id: 'high', name: 'High', price: 879000, keyFeature: 'หนัง + Safety', featureClass: 'top', specDiffs: { wheels: '18" Alloy', seats: 'หนังแท้', display: '9"', driverSeat: 'ไฟฟ้า 8 ทิศ', ac: '2 โซน', speakers: '8', driveModes: 'Eco / Normal / Power / Sport' }, stock: '2 คัน · สาขาอ่อนนุช' },
+    ],
     specs: {
       engine: [['เครื่องยนต์', '2.8L 4-Cylinder Turbo Diesel'], ['แรงม้า', '204 hp @ 3,400 rpm'], ['แรงบิด', '500 Nm @ 1,600 rpm'], ['ระบบเกียร์', '6-Speed Auto / Manual'], ['ระบบขับเคลื่อน', '4WD'], ['อัตราสิ้นเปลือง', '11.6 km/L']],
       dim: [['ความยาว', '5,325 mm'], ['ความกว้าง', '1,855 mm'], ['ความสูง', '1,815 mm'], ['ฐานล้อ', '3,085 mm'], ['ความจุถังน้ำมัน', '80 L'], ['น้ำหนัก', '2,080 kg']],
@@ -144,6 +167,10 @@ export const CARS = {
       int: CAR_IMAGES.gr86,
     },
     video: 'ZE6MkxVRKXM',
+    subModels: [
+      { id: 'gr86', name: 'GR 86', price: 1899000, keyFeature: 'MT สปอร์ต', featureClass: 'standard', specDiffs: { wheels: '17" Alloy', seats: 'ผ้า/หนัง', display: '8"', driverSeat: 'Sport Bucket', ac: '1 โซน', speakers: '8', driveModes: 'Normal / Sport / Track' }, stock: '2 คัน · สาขาลาดพร้าว' },
+      { id: 'gr86_at', name: 'GR 86 AT', price: 1999000, keyFeature: 'AT + อุปกรณ์ครบ', featureClass: 'top', specDiffs: { wheels: '18" Alloy', seats: 'หนังแท้/Alcantara', display: '8"', driverSeat: 'Sport Bucket + ปรับไฟฟ้า', ac: '1 โซน', speakers: '8', driveModes: 'Normal / Sport / Track' }, stock: '1 คัน · สาขาลาดพร้าว' },
+    ],
     specs: {
       engine: [['เครื่องยนต์', '2.4L Flat-4 Boxer'], ['แรงม้า', '235 hp @ 7,000 rpm'], ['แรงบิด', '250 Nm @ 3,700 rpm'], ['ระบบเกียร์', '6-Speed Manual / Auto'], ['ระบบขับเคลื่อน', 'RWD'], ['อัตราสิ้นเปลือง', '12.0 km/L']],
       dim: [['ความยาว', '4,265 mm'], ['ความกว้าง', '1,775 mm'], ['ความสูง', '1,310 mm'], ['ฐานล้อ', '2,575 mm'], ['ความจุถังน้ำมัน', '50 L'], ['น้ำหนัก', '1,270 kg']],
@@ -344,4 +371,9 @@ export const AI_INSIGHTS = [
 export const DEMO_USERS = {
   sales: { id: 'demo-sales', email: 'malee.sales', name: 'มาลี', role: 'sales', init: 'ม' },
   mgr: { id: 'demo-mgr', email: 'manager', name: 'วิชัย', role: 'mgr', init: 'ว' },
+}
+
+export function getStartingPrice(car) {
+  if (!car.subModels || car.subModels.length === 0) return car.price;
+  return Math.min(...car.subModels.map(g => g.price));
 }

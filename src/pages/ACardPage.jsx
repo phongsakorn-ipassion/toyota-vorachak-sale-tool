@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import Icon from '../components/icons/Icon';
 import { CARS, CARS_LIST, LEAD_SOURCES, COLOR_OPTIONS } from '../lib/mockData';
 import { CAR_TYPES } from '../lib/constants';
+import { formatNumber } from '../lib/formats';
 import { THAI_PROVINCES, SERVICE_CENTERS } from '../lib/thaiProvinces';
 import { useLeadStore } from '../stores/leadStore';
 import { useUiStore } from '../stores/uiStore';
@@ -48,6 +49,7 @@ export default function ACardPage() {
   const [carType, setCarType] = useState('all');
   const [model, setModel] = useState('');
   const [selectedColor, setSelectedColor] = useState('');
+  const [selectedGrade, setSelectedGrade] = useState('');
   const [notes, setNotes] = useState('');
   const [errors, setErrors] = useState({});
 
@@ -99,6 +101,7 @@ export default function ACardPage() {
         setInterest(lead.level || 'hot');
         setModel(lead.car || '');
         setSelectedColor(lead.selectedColor || '');
+        setSelectedGrade(lead.selectedGrade || '');
         setNotes(lead.notes || '');
         setProvince(lead.province || '');
         setServiceDate(lead.serviceDate || '');
@@ -120,7 +123,7 @@ export default function ACardPage() {
       const d = draftStore.acardDraft;
       setName(d.name || ''); setPhone(d.phone || ''); setEmail(d.email || '');
       setLineId(d.lineId || ''); setSource(d.source || 'Walk-in'); setInterest(d.interest || 'hot');
-      setModel(d.model || ''); setSelectedColor(d.selectedColor || ''); setNotes(d.notes || '');
+      setModel(d.model || ''); setSelectedColor(d.selectedColor || ''); setSelectedGrade(d.selectedGrade || ''); setNotes(d.notes || '');
       setProvince(d.province || ''); setServiceDate(d.serviceDate || ''); setServiceTime(d.serviceTime || '');
       setSelectedCenter(d.selectedCenter || ''); setCarType(d.carType || 'all');
       setDriveDate(d.driveDate || ''); setDriveTime(d.driveTime || '');
@@ -131,10 +134,10 @@ export default function ACardPage() {
   useEffect(() => {
     if (editId) return;
     const timer = setTimeout(() => {
-      draftStore.setAcardDraft({ name, phone, email, lineId, source, interest, model, selectedColor, province, serviceDate, serviceTime, selectedCenter, notes, carType, driveDate, driveTime, formType });
+      draftStore.setAcardDraft({ name, phone, email, lineId, source, interest, model, selectedColor, selectedGrade, province, serviceDate, serviceTime, selectedCenter, notes, carType, driveDate, driveTime, formType });
     }, 500);
     return () => clearTimeout(timer);
-  }, [name, phone, email, lineId, source, interest, model, selectedColor, province, serviceDate, serviceTime, selectedCenter, notes, carType, driveDate, driveTime, formType]);
+  }, [name, phone, email, lineId, source, interest, model, selectedColor, selectedGrade, province, serviceDate, serviceTime, selectedCenter, notes, carType, driveDate, driveTime, formType]);
 
   // Filter service centers by province/postal
   const filteredCenters = useMemo(() => {
@@ -269,6 +272,7 @@ export default function ACardPage() {
         phone: phone.trim(),
         car: model || undefined,
         selectedColor: selectedColor || undefined,
+        selectedGrade: selectedGrade || undefined,
         testDriveDate: driveDate,
         testDriveTime: driveTime,
         serviceCenter: selectedCenter,
@@ -320,6 +324,7 @@ export default function ACardPage() {
         level: interest,
         car: model || undefined,
         selectedColor: selectedColor || undefined,
+        selectedGrade: selectedGrade || undefined,
         notes: notes.trim(),
         init: initChar,
         color,
@@ -612,11 +617,24 @@ export default function ACardPage() {
               {/* Model */}
               <div className="mb-3">
                 <label className={labelCls}>รุ่น / Model *</label>
-                <select value={model} onChange={(e) => { setModel(e.target.value); setSelectedColor(''); }} className={`${inputCls} appearance-none cursor-pointer`} style={inputStyle}>
+                <select value={model} onChange={(e) => { setModel(e.target.value); setSelectedColor(''); setSelectedGrade(''); }} className={`${inputCls} appearance-none cursor-pointer`} style={inputStyle}>
                   <option value="">เลือกรุ่นรถ</option>
                   {filteredModels.map(c => <option key={c.id} value={c.id}>{c.name} — {c.priceLabel}</option>)}
                 </select>
               </div>
+
+              {/* Sub-model / Grade */}
+              {model && CARS[model]?.subModels?.length > 0 && (
+                <div className="mb-3">
+                  <label className={labelCls}>รุ่นย่อย / Sub-model</label>
+                  <select value={selectedGrade} onChange={(e) => setSelectedGrade(e.target.value)} className={`${inputCls} appearance-none cursor-pointer`} style={inputStyle}>
+                    <option value="">เลือกรุ่นย่อย</option>
+                    {CARS[model].subModels.map(g => (
+                      <option key={g.id} value={g.id}>{g.name} — ฿{formatNumber(g.price)}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               {/* Color picker */}
               {model && (

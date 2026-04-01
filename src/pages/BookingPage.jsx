@@ -124,8 +124,14 @@ export default function BookingPage() {
     );
   };
 
+  const bkSelectedGrade = useBookingStore((s) => s.selectedGrade);
+
   const lead = leadId ? getLeadById(leadId) : null;
   const car = carId ? CARS[carId] : (lead?.car ? CARS[lead.car] : CARS.corolla);
+  const gradeId = bkSelectedGrade || lead?.selectedGrade;
+  const grade = car?.subModels?.find(g => g.id === gradeId);
+  const gradeName = grade?.name || '';
+  const gradePrice = grade?.price || car?.price || 0;
 
   // Restore draft on mount
   useEffect(() => {
@@ -179,11 +185,12 @@ export default function BookingPage() {
   // Calculations
   const calc = useMemo(() => {
     if (!car) return { downPayment: 0, financeAmount: 0, monthly: 0 };
-    const downPayment = Math.round(car.price * formData.downPaymentPct / 100);
-    const financeAmount = car.price - downPayment;
+    const price = gradePrice;
+    const downPayment = Math.round(price * formData.downPaymentPct / 100);
+    const financeAmount = price - downPayment;
     const monthly = flatRateMonthly(financeAmount, formData.interestRate, formData.loanTermMonths);
     return { downPayment, financeAmount, monthly };
-  }, [car, formData.downPaymentPct, formData.interestRate, formData.loanTermMonths]);
+  }, [car, gradePrice, formData.downPaymentPct, formData.interestRate, formData.loanTermMonths]);
 
   // Term slider ticks
   const ticks = [];
@@ -289,6 +296,10 @@ export default function BookingPage() {
       serviceTime: formData.serviceTime,
       source: formData.source,
       selectedCenter: formData.selectedCenter,
+      // Sub-model / grade
+      gradeName: gradeName || undefined,
+      gradeId: gradeId || undefined,
+      carPrice: gradePrice,
     });
 
     if (result?.conflict) {
@@ -693,6 +704,12 @@ export default function BookingPage() {
                 <span className="text-t2 font-semibold">รุ่น</span>
                 <span className="text-t1 font-bold text-right">{car?.name || '-'}</span>
               </div>
+              {gradeName && (
+                <div className="flex justify-between py-[9px] border-b border-border text-[12px]">
+                  <span className="text-t2 font-semibold">รุ่นย่อย</span>
+                  <span className="text-t1 font-bold">{gradeName}</span>
+                </div>
+              )}
               <div className="py-[9px] border-b border-border">
                 <div className="flex justify-between text-[12px] mb-2">
                   <span className="text-t2 font-semibold">สี</span>
@@ -712,7 +729,7 @@ export default function BookingPage() {
               </div>
               <div className="flex justify-between py-[9px] text-[12px]">
                 <span className="text-t2 font-semibold">ราคา</span>
-                <span className="text-t1 font-bold">{car ? `฿${fmt(car.price)}` : '-'}</span>
+                <span className="text-t1 font-bold">{car ? `฿${fmt(gradePrice)}` : '-'}</span>
               </div>
             </div>
 

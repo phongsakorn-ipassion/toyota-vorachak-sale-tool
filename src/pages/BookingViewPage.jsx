@@ -93,8 +93,9 @@ export default function BookingViewPage() {
           <h3 className="text-[13px] font-extrabold text-gray-900 mb-3">ข้อมูลรถ</h3>
           {[
             ['รุ่น', booking.carName || car?.name || '-'],
+            ...(booking.gradeName ? [['รุ่นย่อย', booking.gradeName]] : []),
             ['สี', booking.color || '-'],
-            ['ราคา', car ? `฿${fmt(car.price)}` : (booking.carPrice ? `฿${fmt(booking.carPrice)}` : '-')],
+            ['ราคา', booking.carPrice ? `฿${fmt(booking.carPrice)}` : (car ? `฿${fmt(car.price)}` : '-')],
           ].map(([label, value]) => (
             <div key={label} className="flex justify-between py-2 border-b border-gray-100 last:border-b-0 text-[12px]">
               <span className="text-gray-500">{label}</span>
