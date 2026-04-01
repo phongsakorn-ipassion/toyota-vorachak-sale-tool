@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { createPortal } from 'react-dom'
 
 const fmt = (n) => typeof n === 'number' ? n.toLocaleString('th-TH') : n
 
@@ -142,8 +143,8 @@ export default function GradeCompareModal({ isOpen, onClose, car }) {
 
   const grades = car.subModels
 
-  return (
-    <div className="fixed inset-0 z-[100] flex items-end justify-center">
+  return createPortal(
+    <div className="fixed inset-0 z-[200] flex items-end justify-center">
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
@@ -233,6 +234,7 @@ export default function GradeCompareModal({ isOpen, onClose, car }) {
           animation: slideUp 0.3s ease-out;
         }
       `}</style>
-    </div>
+    </div>,
+    document.body
   )
 }

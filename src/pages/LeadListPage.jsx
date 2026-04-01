@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import PageHeader from '../components/layout/PageHeader';
@@ -322,8 +323,8 @@ export default function LeadListPage() {
       </div>
 
       {/* Type selector popup */}
-      {showTypePopup && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowTypePopup(false)}>
+      {showTypePopup && createPortal(
+        <div className="fixed inset-0 bg-black/50 z-[200] flex items-center justify-center p-4" onClick={() => setShowTypePopup(false)}>
           <div className="bg-white rounded-2xl p-5 max-w-sm w-full" onClick={(e) => e.stopPropagation()}>
             <h3 className="text-[15px] font-extrabold text-t1 mb-4">เลือกประเภท</h3>
             <div className="flex flex-col gap-3">
@@ -352,7 +353,8 @@ export default function LeadListPage() {
               ยกเลิก
             </button>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

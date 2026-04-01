@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import Icon from '../components/icons/Icon';
 import SubModelSelector from '../components/car/SubModelSelector';
@@ -247,9 +248,9 @@ export default function CarDetailPage() {
       <GradeCompareModal isOpen={showCompare} onClose={() => setShowCompare(false)} car={car} />
 
       {/* Fullscreen Lightbox */}
-      {showLightbox && (
+      {showLightbox && createPortal(
         <div
-          className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center"
+          className="fixed inset-0 bg-black/90 z-[200] flex items-center justify-center"
           onClick={() => setShowLightbox(false)}
         >
           <button
@@ -275,7 +276,8 @@ export default function CarDetailPage() {
               />
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

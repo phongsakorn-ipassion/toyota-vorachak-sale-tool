@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useParams, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import Icon from '../components/icons/Icon';
@@ -629,8 +630,8 @@ export default function LeadDetailPage() {
                   </div>
 
                   {/* Share Modal */}
-                  {showShareModal && (
-                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowShareModal(false)}>
+                  {showShareModal && createPortal(
+                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[200] p-4" onClick={() => setShowShareModal(false)}>
                       <div className="bg-white rounded-xl p-5 w-full max-w-sm shadow-xl" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-between mb-4">
                           <h3 className="text-[15px] font-extrabold text-t1">แชร์ Booking</h3>
@@ -677,7 +678,8 @@ export default function LeadDetailPage() {
                           <span className="flex items-center justify-center gap-1"><Icon name="share" size={14} /> แชร์ลิงก์</span>
                         </button>
                       </div>
-                    </div>
+                    </div>,
+                    document.body
                   )}
                 </div>
                 );

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import Icon from '../icons/Icon';
 
 export default function ConfirmDialog({
@@ -27,9 +28,9 @@ export default function ConfirmDialog({
   // Default icon based on confirmColor (red = alert, otherwise check)
   const resolvedIcon = titleIcon || (confirmColor === '#DC2626' ? 'alert' : 'check');
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center px-6"
+      className="fixed inset-0 z-[200] flex items-center justify-center px-6"
       onClick={onClose}
     >
       {/* Overlay */}
@@ -77,6 +78,7 @@ export default function ConfirmDialog({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

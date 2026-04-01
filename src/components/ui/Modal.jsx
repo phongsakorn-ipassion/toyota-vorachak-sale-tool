@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import Icon from '../icons/Icon';
 
 export default function Modal({ isOpen, onClose, title, children }) {
@@ -15,9 +16,9 @@ export default function Modal({ isOpen, onClose, title, children }) {
 
   if (!isOpen) return null;
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fadeIn"
+      className="fixed inset-0 z-[200] flex items-center justify-center p-4 animate-fadeIn"
       onClick={onClose}
     >
       <div className="absolute inset-0 bg-black/40" />
@@ -36,6 +37,7 @@ export default function Modal({ isOpen, onClose, title, children }) {
         </div>
         <div className="p-4">{children}</div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
