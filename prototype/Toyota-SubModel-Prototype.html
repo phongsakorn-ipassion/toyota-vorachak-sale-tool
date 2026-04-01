@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Toyota Sale Tool — Sub-Model Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --p: #1B7A3F; --p-dark: #145E30; --p-light: #EBF7EF; --p-medium: #C4E3CE;
+    --t1: #111827; --t2: #6B7280; --t3: #9CA3AF;
+    --bg: #F5F7F5; --card: #FFFFFF; --border: #E5E7EB;
+    --hot: #DC2626; --warm: #D97706; --cool: #2563EB; --won: #10B981;
+    --avail: #16A34A; --transit: #EA580C;
+    --font: 'Sarabun', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family: var(--font); background: var(--bg); color: var(--t1); -webkit-font-smoothing: antialiased; }
+
+  /* Layout */
+  .page { max-width: 480px; margin: 0 auto; min-height: 100vh; background: var(--bg); position: relative; }
+  .header { display: flex; align-items: center; padding: 14px 16px; background: #fff; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 10; }
+  .header .back { width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; background: #fff; margin-right: 12px; font-size: 18px; color: var(--t2); }
+  .header .title { flex: 1; }
+  .header .title h1 { font-size: 15px; font-weight: 800; color: var(--t1); }
+  .header .title p { font-size: 11px; color: var(--t2); margin-top: 1px; }
+  .content { padding: 0 0 100px; overflow-y: auto; }
+
+  /* Cards */
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 15px; margin: 0 16px 12px; }
+  .card-hd { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+  .card-title { font-size: 14px; font-weight: 800; color: var(--t1); display: flex; align-items: center; gap: 6px; }
+  .card-sub { font-size: 11px; color: var(--t2); }
+
+  /* Gallery */
+  .gallery { background: linear-gradient(135deg, #F0FAF3 0%, #E8F5EC 50%, #DCF0E2 100%); height: 220px; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
+  .gallery img { width: 75%; max-width: 320px; object-fit: cover; filter: drop-shadow(0 8px 24px rgba(0,0,0,.15)); }
+  .gallery .counter { position: absolute; bottom: 12px; right: 16px; font-size: 10px; color: var(--t3); background: rgba(255,255,255,.85); padding: 3px 10px; border-radius: 20px; }
+  .thumbs { display: flex; gap: 6px; padding: 10px 16px; overflow-x: auto; background: #fff; border-bottom: 1px solid var(--border); }
+  .thumbs .thumb { width: 56px; height: 42px; border-radius: 8px; border: 2px solid transparent; overflow: hidden; flex-shrink: 0; cursor: pointer; background: var(--bg); display: flex; align-items: center; justify-content: center; font-size: 9px; color: var(--t3); }
+  .thumbs .thumb.active { border-color: var(--p); }
+  .thumbs .thumb img { width: 100%; height: 100%; object-fit: cover; }
+
+  /* Info Bar */
+  .info-bar { background: #fff; padding: 14px 16px; border-bottom: 1px solid var(--border); }
+  .info-bar .model-name { font-size: 20px; font-weight: 800; color: var(--t1); }
+  .info-bar .model-type { font-size: 12px; color: var(--t2); margin-top: 2px; }
+  .info-bar .model-price { font-size: 18px; font-weight: 800; color: var(--p); margin-top: 4px; }
+  .info-bar .price-note { font-size: 10px; color: var(--t3); }
+
+  /* === SUB-MODEL SELECTOR (NEW) === */
+  .submodel-section { padding: 16px; }
+  .submodel-section .section-title { font-size: 14px; font-weight: 800; color: var(--t1); margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+  .submodel-cards { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; -webkit-overflow-scrolling: touch; }
+  .submodel-cards::-webkit-scrollbar { display: none; }
+  .submodel-card { flex-shrink: 0; width: calc(50% - 4px); min-width: 160px; border: 2px solid var(--border); border-radius: 14px; padding: 14px; cursor: pointer; transition: all 0.2s; background: #fff; position: relative; }
+  .submodel-card:hover { border-color: var(--p-medium); }
+  .submodel-card.selected { border-color: var(--p); background: var(--p-light); }
+  .submodel-card .grade-name { font-size: 13px; font-weight: 800; color: var(--t1); }
+  .submodel-card .grade-price { font-size: 16px; font-weight: 800; color: var(--p); margin-top: 6px; }
+  .submodel-card .grade-feature { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 100px; margin-top: 8px; }
+  .submodel-card .grade-feature.standard { background: #F3F4F6; color: var(--t2); }
+  .submodel-card .grade-feature.mid { background: #EFF6FF; color: #3B82F6; }
+  .submodel-card .grade-feature.top { background: #FDF4FF; color: #A855F7; }
+  .submodel-card .check { position: absolute; top: 10px; right: 10px; width: 20px; height: 20px; border-radius: 50%; background: var(--p); color: #fff; display: none; align-items: center; justify-content: center; font-size: 12px; }
+  .submodel-card.selected .check { display: flex; }
+  .submodel-card .spec-diff { margin-top: 10px; font-size: 10px; color: var(--t3); line-height: 1.6; }
+  .submodel-card .spec-diff span { color: var(--t2); font-weight: 600; }
+
+  /* Compare Button */
+  .compare-btn { display: flex; align-items: center; justify-content: center; gap: 6px; width: calc(100% - 32px); margin: 0 16px 12px; padding: 10px; border-radius: 10px; border: 1.5px solid var(--p); background: #fff; color: var(--p); font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s; font-family: var(--font); }
+  .compare-btn:hover { background: var(--p-light); }
+
+  /* === GRADE COMPARE MODAL === */
+  .compare-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 100; justify-content: center; align-items: flex-end; }
+  .compare-overlay.open { display: flex; }
+  .compare-modal { background: #fff; border-radius: 20px 20px 0 0; width: 100%; max-width: 480px; max-height: 85vh; overflow-y: auto; padding: 20px 16px 40px; animation: slideUp 0.25s ease; }
+  @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+  .compare-modal .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+  .compare-modal .modal-title { font-size: 16px; font-weight: 800; }
+  .compare-modal .close-btn { width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; background: #fff; font-size: 16px; color: var(--t2); }
+
+  /* Compare Table */
+  .compare-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+  .compare-table th { font-weight: 800; text-align: center; padding: 8px 6px; border-bottom: 2px solid var(--border); color: var(--t1); }
+  .compare-table th.feature-col { text-align: left; width: 30%; color: var(--t3); font-weight: 700; }
+  .compare-table td { padding: 8px 6px; text-align: center; border-bottom: 1px solid #F3F4F6; color: var(--t2); }
+  .compare-table td.feature-col { text-align: left; font-weight: 700; color: var(--t1); font-size: 10px; }
+  .compare-table td.highlight { color: var(--p); font-weight: 700; }
+  .compare-table tr:last-child td { border-bottom: none; }
+  .compare-table .price-row td { font-weight: 800; font-size: 13px; color: var(--p); padding: 12px 6px; border-bottom: 2px solid var(--border); }
+
+  /* Color Picker */
+  .color-dots { display: flex; gap: 10px; margin-top: 10px; }
+  .color-dot { width: 28px; height: 28px; border-radius: 50%; border: 3px solid transparent; cursor: pointer; transition: all 0.15s; }
+  .color-dot.active { border-color: var(--p); transform: scale(1.15); }
+  .color-name { font-size: 11px; color: var(--t2); margin-top: 6px; font-weight: 600; }
+
+  /* Stock */
+  .stock-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #F3F4F6; font-size: 12px; }
+  .stock-row:last-child { border-bottom: none; }
+  .stock-row .label { color: var(--t2); display: flex; align-items: center; gap: 6px; }
+  .stock-row .value { font-weight: 700; color: var(--t1); }
+  .stock-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+  .stock-dot.green { background: var(--avail); }
+  .stock-dot.orange { background: var(--transit); }
+
+  /* Spec Grid */
+  .spec-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+  .spec-item { display: flex; align-items: center; gap: 8px; padding: 10px; border-radius: 10px; background: var(--bg); }
+  .spec-item .icon { width: 32px; height: 32px; border-radius: 8px; background: #fff; display: flex; align-items: center; justify-content: center; color: var(--t3); font-size: 14px; }
+  .spec-item .info .label { font-size: 10px; color: var(--t3); }
+  .spec-item .info .val { font-size: 12px; font-weight: 700; color: var(--t1); }
+
+  /* Accordion */
+  .accordion-item { border-bottom: 1px solid #F3F4F6; }
+  .accordion-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; cursor: pointer; }
+  .accordion-header .title { font-size: 13px; font-weight: 700; color: var(--t1); display: flex; align-items: center; gap: 8px; }
+  .accordion-header .arrow { color: var(--t3); transition: transform 0.2s; font-size: 12px; }
+  .accordion-header .arrow.open { transform: rotate(180deg); }
+  .accordion-body { display: none; padding-bottom: 12px; }
+  .accordion-body.open { display: block; }
+  .accordion-kv { display: flex; justify-content: space-between; padding: 6px 0; font-size: 11px; }
+  .accordion-kv .k { color: var(--t3); }
+  .accordion-kv .v { color: var(--t1); font-weight: 600; }
+  .spec-tag { display: inline-block; padding: 3px 9px; border-radius: 8px; background: var(--bg); font-size: 10px; color: var(--t2); margin: 2px; font-weight: 600; }
+
+  /* CTA Buttons */
+  .cta-row { display: flex; flex-direction: column; gap: 8px; padding: 16px; }
+  @media (min-width: 768px) { .cta-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; } }
+  .btn { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 14px 16px; border-radius: 20px; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.15s; border: none; font-family: var(--font); }
+  .btn:active { transform: scale(0.98); }
+  .btn-primary { background: var(--p); color: #fff; }
+  .btn-primary:hover { background: var(--p-dark); }
+  .btn-outline { background: #fff; border: 2px solid var(--p); color: var(--p); }
+  .btn-outline:hover { background: var(--p-light); }
+  .btn-blue { background: #fff; border: 2px solid var(--cool); color: var(--cool); }
+  .btn-blue:hover { background: #EFF6FF; }
+
+  /* Calculator */
+  .calc-section { padding: 16px; }
+  .calc-grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
+  @media (min-width: 640px) { .calc-grid { grid-template-columns: 1fr 1fr; } }
+  .calc-controls { display: flex; flex-direction: column; gap: 14px; }
+  .calc-label { font-size: 11px; font-weight: 700; color: var(--t2); margin-bottom: 6px; display: flex; align-items: center; gap: 4px; }
+  .calc-input { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; font-size: 13px; font-family: var(--font); outline: none; }
+  .calc-input:focus { border-color: var(--p); }
+  .down-pills { display: flex; gap: 6px; flex-wrap: wrap; }
+  .down-pill { padding: 8px 14px; border-radius: 100px; border: 1.5px solid var(--border); font-size: 12px; font-weight: 700; cursor: pointer; background: #fff; color: var(--t2); font-family: var(--font); transition: all 0.15s; }
+  .down-pill.active { border-color: var(--p); background: var(--p-light); color: var(--p); }
+  .term-slider { width: 100%; accent-color: var(--p); height: 6px; }
+  .term-ticks { display: flex; justify-content: space-between; font-size: 9px; color: var(--t3); margin-top: 4px; }
+  .calc-result { background: var(--p-light); border: 1px solid var(--p-medium); border-radius: 20px; padding: 20px; }
+  .calc-result .monthly { font-size: 11px; color: var(--t2); margin-bottom: 4px; }
+  .calc-result .amount { font-size: 28px; font-weight: 800; color: var(--p); }
+  .calc-result .breakdown { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 14px; }
+  .calc-result .breakdown .item .label { font-size: 10px; color: var(--t3); }
+  .calc-result .breakdown .item .val { font-size: 12px; font-weight: 700; color: var(--t1); }
+  .calc-disclaimer { font-size: 9px; color: var(--t3); margin-top: 10px; line-height: 1.5; }
+
+  /* Bottom Nav */
+  .bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; height: 78px; background: #fff; border-top: 1px solid var(--border); display: flex; align-items: flex-start; padding-top: 11px; z-index: 50; }
+  .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 10px; font-weight: 700; color: var(--t3); cursor: pointer; position: relative; }
+  .nav-item.active { color: var(--p); }
+  .nav-item .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--p); position: absolute; bottom: -9px; }
+  .nav-icon { font-size: 20px; }
+
+  /* Advisory */
+  .advisory { background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 10px; padding: 10px 14px; margin: 0 16px 12px; font-size: 11px; color: #92400E; display: flex; align-items: flex-start; gap: 8px; }
+  .advisory .icon { flex-shrink: 0; font-size: 14px; }
+</style>
+</head>
+<body>
+
+<div class="page">
+  <!-- Header -->
+  <div class="header">
+    <div class="back" onclick="history.back()">&#8249;</div>
+    <div class="title">
+      <h1 id="headerTitle">Corolla Altis 2026</h1>
+      <p>Toyota — Vehicle Detail</p>
+    </div>
+  </div>
+
+  <div class="content">
+    <!-- Gallery -->
+    <div class="gallery">
+      <img id="galleryImg" src="https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?w=640&h=480&fit=crop" alt="Corolla Altis">
+      <span class="counter">1 / 5</span>
+    </div>
+    <div class="thumbs">
+      <div class="thumb active"><img src="https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?w=100&h=75&fit=crop"></div>
+      <div class="thumb"><img src="https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?w=100&h=75&fit=crop"></div>
+      <div class="thumb"><img src="https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?w=100&h=75&fit=crop"></div>
+      <div class="thumb"><img src="https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?w=100&h=75&fit=crop"></div>
+      <div class="thumb" style="font-size:11px;">Video</div>
+    </div>
+
+    <!-- Info Bar -->
+    <div class="info-bar">
+      <div class="model-name" id="modelName">Corolla Altis 2026</div>
+      <div class="model-type">Sedan · 1.8L Hybrid</div>
+      <div class="model-price" id="modelPrice">&#3647;909,000</div>
+      <div class="price-note" id="priceNote">เริ่มต้น · Smart</div>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- NEW: Sub-Model / Grade Selector -->
+    <!-- ============================================ -->
+    <div class="submodel-section">
+      <div class="section-title">
+        &#9733; รุ่นย่อย / LINE-UP
+      </div>
+      <div class="submodel-cards" id="gradeCards">
+        <!-- Grade 1: Smart -->
+        <div class="submodel-card selected" onclick="selectGrade(0)">
+          <div class="check">&#10003;</div>
+          <div class="grade-name">Smart</div>
+          <div class="grade-price">&#3647;909,000</div>
+          <div class="grade-feature standard">&#9679; มาตรฐาน</div>
+          <div class="spec-diff">
+            <span>ล้อ 16"</span> · เบาะผ้า · จอ 7"
+          </div>
+        </div>
+        <!-- Grade 2: Premium -->
+        <div class="submodel-card" onclick="selectGrade(1)">
+          <div class="check">&#10003;</div>
+          <div class="grade-name">Premium</div>
+          <div class="grade-price">&#3647;999,000</div>
+          <div class="grade-feature mid">&#9650; หนังแท้ + จอใหญ่</div>
+          <div class="spec-diff">
+            <span>ล้อ 17"</span> · เบาะหนัง · จอ 9"
+          </div>
+        </div>
+        <!-- Grade 3: Premium Luxury -->
+        <div class="submodel-card" onclick="selectGrade(2)">
+          <div class="check">&#10003;</div>
+          <div class="grade-name">Premium Luxury</div>
+          <div class="grade-price">&#3647;1,099,000</div>
+          <div class="grade-feature top">&#9830; ซันรูฟ + เบาะระบาย</div>
+          <div class="spec-diff">
+            <span>ล้อ 18"</span> · หนังระบายอากาศ · จอ 12.3"
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Compare Button -->
+    <button class="compare-btn" onclick="openCompare()">
+      &#9776; เปรียบเทียบรุ่นย่อย / Compare Grades
+    </button>
+
+    <!-- Color Picker -->
+    <div class="card">
+      <div class="card-hd">
+        <span class="card-title">&#127912; เลือกสี / Choose Color</span>
+      </div>
+      <div class="color-dots">
+        <div class="color-dot active" style="background:#F5F5F0;" onclick="pickColor(this,'Pearl White')"></div>
+        <div class="color-dot" style="background:#1a1a1a;" onclick="pickColor(this,'Black Mica')"></div>
+        <div class="color-dot" style="background:#C0C0C0;" onclick="pickColor(this,'Silver Metallic')"></div>
+        <div class="color-dot" style="background:#2B4C7E;" onclick="pickColor(this,'Blue Metallic')"></div>
+        <div class="color-dot" style="background:#8B2500;" onclick="pickColor(this,'Red Mica')"></div>
+      </div>
+      <div class="color-name" id="colorName">Pearl White</div>
+    </div>
+
+    <!-- Stock & Availability -->
+    <div class="card">
+      <div class="card-hd"><span class="card-title">&#128230; Stock & Availability</span></div>
+      <div class="stock-row">
+        <span class="label"><span class="stock-dot green"></span> สถานะ</span>
+        <span class="value" id="stockStatus">In Stock</span>
+      </div>
+      <div class="stock-row">
+        <span class="label">&#128196; คลังสินค้า</span>
+        <span class="value" id="stockCount">3 คัน · สาขาลาดพร้าว</span>
+      </div>
+      <div class="stock-row">
+        <span class="label">&#128179; ประกัน / Warranty</span>
+        <span class="value">3 ปี / 100,000 กม.</span>
+      </div>
+      <div class="stock-row">
+        <span class="label">&#128295; บริการฟรี / Free Service</span>
+        <span class="value">5 ครั้ง</span>
+      </div>
+      <div class="stock-row">
+        <span class="label">&#128247; กล้องบันทึก / Dash Camera</span>
+        <span class="value" style="color:var(--p)">ติดตั้งฟรี</span>
+      </div>
+      <div class="stock-row">
+        <span class="label">&#9734; โปรโมชั่น / Promo</span>
+        <span class="value" style="color:var(--hot)">ดาวน์เริ่มต้น 5%</span>
+      </div>
+    </div>
+
+    <!-- Spec Grid -->
+    <div class="card">
+      <div class="card-hd"><span class="card-title">Car Specifications</span></div>
+      <div class="spec-grid">
+        <div class="spec-item">
+          <div class="icon">&#9981;</div>
+          <div class="info"><div class="label">Fuel</div><div class="val">1.8L Hybrid</div></div>
+        </div>
+        <div class="spec-item">
+          <div class="icon">&#128101;</div>
+          <div class="info"><div class="label">Capacity</div><div class="val">5 ที่นั่ง</div></div>
+        </div>
+        <div class="spec-item">
+          <div class="icon">&#9881;</div>
+          <div class="info"><div class="label">Gearbox</div><div class="val" id="specGearbox">CVT Auto</div></div>
+        </div>
+        <div class="spec-item">
+          <div class="icon">&#9889;</div>
+          <div class="info"><div class="label">Power</div><div class="val" id="specPower">140 hp</div></div>
+        </div>
+      </div>
+
+      <!-- Spec Accordion -->
+      <div class="accordion-item">
+        <div class="accordion-header" onclick="toggleSpec(this)">
+          <div class="title">&#9889; เครื่องยนต์ / Engine</div>
+          <div class="arrow open">&#9660;</div>
+        </div>
+        <div class="accordion-body open">
+          <div class="accordion-kv"><span class="k">เครื่องยนต์</span><span class="v">1.8L 4-Cylinder Hybrid</span></div>
+          <div class="accordion-kv"><span class="k">แรงม้า</span><span class="v">140 hp @ 5,200 rpm</span></div>
+          <div class="accordion-kv"><span class="k">แรงบิด</span><span class="v">177 Nm @ 3,600 rpm</span></div>
+          <div class="accordion-kv"><span class="k">ระบบเกียร์</span><span class="v">CVT Auto (E-CVT)</span></div>
+        </div>
+      </div>
+      <div class="accordion-item">
+        <div class="accordion-header" onclick="toggleSpec(this)">
+          <div class="title">&#128207; มิติตัวถัง / Dimensions</div>
+          <div class="arrow">&#9660;</div>
+        </div>
+        <div class="accordion-body">
+          <div class="accordion-kv"><span class="k">ความยาว</span><span class="v">4,630 mm</span></div>
+          <div class="accordion-kv"><span class="k">ความกว้าง</span><span class="v">1,780 mm</span></div>
+          <div class="accordion-kv"><span class="k">ความสูง</span><span class="v">1,435 mm</span></div>
+          <div class="accordion-kv"><span class="k">ฐานล้อ</span><span class="v">2,700 mm</span></div>
+          <div class="accordion-kv"><span class="k" id="specWheels">ล้อ</span><span class="v" id="specWheelsVal">16" Alloy</span></div>
+        </div>
+      </div>
+      <div class="accordion-item">
+        <div class="accordion-header" onclick="toggleSpec(this)">
+          <div class="title">&#128737; ความปลอดภัย / Safety</div>
+          <div class="arrow">&#9660;</div>
+        </div>
+        <div class="accordion-body">
+          <div style="display:flex;flex-wrap:wrap;gap:4px;">
+            <span class="spec-tag">Toyota Safety Sense</span>
+            <span class="spec-tag">7 ถุงลม</span>
+            <span class="spec-tag">PCS</span>
+            <span class="spec-tag">LDA</span>
+            <span class="spec-tag">DRCC</span>
+            <span class="spec-tag">BSM</span>
+            <span class="spec-tag">RCTA</span>
+            <span class="spec-tag">กล้อง 360°</span>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item">
+        <div class="accordion-header" onclick="toggleSpec(this)">
+          <div class="title">&#9881; ฟีเจอร์ / Features</div>
+          <div class="arrow">&#9660;</div>
+        </div>
+        <div class="accordion-body">
+          <div style="display:flex;flex-wrap:wrap;gap:4px;">
+            <span class="spec-tag" id="specDisplay">จอ 7"</span>
+            <span class="spec-tag">Apple CarPlay</span>
+            <span class="spec-tag">Android Auto</span>
+            <span class="spec-tag" id="specSeats">เบาะผ้า</span>
+            <span class="spec-tag">Smart Key</span>
+            <span class="spec-tag">Push Start</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CTA Buttons -->
+    <div class="cta-row">
+      <button class="btn btn-outline" onclick="alert('Navigate to Calculator')">&#128178; คำนวณผ่อน</button>
+      <button class="btn btn-primary" onclick="alert('Navigate to Booking')">&#128278; จองรถ / Book Now</button>
+      <button class="btn btn-blue" onclick="alert('Navigate to Test Drive')">&#127951; ทดลองขับ</button>
+    </div>
+
+    <!-- Calculator Section -->
+    <div class="calc-section" id="calcSection">
+      <div class="card" style="margin:0;">
+        <div class="card-hd"><span class="card-title">&#128178; คำนวณสินเชื่อ / Calculate Installment</span></div>
+        <div class="calc-grid">
+          <!-- Controls -->
+          <div class="calc-controls">
+            <div>
+              <div class="calc-label">&#37; กำหนดดอกเบี้ย % ต่อปี</div>
+              <input type="text" class="calc-input" value="2.49" id="calcRate" oninput="updateCalc()">
+            </div>
+            <div>
+              <div class="calc-label">&#128176; เงินดาวน์</div>
+              <div class="down-pills" id="downPills">
+                <div class="down-pill" onclick="setDown(5)">5%</div>
+                <div class="down-pill" onclick="setDown(10)">10%</div>
+                <div class="down-pill active" onclick="setDown(15)">15%</div>
+                <div class="down-pill" onclick="setDown(20)">20%</div>
+                <div class="down-pill" onclick="setDown(25)">25%</div>
+              </div>
+              <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:11px;">
+                <span style="color:var(--t3)">เงินดาวน์ <span id="downAmt" style="color:var(--t1);font-weight:700">&#3647;136,350</span></span>
+                <span style="color:var(--t3)">ยอดจัด <span id="financeAmt" style="color:var(--t1);font-weight:700">&#3647;772,650</span></span>
+              </div>
+            </div>
+            <div>
+              <div class="calc-label">&#128197; ระยะเวลาผ่อนชำระ <span id="termVal" style="color:var(--p);font-weight:800;">48 เดือน</span></div>
+              <input type="range" class="term-slider" min="12" max="84" step="12" value="48" id="termSlider" oninput="updateCalc()">
+              <div class="term-ticks">
+                <span>12</span><span>24</span><span>36</span><span>48</span><span>60</span><span>72</span><span>84</span>
+              </div>
+            </div>
+          </div>
+          <!-- Result -->
+          <div class="calc-result">
+            <div class="monthly">ค่างวดต่อเดือน (โดยประมาณ)</div>
+            <div class="amount" id="monthlyAmt">&#3647;17,400</div>
+            <div class="breakdown">
+              <div class="item"><div class="label">ดอกเบี้ย</div><div class="val" id="bkRate">2.49%</div></div>
+              <div class="item"><div class="label">ราคารถ</div><div class="val" id="bkPrice">&#3647;909,000</div></div>
+              <div class="item"><div class="label">เงินดาวน์</div><div class="val" id="bkDown">&#3647;136,350 (15%)</div></div>
+              <div class="item"><div class="label">ยอดจัด</div><div class="val" id="bkFinance">&#3647;772,650</div></div>
+              <div class="item"><div class="label">ระยะเวลา</div><div class="val" id="bkTerm">48 งวด</div></div>
+            </div>
+            <div class="calc-disclaimer">การคำนวณนี้เป็นเพียงการประมาณการเบื้องต้น ดอกเบี้ยและเงื่อนไขจริงขึ้นอยู่กับสถาบันการเงิน</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Nav -->
+  <div class="bottom-nav">
+    <div class="nav-item"><span class="nav-icon">&#127968;</span>หน้าหลัก</div>
+    <div class="nav-item"><span class="nav-icon">&#128101;</span>Leads</div>
+    <div class="nav-item active"><span class="nav-icon">&#128663;</span>รุ่นรถ<span class="dot"></span></div>
+    <div class="nav-item"><span class="nav-icon">&#128276;</span>แจ้งเตือน</div>
+    <div class="nav-item"><span class="nav-icon">&#128100;</span>Profile</div>
+  </div>
+</div>
+
+<!-- ============================================ -->
+<!-- COMPARE MODAL -->
+<!-- ============================================ -->
+<div class="compare-overlay" id="compareModal">
+  <div class="compare-modal">
+    <div class="modal-header">
+      <span class="modal-title">&#9776; เปรียบเทียบรุ่นย่อย</span>
+      <div class="close-btn" onclick="closeCompare()">&#10005;</div>
+    </div>
+    <div style="overflow-x:auto;">
+      <table class="compare-table">
+        <thead>
+          <tr>
+            <th class="feature-col">คุณสมบัติ</th>
+            <th>Smart</th>
+            <th>Premium</th>
+            <th>Premium Luxury</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- PRICING -->
+          <tr class="price-row">
+            <td class="feature-col">ราคา</td>
+            <td>&#3647;909,000</td>
+            <td>&#3647;999,000</td>
+            <td>&#3647;1,099,000</td>
+          </tr>
+
+          <!-- SECTION: ภายนอก / Exterior -->
+          <tr><td colspan="4" style="background:#F9FAFB;font-weight:800;font-size:10px;color:var(--t3);letter-spacing:1px;padding:10px 6px 6px;">EXTERIOR / ภายนอก</td></tr>
+          <tr><td class="feature-col">ล้ออัลลอย</td><td>16"</td><td class="highlight">17"</td><td class="highlight">18"</td></tr>
+          <tr><td class="feature-col">ไฟหน้า</td><td>LED</td><td>LED</td><td class="highlight">LED Adaptive</td></tr>
+          <tr><td class="feature-col">ไฟท้าย</td><td>LED</td><td>LED</td><td class="highlight">LED แบบต่อเนื่อง</td></tr>
+          <tr><td class="feature-col">กระจกมองข้าง</td><td>ปรับไฟฟ้า</td><td class="highlight">พับไฟฟ้า + ไฟเลี้ยว</td><td class="highlight">พับไฟฟ้า + ไฟเลี้ยว + BSM</td></tr>
+          <tr><td class="feature-col">ซันรูฟ</td><td>—</td><td>—</td><td class="highlight">Panoramic</td></tr>
+          <tr><td class="feature-col">สปอยเลอร์หลัง</td><td>—</td><td class="highlight">&#10003;</td><td class="highlight">&#10003;</td></tr>
+
+          <!-- SECTION: ภายใน / Interior -->
+          <tr><td colspan="4" style="background:#F9FAFB;font-weight:800;font-size:10px;color:var(--t3);letter-spacing:1px;padding:10px 6px 6px;">INTERIOR / ภายใน</td></tr>
+          <tr><td class="feature-col">เบาะ</td><td>ผ้า</td><td class="highlight">หนังแท้</td><td class="highlight">หนังแท้ระบายอากาศ</td></tr>
+          <tr><td class="feature-col">เบาะคนขับ</td><td>ปรับมือ 6 ทิศ</td><td class="highlight">ไฟฟ้า 8 ทิศ</td><td class="highlight">ไฟฟ้า 8 ทิศ + Memory</td></tr>
+          <tr><td class="feature-col">เบาะหลัง</td><td>พับ 60:40</td><td>พับ 60:40</td><td class="highlight">พับ 60:40 + ที่วางแขน</td></tr>
+          <tr><td class="feature-col">พวงมาลัย</td><td>หนัง</td><td>หนัง</td><td class="highlight">หนัง + ปุ่มแบบสัมผัส</td></tr>
+          <tr><td class="feature-col">แอร์</td><td>อัตโนมัติ 1 โซน</td><td class="highlight">อัตโนมัติ 2 โซน</td><td class="highlight">อัตโนมัติ 2 โซน + แอร์หลัง</td></tr>
+          <tr><td class="feature-col">กระจกมองหลัง</td><td>ปกติ</td><td>ปกติ</td><td class="highlight">ตัดแสงอัตโนมัติ</td></tr>
+
+          <!-- SECTION: เทคโนโลยี / Technology -->
+          <tr><td colspan="4" style="background:#F9FAFB;font-weight:800;font-size:10px;color:var(--t3);letter-spacing:1px;padding:10px 6px 6px;">TECHNOLOGY / เทคโนโลยี</td></tr>
+          <tr><td class="feature-col">จอมัลติมีเดีย</td><td>7"</td><td class="highlight">9"</td><td class="highlight">12.3"</td></tr>
+          <tr><td class="feature-col">เข็มวัด</td><td>7" TFT</td><td>7" TFT</td><td class="highlight">12.3" TFT</td></tr>
+          <tr><td class="feature-col">Apple CarPlay / Android Auto</td><td>&#10003;</td><td>&#10003;</td><td>&#10003;</td></tr>
+          <tr><td class="feature-col">ระบบนำทาง</td><td>—</td><td class="highlight">&#10003;</td><td class="highlight">&#10003;</td></tr>
+          <tr><td class="feature-col">ลำโพง</td><td>6 ตัว</td><td class="highlight">8 ตัว</td><td class="highlight">9 ตัว JBL</td></tr>
+          <tr><td class="feature-col">ชาร์จไร้สาย Qi</td><td>—</td><td>—</td><td class="highlight">&#10003;</td></tr>
+          <tr><td class="feature-col">USB Type-C</td><td>1 ช่อง</td><td class="highlight">2 ช่อง</td><td class="highlight">3 ช่อง</td></tr>
+          <tr><td class="feature-col">Head-Up Display</td><td>—</td><td>—</td><td class="highlight">&#10003;</td></tr>
+          <tr><td class="feature-col">Digital Key (สมาร์ทโฟน)</td><td>—</td><td>—</td><td class="highlight">&#10003;</td></tr>
+
+          <!-- SECTION: ความปลอดภัย / Safety -->
+          <tr><td colspan="4" style="background:#F9FAFB;font-weight:800;font-size:10px;color:var(--t3);letter-spacing:1px;padding:10px 6px 6px;">SAFETY / ความปลอดภัย</td></tr>
+          <tr><td class="feature-col">Toyota Safety Sense</td><td>&#10003;</td><td>&#10003;</td><td>&#10003;</td></tr>
+          <tr><td class="feature-col">ถุงลม</td><td>7</td><td>7</td><td>7</td></tr>
+          <tr><td class="feature-col">PCS (เบรกอัตโนมัติ)</td><td>&#10003;</td><td>&#10003;</td><td>&#10003;</td></tr>
+          <tr><td class="feature-col">LDA (ช่วยควบคุมเลน)</td><td>&#10003;</td><td>&#10003;</td><td>&#10003;</td></tr>
+          <tr><td class="feature-col">DRCC (ครูซอัจฉริยะ)</td><td>&#10003;</td><td>&#10003;</td><td>&#10003;</td></tr>
+          <tr><td class="feature-col">BSM (จุดบอด)</td><td>&#10003;</td><td>&#10003;</td><td>&#10003;</td></tr>
+          <tr><td class="feature-col">RCTA (ถอยหลัง)</td><td>—</td><td class="highlight">&#10003;</td><td class="highlight">&#10003;</td></tr>
+          <tr><td class="feature-col">กล้อง 360°</td><td>—</td><td class="highlight">&#10003;</td><td class="highlight">&#10003;</td></tr>
+          <tr><td class="feature-col">เซ็นเซอร์จอดรถหน้า-หลัง</td><td>หลังเท่านั้น</td><td class="highlight">หน้า + หลัง</td><td class="highlight">หน้า + หลัง</td></tr>
+          <tr><td class="feature-col">กุญแจ Immobilizer</td><td>&#10003;</td><td>&#10003;</td><td>&#10003;</td></tr>
+
+          <!-- SECTION: สมรรถนะ / Performance -->
+          <tr><td colspan="4" style="background:#F9FAFB;font-weight:800;font-size:10px;color:var(--t3);letter-spacing:1px;padding:10px 6px 6px;">PERFORMANCE / สมรรถนะ</td></tr>
+          <tr><td class="feature-col">เครื่องยนต์</td><td colspan="3" style="text-align:center">1.8L 4-Cylinder Hybrid (A25A-FXS)</td></tr>
+          <tr><td class="feature-col">กำลังสูงสุด</td><td colspan="3" style="text-align:center">140 hp @ 5,200 rpm</td></tr>
+          <tr><td class="feature-col">แรงบิดสูงสุด</td><td colspan="3" style="text-align:center">177 Nm @ 3,600 rpm</td></tr>
+          <tr><td class="feature-col">เกียร์</td><td colspan="3" style="text-align:center">E-CVT</td></tr>
+          <tr><td class="feature-col">ระบบขับเคลื่อน</td><td colspan="3" style="text-align:center">ขับหน้า (FF)</td></tr>
+          <tr><td class="feature-col">โหมดขับขี่</td><td>Eco / Normal</td><td class="highlight">Eco / Normal / Sport</td><td class="highlight">Eco / Normal / Sport / Custom</td></tr>
+          <tr><td class="feature-col">อัตราสิ้นเปลือง</td><td colspan="3" style="text-align:center">23.3 km/L</td></tr>
+
+          <!-- SECTION: มิติ / Dimensions -->
+          <tr><td colspan="4" style="background:#F9FAFB;font-weight:800;font-size:10px;color:var(--t3);letter-spacing:1px;padding:10px 6px 6px;">DIMENSIONS / มิติ</td></tr>
+          <tr><td class="feature-col">ความยาว x กว้าง x สูง</td><td colspan="3" style="text-align:center">4,630 x 1,780 x 1,435 mm</td></tr>
+          <tr><td class="feature-col">ฐานล้อ</td><td colspan="3" style="text-align:center">2,700 mm</td></tr>
+          <tr><td class="feature-col">ความจุกระโปรงหลัง</td><td colspan="3" style="text-align:center">470 L</td></tr>
+          <tr><td class="feature-col">ถังน้ำมัน</td><td colspan="3" style="text-align:center">50 L</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Sub-model data
+  const grades = [
+    { name: 'Smart', price: 909000, feature: 'มาตรฐาน', wheels: '16" Alloy', seats: 'เบาะผ้า', display: 'จอ 7"', stock: '3 คัน · สาขาลาดพร้าว' },
+    { name: 'Premium', price: 999000, feature: 'หนังแท้ + จอใหญ่', wheels: '17" Alloy', seats: 'เบาะหนังแท้', display: 'จอ 9"', stock: '2 คัน · สาขาบางนา' },
+    { name: 'Premium Luxury', price: 1099000, feature: 'ซันรูฟ + เบาะระบาย', wheels: '18" Alloy', seats: 'หนังแท้ระบายอากาศ', display: 'จอ 12.3"', stock: '1 คัน · สาขาลาดพร้าว' },
+  ];
+  let selectedGrade = 0;
+  let downPct = 15;
+
+  function fmt(n) { return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+
+  function selectGrade(idx) {
+    selectedGrade = idx;
+    const g = grades[idx];
+    // Update cards
+    document.querySelectorAll('.submodel-card').forEach((c, i) => {
+      c.classList.toggle('selected', i === idx);
+    });
+    // Update price
+    document.getElementById('modelPrice').innerHTML = '&#3647;' + fmt(g.price);
+    document.getElementById('priceNote').textContent = g.name;
+    // Update specs that differ
+    document.getElementById('specWheelsVal').textContent = g.wheels;
+    document.getElementById('specSeats').textContent = g.seats;
+    document.getElementById('specDisplay').textContent = g.display;
+    // Update stock
+    document.getElementById('stockCount').textContent = g.stock;
+    // Update calculator
+    updateCalc();
+  }
+
+  function pickColor(el, name) {
+    document.querySelectorAll('.color-dot').forEach(d => d.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById('colorName').textContent = name;
+  }
+
+  function setDown(pct) {
+    downPct = pct;
+    document.querySelectorAll('.down-pill').forEach(p => p.classList.remove('active'));
+    event.target.classList.add('active');
+    updateCalc();
+  }
+
+  function updateCalc() {
+    const price = grades[selectedGrade].price;
+    const rate = parseFloat(document.getElementById('calcRate').value) || 0;
+    const months = parseInt(document.getElementById('termSlider').value) || 48;
+    const down = price * downPct / 100;
+    const finance = price - down;
+    const totalInterest = finance * (rate / 100) * (months / 12);
+    const totalLoan = finance + totalInterest;
+    const monthly = Math.ceil(totalLoan / months);
+
+    document.getElementById('termVal').textContent = months + ' เดือน';
+    document.getElementById('downAmt').innerHTML = '&#3647;' + fmt(down);
+    document.getElementById('financeAmt').innerHTML = '&#3647;' + fmt(finance);
+    document.getElementById('monthlyAmt').innerHTML = '&#3647;' + fmt(monthly);
+    document.getElementById('bkRate').textContent = rate + '%';
+    document.getElementById('bkPrice').innerHTML = '&#3647;' + fmt(price);
+    document.getElementById('bkDown').innerHTML = '&#3647;' + fmt(down) + ' (' + downPct + '%)';
+    document.getElementById('bkFinance').innerHTML = '&#3647;' + fmt(finance);
+    document.getElementById('bkTerm').textContent = months + ' งวด';
+  }
+
+  function toggleSpec(header) {
+    const body = header.nextElementSibling;
+    const arrow = header.querySelector('.arrow');
+    body.classList.toggle('open');
+    arrow.classList.toggle('open');
+  }
+
+  function openCompare() {
+    document.getElementById('compareModal').classList.add('open');
+  }
+  function closeCompare() {
+    document.getElementById('compareModal').classList.remove('open');
+  }
+  // Close on backdrop click
+  document.getElementById('compareModal').addEventListener('click', function(e) {
+    if (e.target === this) closeCompare();
+  });
+
+  // Init calculator
+  updateCalc();
+</script>
+
+</body>
+</html>

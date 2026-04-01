@@ -18,7 +18,25 @@
       "Bash(curl -sI \"https://phongsakorn-ipassion.github.io/toyota-vorachak-sale-tool/\")",
       "Bash(open \"https://phongsakorn-ipassion.github.io/toyota-vorachak-sale-tool/\")",
       "Bash(open \"/Users/ppungpong/Library/Mobile Documents/com~apple~CloudDocs/Work 🧑‍💻/iPassion/Presale/Toyota Vorachak/Sale Tools/04 - Demo/Toyota-SaleTool-Prototype-v5.html\")",
-      "Bash(npm run:*)"
+      "Bash(npm run:*)",
+      "Bash(python3 -c \":*)",
+      "Bash(python3:*)",
+      "Bash(curl -sL -o /tmp/toyota_appointment.html -w \"%{http_code}\" \"https://aftersales.toyota.co.th/appointment?dlr=11015\" --max-time 15)",
+      "Bash(curl -sL -o /tmp/toyota_hilux.html -w \"%{http_code}\" \"https://toyotavorachakyont.com/model-lineup/HILUX_CHAMP\" --max-time 15)",
+      "Bash(curl -sL -o /tmp/istudio_locator.html -w \"%{http_code}\" \"https://www.istudio.store/pages/store-locator\" --max-time 15)",
+      "WebFetch(domain:aftersales.toyota.co.th)",
+      "WebFetch(domain:toyotavorachakyont.com)",
+      "WebFetch(domain:www.istudio.store)",
+      "mcp__Control_Chrome__get_page_content",
+      "Bash(grep -c \"badge-scheduled\" dist/assets/*.css)",
+      "Bash(grep \"badge-scheduled\" dist/assets/*.css)",
+      "Bash(grep \"badge-hot\\\\|badge-warm\\\\|badge-cool\\\\|badge-won\\\\|badge-lost\" dist/assets/*.css)",
+      "Bash(grep -c \"badge-confirmed\" dist/assets/*.css)",
+      "Bash(grep -c \"badge-completed\" dist/assets/*.css)",
+      "Bash(grep -c \"badge-lost\" dist/assets/*.css)",
+      "Bash(mkdir -p prototype)",
+      "Bash(mv Toyota-SaleTool-Prototype-v5.html prototype/)",
+      "Bash(mv Toyota-SubModel-Prototype.html prototype/)"
     ]
   }
 }
