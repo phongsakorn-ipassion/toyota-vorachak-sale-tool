@@ -62,11 +62,6 @@ export default function BookingPage() {
     deliveryDate: defaultDeliveryDate(),
     paymentMethod: 'qr',
     selectedColor: 'Pearl White',
-    // Step 3 — credit card fields
-    cardNumber: '',
-    cardExpiry: '',
-    cardCvv: '',
-    cardName: '',
   });
 
   const updateForm = (updates) => setFormData(prev => ({ ...prev, ...updates }));
@@ -154,20 +149,27 @@ export default function BookingPage() {
     }
   }, [leadId]);
 
-  // Pre-fill from calculator store (when coming from PaymentCalcPage)
+  // Pre-fill from calculator store (when coming from PaymentCalcPage or CarDetailPage)
   useEffect(() => {
     const bkStore = useBookingStore.getState();
-    if (bkStore.interestRate && bkStore.interestRate !== 2.79) {
-      updateForm({ interestRate: bkStore.interestRate });
+    const updates = {};
+    if (bkStore.interestRate && bkStore.interestRate !== DEFAULT_INTEREST_RATE) {
+      updates.interestRate = bkStore.interestRate;
     }
-    if (bkStore.downPaymentPct && bkStore.downPaymentPct !== 20) {
-      updateForm({ downPaymentPct: bkStore.downPaymentPct });
+    if (bkStore.downPaymentPct && bkStore.downPaymentPct !== 15) {
+      updates.downPaymentPct = bkStore.downPaymentPct;
     }
-    if (bkStore.loanTermMonths && bkStore.loanTermMonths !== 60) {
-      updateForm({ loanTermMonths: bkStore.loanTermMonths });
+    if (bkStore.loanTermMonths && bkStore.loanTermMonths !== LOAN_TERM_RANGE.default) {
+      updates.loanTermMonths = bkStore.loanTermMonths;
     }
-    if (bkStore.selectedColor && bkStore.selectedColor !== 'Pearl White') {
-      updateForm({ selectedColor: bkStore.selectedColor });
+    if (bkStore.selectedColor) {
+      updates.selectedColor = bkStore.selectedColor;
+    }
+    if (bkStore.selectedGrade) {
+      // selectedGrade is used via gradeId for price lookup, also store in selectedColor context if grade has color info
+    }
+    if (Object.keys(updates).length > 0) {
+      updateForm(updates);
     }
   }, []);
 
@@ -234,20 +236,6 @@ export default function BookingPage() {
         });
       }, 1000);
     }
-  };
-
-  const handleCreditCardPay = () => {
-    const errors = [];
-    if (!formData.cardNumber?.trim()) errors.push('หมายเลขบัตร');
-    if (!formData.cardExpiry?.trim()) errors.push('วันหมดอายุ');
-    if (!formData.cardCvv?.trim()) errors.push('CVV');
-    if (!formData.cardName?.trim()) errors.push('ชื่อบนบัตร');
-
-    if (errors.length > 0) {
-      toast.error(`กรุณากรอกข้อมูล: ${errors.join(', ')}`);
-      return;
-    }
-    goToStep4();
   };
 
   const goToStep4 = () => {
@@ -349,13 +337,11 @@ export default function BookingPage() {
   const payMethodLabel = {
     qr: 'สร้าง QR ชำระเงิน ฿5,000',
     transfer: 'ดำเนินการโอนเงิน ฿5,000',
-    credit: 'ชำระด้วยบัตรเครดิต ฿5,000',
   };
 
   const payMethodIcon = {
     qr: 'qr',
     transfer: 'bank',
-    credit: 'card',
   };
 
   const steps = [
@@ -845,7 +831,6 @@ export default function BookingPage() {
                 {[
                   { id: 'qr', icon: 'qr', label: 'QR PromptPay' },
                   { id: 'transfer', icon: 'bank', label: 'โอนเงิน' },
-                  { id: 'credit', icon: 'card', label: 'บัตรเครดิต' },
                 ].map(m => (
                   <button
                     key={m.id}
@@ -950,76 +935,6 @@ export default function BookingPage() {
               </>
             )}
 
-            {/* Credit Card */}
-            {formData.paymentMethod === 'credit' && (
-              <>
-                <div className="card-base">
-                  <div className="card-hd">
-                    <span className="card-title flex items-center gap-2">
-                      <Icon name="card" size={16} /> ข้อมูลบัตรเครดิต
-                    </span>
-                    <span className="text-t3"><Icon name="lock" size={14} /></span>
-                  </div>
-                  <div className="space-y-3 py-2">
-                    <div>
-                      <label className="text-[11px] font-bold text-t2 mb-1 block">หมายเลขบัตร</label>
-                      <input
-                        type="text"
-                        value={formData.cardNumber}
-                        onChange={(e) => updateForm({ cardNumber: e.target.value })}
-                        placeholder="XXXX XXXX XXXX XXXX"
-                        maxLength={19}
-                        className="w-full h-[42px] bg-bg border border-border rounded-md px-3 text-[13px] text-t1 outline-none focus:border-primary"
-                      />
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="text-[11px] font-bold text-t2 mb-1 block">วันหมดอายุ</label>
-                        <input
-                          type="text"
-                          value={formData.cardExpiry}
-                          onChange={(e) => updateForm({ cardExpiry: e.target.value })}
-                          placeholder="MM/YY"
-                          maxLength={5}
-                          className="w-full h-[42px] bg-bg border border-border rounded-md px-3 text-[13px] text-t1 outline-none focus:border-primary"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-[11px] font-bold text-t2 mb-1 block">CVV</label>
-                        <input
-                          type="text"
-                          value={formData.cardCvv}
-                          onChange={(e) => updateForm({ cardCvv: e.target.value })}
-                          placeholder="XXX"
-                          maxLength={4}
-                          className="w-full h-[42px] bg-bg border border-border rounded-md px-3 text-[13px] text-t1 outline-none focus:border-primary"
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="text-[11px] font-bold text-t2 mb-1 block">ชื่อบนบัตร</label>
-                      <input
-                        type="text"
-                        value={formData.cardName}
-                        onChange={(e) => updateForm({ cardName: e.target.value })}
-                        placeholder="FULL NAME"
-                        className="w-full h-[42px] bg-bg border border-border rounded-md px-3 text-[13px] text-t1 outline-none focus:border-primary"
-                      />
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 text-[10px] text-t3 mt-2 pt-2 border-t border-border">
-                    <Icon name="lock" size={12} />
-                    <span>ข้อมูลถูกเข้ารหัสอย่างปลอดภัย</span>
-                  </div>
-                </div>
-                <div className="flex gap-[10px]">
-                  <button onClick={goBack} className="btn-o flex-1 cursor-pointer">ย้อนกลับ</button>
-                  <button onClick={handleCreditCardPay} className="btn-p flex-1 cursor-pointer">
-                    <Icon name="card" size={16} /> ชำระเงิน ฿5,000
-                  </button>
-                </div>
-              </>
-            )}
           </>
         )}
 

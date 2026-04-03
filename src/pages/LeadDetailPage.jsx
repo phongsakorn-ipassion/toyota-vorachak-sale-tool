@@ -42,6 +42,7 @@ export default function LeadDetailPage() {
   const [showBookingInfo, setShowBookingInfo] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [showCloseDialog, setShowCloseDialog] = useState(false);
+  const [showWonDialog, setShowWonDialog] = useState(false);
 
   // Confirm dialog state
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -77,8 +78,10 @@ export default function LeadDetailPage() {
     addActivity(lead.id, { type: 'line', title: 'ส่ง LINE', description: 'ส่งข้อความ LINE ถึง ' + lead.name });
   };
 
+  const isViewOnly = ['evaluation', 'close_won', 'close_lost'].includes(lead.stage);
+
   const handleEdit = () => {
-    navigate(`/acard?edit=${lead.id}`);
+    navigate(`/acard?${isViewOnly ? 'view' : 'edit'}=${lead.id}`);
   };
 
   const handleBook = () => {
@@ -112,6 +115,26 @@ export default function LeadDetailPage() {
       addNotification({ title: 'เปลี่ยนสถานะ', body: `${lead.name} → ${LEAD_STAGES[targetStage]?.labelTh}`, type: 'lead_update' });
       readTimestamp.current = Date.now();
     }
+  };
+
+  // --- Close Won with optional note ---
+  const handleCloseWon = (note) => {
+    const result = advanceStage(lead.id, 'close_won', note || '', readTimestamp.current);
+    if (result?.conflict) {
+      toast((t) => (
+        <div className="flex items-center gap-3">
+          <span className="text-sm">{result.message}</span>
+          <button onClick={() => { readTimestamp.current = Date.now(); forceUpdate(n => n + 1); toast.dismiss(t.id); }} className="text-xs px-2 py-1 bg-primary text-white rounded whitespace-nowrap">โหลดใหม่</button>
+        </div>
+      ), { duration: 5000, icon: '\u26A0\uFE0F' });
+    } else if (result?.error) {
+      toast.error(result.error);
+    } else {
+      toast.success('ปิดการขายสำเร็จ!');
+      addNotification({ title: 'ปิดการขายสำเร็จ', body: `${lead.name} → Won`, type: 'lead_update' });
+      readTimestamp.current = Date.now();
+    }
+    setShowWonDialog(false);
   };
 
   // --- Close Lost with required note ---
@@ -331,31 +354,73 @@ export default function LeadDetailPage() {
 
         {/* Status management section — different for test drive vs purchase */}
         {isTestDrive ? (
-          /* Test drive status management */
-          <div className="bg-white px-4 py-3 border-b border-border">
-            {lead.testDriveStatus === 'scheduled' && (
-              <div className="flex gap-2">
-                <button onClick={() => handleTestDriveStatusChange('completed')} className="flex-1 py-2.5 rounded-lg text-[12px] font-bold text-center cursor-pointer bg-emerald-50 text-emerald-600 border border-emerald-200 active:opacity-70">
-                  เสร็จสิ้น
-                </button>
-                <button onClick={() => handleTestDriveStatusChange('cancelled')} className="flex-1 py-2.5 rounded-lg text-[12px] font-bold text-center cursor-pointer bg-red-50 text-red-500 border border-red-200 active:opacity-70">
-                  ยกเลิก
-                </button>
+          lead.stage !== 'new_lead' ? (
+            /* Test drive lead has been promoted — show purchase pipeline stepper */
+            <div className="bg-white px-4 py-3 border-b border-border">
+              <div className="flex items-center justify-between mb-3">
+                {['new_lead', 'proposal', 'evaluation', 'close_won'].map((s, i, arr) => (
+                  <React.Fragment key={s}>
+                    <div className={`flex flex-col items-center ${lead.stage === s || (s === 'close_won' && lead.stage === 'close_lost') ? 'text-primary' : (LEAD_STAGES[lead.stage]?.order || 0) >= (LEAD_STAGES[s]?.order || 0) ? 'text-primary' : 'text-t3'}`}>
+                      <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold ${(LEAD_STAGES[lead.stage]?.order || 0) >= (LEAD_STAGES[s]?.order || 0) ? 'bg-primary text-white' : 'bg-gray-100 text-t3'}`}>
+                        {(LEAD_STAGES[lead.stage]?.order || 0) > (LEAD_STAGES[s]?.order || 0) ? '\u2713' : i + 1}
+                      </div>
+                      <span className="text-[9px] font-bold mt-1">{LEAD_STAGES[s]?.labelTh}</span>
+                    </div>
+                    {i < arr.length - 1 && <div className={`flex-1 h-[2px] mx-1 mb-4 ${(LEAD_STAGES[lead.stage]?.order || 0) > (LEAD_STAGES[s]?.order || 0) ? 'bg-primary' : 'bg-gray-200'}`} />}
+                  </React.Fragment>
+                ))}
               </div>
-            )}
-            {lead.testDriveStatus === 'completed' && (
-              <button onClick={handlePromoteToProposal} className="w-full py-2.5 rounded-lg text-[12px] font-bold text-center cursor-pointer bg-purple-500 text-white active:opacity-70">
-                <span className="flex items-center justify-center gap-1"><Icon name="users" size={14} /> เลื่อนเป็น Proposal</span>
-              </button>
-            )}
-            {lead.testDriveStatus === 'cancelled' && (
-              <div className="text-center py-1">
-                <span className="px-3 py-1 rounded-full text-[11px] font-bold" style={{ backgroundColor: TEST_DRIVE_STATUSES.cancelled?.bg, color: TEST_DRIVE_STATUSES.cancelled?.color }}>
-                  ยกเลิก (ถาวร)
-                </span>
-              </div>
-            )}
-          </div>
+
+              {lead.stage === 'proposal' && (
+                <div className="flex gap-2">
+                  <button onClick={handleGoToBooking} className="flex-1 py-2.5 bg-primary text-white rounded-lg text-[12px] font-bold cursor-pointer">
+                    จองรถ (Evaluation)
+                  </button>
+                </div>
+              )}
+              {lead.stage === 'evaluation' && (
+                <div className="flex gap-2">
+                  <button onClick={() => setShowWonDialog(true)} className="flex-1 py-2.5 border-2 border-green-500 text-green-600 bg-white rounded-lg text-[12px] font-bold cursor-pointer active:opacity-70">
+                    ปิดการขายสำเร็จ (Won)
+                  </button>
+                  <button onClick={() => setShowCloseDialog(true)} className="flex-1 py-2.5 border-2 border-gray-400 text-gray-500 bg-white rounded-lg text-[12px] font-bold cursor-pointer active:opacity-70">
+                    ปิดไม่สำเร็จ (Lost)
+                  </button>
+                </div>
+              )}
+              {(lead.stage === 'close_won' || lead.stage === 'close_lost') && (
+                <div className="text-center">
+                  <span className={`badge-${lead.stage}`}>{LEAD_STAGES[lead.stage]?.labelTh} (ถาวร)</span>
+                </div>
+              )}
+            </div>
+          ) : (
+            /* Test drive lead still at new_lead — show TD status management */
+            <div className="bg-white px-4 py-3 border-b border-border">
+              {lead.testDriveStatus === 'scheduled' && (
+                <div className="flex gap-2">
+                  <button onClick={() => handleTestDriveStatusChange('completed')} className="flex-1 py-2.5 rounded-lg text-[12px] font-bold text-center cursor-pointer bg-emerald-50 text-emerald-600 border border-emerald-200 active:opacity-70">
+                    เสร็จสิ้น
+                  </button>
+                  <button onClick={() => handleTestDriveStatusChange('cancelled')} className="flex-1 py-2.5 rounded-lg text-[12px] font-bold text-center cursor-pointer bg-red-50 text-red-500 border border-red-200 active:opacity-70">
+                    ยกเลิก
+                  </button>
+                </div>
+              )}
+              {lead.testDriveStatus === 'completed' && lead.stage === 'new_lead' && (
+                <button onClick={handlePromoteToProposal} className="w-full py-2.5 rounded-lg text-[12px] font-bold text-center cursor-pointer bg-purple-500 text-white active:opacity-70">
+                  <span className="flex items-center justify-center gap-1"><Icon name="users" size={14} /> เลื่อนเป็น Proposal</span>
+                </button>
+              )}
+              {lead.testDriveStatus === 'cancelled' && (
+                <div className="text-center py-1">
+                  <span className="px-3 py-1 rounded-full text-[11px] font-bold" style={{ backgroundColor: TEST_DRIVE_STATUSES.cancelled?.bg, color: TEST_DRIVE_STATUSES.cancelled?.color }}>
+                    ยกเลิก (ถาวร)
+                  </span>
+                </div>
+              )}
+            </div>
+          )
         ) : (
           /* Purchase lead — Stage Progress Stepper */
           <div className="bg-white px-4 py-3 border-b border-border">
@@ -388,10 +453,10 @@ export default function LeadDetailPage() {
             )}
             {lead.stage === 'evaluation' && (
               <div className="flex gap-2">
-                <button onClick={() => handleAdvanceStage('close_won')} className="flex-1 py-2.5 bg-green-500 text-white rounded-lg text-[12px] font-bold cursor-pointer">
-                  ปิดการขาย (Won)
+                <button onClick={() => setShowWonDialog(true)} className="flex-1 py-2.5 border-2 border-green-500 text-green-600 bg-white rounded-lg text-[12px] font-bold cursor-pointer active:opacity-70">
+                  ปิดการขายสำเร็จ (Won)
                 </button>
-                <button onClick={() => setShowCloseDialog(true)} className="flex-1 py-2.5 bg-gray-500 text-white rounded-lg text-[12px] font-bold cursor-pointer">
+                <button onClick={() => setShowCloseDialog(true)} className="flex-1 py-2.5 border-2 border-gray-400 text-gray-500 bg-white rounded-lg text-[12px] font-bold cursor-pointer active:opacity-70">
                   ปิดไม่สำเร็จ (Lost)
                 </button>
               </div>
@@ -474,7 +539,7 @@ export default function LeadDetailPage() {
                 { icon: 'phone', label: 'โทร', action: handleCall },
                 { icon: 'chat', label: 'LINE', action: handleLine },
                 { icon: 'book', label: 'จอง', action: handleBook },
-                { icon: 'edit', label: 'แก้ไข', action: handleEdit },
+                { icon: isViewOnly ? 'search' : 'edit', label: isViewOnly ? 'ดูข้อมูล' : 'แก้ไข', action: handleEdit },
               ].map(a => (
                 <button key={a.label} onClick={a.action} className="flex flex-col items-center gap-1 p-3 bg-white border border-border rounded-md cursor-pointer active:opacity-70 transition-opacity">
                   <span className="text-primary"><Icon name={a.icon} size={18} /></span>
@@ -729,6 +794,20 @@ export default function LeadDetailPage() {
           )}
         </div>
       </div>
+
+      {/* Close Won Dialog */}
+      <ConfirmDialog
+        isOpen={showWonDialog}
+        onClose={() => setShowWonDialog(false)}
+        onConfirm={(note) => handleCloseWon(note)}
+        title="ปิดการขายสำเร็จ"
+        message="ยืนยันปิดการขายสำเร็จ?"
+        confirmLabel="ยืนยัน Won"
+        cancelLabel="ยกเลิก"
+        showNotes={true}
+        requireNotes={false}
+        confirmColor="#22C55E"
+      />
 
       {/* Close Lost Dialog */}
       <ConfirmDialog
