@@ -320,7 +320,7 @@ export default function BookingDocPage() {
           <button onClick={handlePrint} style={btnOutline}>
             พิมพ์ / Print
           </button>
-          <button onClick={handleShare} style={btnOutline}>
+          <button onClick={handleShare} style={{ ...btnOutline, color: '#1B7A3F', borderColor: '#1B7A3F' }}>
             แชร์
           </button>
           <button onClick={() => navigate(-1)} style={{ ...btnOutline, color: '#6B7280', borderColor: '#D1D5DB' }}>

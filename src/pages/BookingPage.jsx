@@ -979,15 +979,29 @@ export default function BookingPage() {
               ))}
             </div>
 
-            <button onClick={() => navigate(`/booking-doc/${bookingRef}`)} className="btn-o w-full cursor-pointer mb-2">
-              <Icon name="document" size={16} /> ดูเอกสารจอง
-            </button>
-            <div className="flex gap-[10px]">
-              <button onClick={() => setShowShareModal(true)} className="btn-o flex-1 cursor-pointer">
-                <Icon name="share" size={16} /> แชร์ Booking
-              </button>
-              <button onClick={handleGoHome} className="btn-p flex-1 cursor-pointer">กลับ</button>
-            </div>
+            {/* Primary action: sign document first */}
+            {!savedBooking?.signature ? (
+              <>
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-3 text-center">
+                  <p className="text-[12px] text-amber-700 font-bold">กรุณาลงนามเอกสารจองเพื่อดำเนินการต่อ</p>
+                </div>
+                <button onClick={() => navigate(`/booking-doc/${bookingRef}`)} className="w-full py-3 bg-primary text-white rounded-xl text-[14px] font-bold cursor-pointer flex items-center justify-center gap-2 mb-3 active:opacity-80">
+                  <Icon name="document" size={16} /> ลงนามเอกสารจอง
+                </button>
+              </>
+            ) : (
+              <>
+                <button onClick={() => navigate(`/booking-doc/${bookingRef}`)} className="w-full py-3 border-2 border-primary text-primary bg-white rounded-xl text-[13px] font-bold cursor-pointer flex items-center justify-center gap-2 mb-2 active:opacity-80">
+                  <Icon name="document" size={16} /> ดูเอกสารจอง
+                </button>
+                <div className="flex gap-[10px]">
+                  <button onClick={() => setShowShareModal(true)} className="btn-o flex-1 cursor-pointer">
+                    <Icon name="share" size={16} /> แชร์ Booking
+                  </button>
+                  <button onClick={handleGoHome} className="btn-p flex-1 cursor-pointer">กลับ</button>
+                </div>
+              </>
+            )}
 
             {/* Share Modal */}
             {showShareModal && createPortal(
