@@ -803,7 +803,7 @@ export default function LeadDetailPage() {
                     </>
                   )}
                 </div>
-                {editingActivityId !== act.id && (
+                {editingActivityId !== act.id && ['note', 'call'].includes(act.type) && (
                   <div className="flex items-start gap-1 flex-shrink-0 mt-[2px]">
                     <button
                       onClick={(e) => { e.stopPropagation(); handleEditActivity(act); }}

@@ -318,7 +318,11 @@ export default function BookingPage() {
   const handleGoHome = () => {
     clearBookingDraft();
     reset();
-    navigate('/sales-dash');
+    if (leadId) {
+      navigate(`/lead/${leadId}`);
+    } else {
+      navigate(-1);
+    }
   };
 
   const handleCopyLink = () => {
@@ -979,7 +983,7 @@ export default function BookingPage() {
               <button onClick={() => setShowShareModal(true)} className="btn-o flex-1 cursor-pointer">
                 <Icon name="share" size={16} /> แชร์ Booking
               </button>
-              <button onClick={handleGoHome} className="btn-p flex-1 cursor-pointer">กลับหน้าหลัก</button>
+              <button onClick={handleGoHome} className="btn-p flex-1 cursor-pointer">กลับ</button>
             </div>
 
             {/* Share Modal */}

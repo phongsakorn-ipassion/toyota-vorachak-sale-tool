@@ -386,6 +386,24 @@ export default function ACardPage() {
         <div className="card-base">
           <div className="card-hd"><span className="card-title">เลือกศูนย์บริการ | Select Service Center</span></div>
 
+          {isViewMode ? (
+            /* View mode: show selected center as plain text */
+            (() => {
+              const centerObj = selectedCenter ? SERVICE_CENTERS.find(c => c.id === selectedCenter) : null;
+              return centerObj ? (
+                <div className="p-3 rounded-lg border border-primary bg-green-50">
+                  <div className="text-[13px] font-extrabold text-t1">{centerObj.name}</div>
+                  <div className="text-[11px] text-t2 mt-[2px]">{centerObj.address}</div>
+                  <div className="flex items-center gap-3 mt-[3px]">
+                    <span className="text-[10px] text-t3 flex items-center gap-1"><Icon name="phone" size={10} /> {centerObj.phone}</span>
+                    <span className="text-[10px] text-t3 flex items-center gap-1"><Icon name="clock" size={10} /> {centerObj.hours}</span>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-[13px] text-t2 py-2">-</p>
+              );
+            })()
+          ) : (
           <div className="md:flex md:gap-4">
             {/* Left: filters + list */}
             <div className="md:w-1/2">
@@ -476,6 +494,7 @@ export default function ACardPage() {
               />
             </div>
           </div>
+          )}
         </div>
 
         {/* ====== Customer Info ====== */}
@@ -484,10 +503,14 @@ export default function ACardPage() {
           {(isTestDrive ? testDriveFields : fields).map((f) => (
             <div key={f.label} className="mb-3">
               <label className={labelCls}>{f.label}</label>
-              <div className="relative">
-                <span className="absolute left-[13px] top-1/2 -translate-y-1/2 text-t3"><Icon name={f.icon} size={15} /></span>
-                <input type={f.type} placeholder={f.ph} value={f.value} onChange={(e) => f.setter(e.target.value)} disabled={isViewMode} className={`w-full py-3 pl-[38px] pr-3 bg-white border border-border rounded-md text-[13px] text-t1 outline-none focus:border-primary ${isViewMode ? 'opacity-70' : ''}`} style={inputStyle} />
-              </div>
+              {isViewMode ? (
+                <p className="text-[13px] text-t1 font-semibold py-2">{f.value || '-'}</p>
+              ) : (
+                <div className="relative">
+                  <span className="absolute left-[13px] top-1/2 -translate-y-1/2 text-t3"><Icon name={f.icon} size={15} /></span>
+                  <input type={f.type} placeholder={f.ph} value={f.value} onChange={(e) => f.setter(e.target.value)} className="w-full py-3 pl-[38px] pr-3 bg-white border border-border rounded-md text-[13px] text-t1 outline-none focus:border-primary" style={inputStyle} />
+                </div>
+              )}
               {errors[f.key] && <p className="text-[10px] text-red-500 mt-1">กรุณากรอกข้อมูล</p>}
             </div>
           ))}
@@ -496,27 +519,33 @@ export default function ACardPage() {
           {!isTestDrive && (
             <div className="mb-3 relative">
               <label className={labelCls}>จังหวัด / Province *</label>
-              <div className="relative">
-                <span className="absolute left-[13px] top-1/2 -translate-y-1/2 text-t3"><Icon name="location" size={15} /></span>
-                <input
-                  type="text"
-                  placeholder="เลือกจังหวัด..."
-                  value={province || customerProvinceSearch}
-                  onChange={(e) => { setCustomerProvinceSearch(e.target.value); setProvince(''); setCustomerProvinceOpen(true); }}
-                  onFocus={() => setCustomerProvinceOpen(true)}
-                  onBlur={() => setTimeout(() => setCustomerProvinceOpen(false), 200)}
-                  className="w-full py-3 pl-[38px] pr-3 bg-white border border-border rounded-md text-[13px] text-t1 outline-none focus:border-primary"
-                  style={inputStyle}
-                />
-              </div>
-              {customerProvinceOpen && (
-                <div className="absolute z-20 left-0 right-0 mt-1 bg-white border border-border rounded-md shadow-lg max-h-40 overflow-y-auto">
-                  {filteredCustomerProvinces.map((p) => (
-                    <button key={p.name} className="w-full text-left px-3 py-2 text-[12px] hover:bg-green-50 cursor-pointer" onMouseDown={() => { setProvince(p.name); setCustomerProvinceSearch(''); setCustomerProvinceOpen(false); }}>
-                      {p.name} ({p.nameEn})
-                    </button>
-                  ))}
-                </div>
+              {isViewMode ? (
+                <p className="text-[13px] text-t1 font-semibold py-2">{province || '-'}</p>
+              ) : (
+                <>
+                  <div className="relative">
+                    <span className="absolute left-[13px] top-1/2 -translate-y-1/2 text-t3"><Icon name="location" size={15} /></span>
+                    <input
+                      type="text"
+                      placeholder="เลือกจังหวัด..."
+                      value={province || customerProvinceSearch}
+                      onChange={(e) => { setCustomerProvinceSearch(e.target.value); setProvince(''); setCustomerProvinceOpen(true); }}
+                      onFocus={() => setCustomerProvinceOpen(true)}
+                      onBlur={() => setTimeout(() => setCustomerProvinceOpen(false), 200)}
+                      className="w-full py-3 pl-[38px] pr-3 bg-white border border-border rounded-md text-[13px] text-t1 outline-none focus:border-primary"
+                      style={inputStyle}
+                    />
+                  </div>
+                  {customerProvinceOpen && (
+                    <div className="absolute z-20 left-0 right-0 mt-1 bg-white border border-border rounded-md shadow-lg max-h-40 overflow-y-auto">
+                      {filteredCustomerProvinces.map((p) => (
+                        <button key={p.name} className="w-full text-left px-3 py-2 text-[12px] hover:bg-green-50 cursor-pointer" onMouseDown={() => { setProvince(p.name); setCustomerProvinceSearch(''); setCustomerProvinceOpen(false); }}>
+                          {p.name} ({p.nameEn})
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </>
               )}
             </div>
           )}
@@ -526,17 +555,25 @@ export default function ACardPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
               <div>
                 <label className={labelCls}>วันที่จะเข้ารับบริการ / Date *</label>
-                <div className="relative">
-                  <span className="absolute left-[13px] top-1/2 -translate-y-1/2 text-t3"><Icon name="calendar" size={15} /></span>
-                  <input type="date" value={serviceDate} onChange={(e) => setServiceDate(e.target.value)} disabled={isViewMode} className={`w-full py-3 pl-[38px] pr-3 bg-white border border-border rounded-md text-[13px] text-t1 outline-none focus:border-primary ${isViewMode ? 'opacity-70' : ''}`} style={inputStyle} />
-                </div>
+                {isViewMode ? (
+                  <p className="text-[13px] text-t1 font-semibold py-2">{serviceDate || '-'}</p>
+                ) : (
+                  <div className="relative">
+                    <span className="absolute left-[13px] top-1/2 -translate-y-1/2 text-t3"><Icon name="calendar" size={15} /></span>
+                    <input type="date" value={serviceDate} onChange={(e) => setServiceDate(e.target.value)} className="w-full py-3 pl-[38px] pr-3 bg-white border border-border rounded-md text-[13px] text-t1 outline-none focus:border-primary" style={inputStyle} />
+                  </div>
+                )}
               </div>
               <div>
                 <label className={labelCls}>เวลาที่สะดวก / Time *</label>
-                <div className="relative">
-                  <span className="absolute left-[13px] top-1/2 -translate-y-1/2 text-t3"><Icon name="clock" size={15} /></span>
-                  <input type="time" value={serviceTime} onChange={(e) => setServiceTime(e.target.value)} disabled={isViewMode} className={`w-full py-3 pl-[38px] pr-3 bg-white border border-border rounded-md text-[13px] text-t1 outline-none focus:border-primary ${isViewMode ? 'opacity-70' : ''}`} style={inputStyle} />
-                </div>
+                {isViewMode ? (
+                  <p className="text-[13px] text-t1 font-semibold py-2">{serviceTime || '-'}</p>
+                ) : (
+                  <div className="relative">
+                    <span className="absolute left-[13px] top-1/2 -translate-y-1/2 text-t3"><Icon name="clock" size={15} /></span>
+                    <input type="time" value={serviceTime} onChange={(e) => setServiceTime(e.target.value)} className="w-full py-3 pl-[38px] pr-3 bg-white border border-border rounded-md text-[13px] text-t1 outline-none focus:border-primary" style={inputStyle} />
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -548,25 +585,35 @@ export default function ACardPage() {
             <div className="card-hd"><span className="card-title flex items-center gap-2"><Icon name="calendar" size={14} /> วัน-เวลาทดลองขับ | Test Drive Schedule</span></div>
             <div className="mb-3">
               <label className={labelCls}>วันทดลองขับ / Date *</label>
-              <div className="relative">
-                <span className="absolute left-[13px] top-1/2 -translate-y-1/2 text-t3"><Icon name="calendar" size={15} /></span>
-                <input type="date" value={driveDate} onChange={(e) => setDriveDate(e.target.value)} disabled={isViewMode} className={`w-full py-3 pl-[38px] pr-3 bg-white border border-border rounded-md text-[13px] text-t1 outline-none focus:border-primary ${isViewMode ? 'opacity-70' : ''}`} style={inputStyle} />
-              </div>
+              {isViewMode ? (
+                <p className="text-[13px] text-t1 font-semibold py-2">{driveDate || '-'}</p>
+              ) : (
+                <div className="relative">
+                  <span className="absolute left-[13px] top-1/2 -translate-y-1/2 text-t3"><Icon name="calendar" size={15} /></span>
+                  <input type="date" value={driveDate} onChange={(e) => setDriveDate(e.target.value)} className="w-full py-3 pl-[38px] pr-3 bg-white border border-border rounded-md text-[13px] text-t1 outline-none focus:border-primary" style={inputStyle} />
+                </div>
+              )}
             </div>
             <div>
               <label className={labelCls}>เวลา / Time Slot *</label>
-              <div className="flex flex-wrap gap-2">
-                {TIME_SLOTS.map(slot => (
-                  <button
-                    key={slot}
-                    onClick={() => setDriveTime(slot)}
-                    className={`px-4 py-2 rounded-lg text-[12px] font-bold cursor-pointer transition-all border ${driveTime === slot ? 'border-primary bg-primary-light text-primary' : 'border-border bg-white text-t2 hover:border-gray-300'}`}
-                  >
-                    {slot}
-                  </button>
-                ))}
-              </div>
-              {driveTime && <p className="text-[11px] text-primary mt-2 font-bold">เลือก: {driveTime} น.</p>}
+              {isViewMode ? (
+                <p className="text-[13px] text-t1 font-semibold py-2">{driveTime ? `${driveTime} น.` : '-'}</p>
+              ) : (
+                <>
+                  <div className="flex flex-wrap gap-2">
+                    {TIME_SLOTS.map(slot => (
+                      <button
+                        key={slot}
+                        onClick={() => setDriveTime(slot)}
+                        className={`px-4 py-2 rounded-lg text-[12px] font-bold cursor-pointer transition-all border ${driveTime === slot ? 'border-primary bg-primary-light text-primary' : 'border-border bg-white text-t2 hover:border-gray-300'}`}
+                      >
+                        {slot}
+                      </button>
+                    ))}
+                  </div>
+                  {driveTime && <p className="text-[11px] text-primary mt-2 font-bold">เลือก: {driveTime} น.</p>}
+                </>
+              )}
             </div>
           </div>
         )}
@@ -575,11 +622,15 @@ export default function ACardPage() {
         {!isTestDrive && (
           <div className="card-base">
             <div className="card-hd"><span className="card-title">ช่องทาง | Lead Source</span></div>
-            <div className="flex flex-wrap gap-[7px]">
-              {LEAD_SOURCES.map((s) => (
-                <button key={s} onClick={() => setSource(s)} className={`pill-filter ${source === s ? 'on' : ''}`}>{s}</button>
-              ))}
-            </div>
+            {isViewMode ? (
+              <span className="inline-block px-3 py-1.5 rounded-full text-[12px] font-bold bg-primary-light text-primary border border-primary">{source || '-'}</span>
+            ) : (
+              <div className="flex flex-wrap gap-[7px]">
+                {LEAD_SOURCES.map((s) => (
+                  <button key={s} onClick={() => setSource(s)} className={`pill-filter ${source === s ? 'on' : ''}`}>{s}</button>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
@@ -599,30 +650,42 @@ export default function ACardPage() {
               {/* Car type */}
               <div className="mb-3">
                 <label className={labelCls}>ประเภทรถ / Type</label>
-                <select value={carType} onChange={(e) => { setCarType(e.target.value); setModel(''); }} disabled={isViewMode} className={`${inputCls} appearance-none cursor-pointer`} style={inputStyle}>
-                  {CAR_TYPES.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
-                </select>
+                {isViewMode ? (
+                  <p className="text-[13px] text-t1 font-semibold py-2">{CAR_TYPES.find(t => t.id === carType)?.label || '-'}</p>
+                ) : (
+                  <select value={carType} onChange={(e) => { setCarType(e.target.value); setModel(''); }} className={`${inputCls} appearance-none cursor-pointer`} style={inputStyle}>
+                    {CAR_TYPES.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
+                  </select>
+                )}
               </div>
 
               {/* Model */}
               <div className="mb-3">
                 <label className={labelCls}>รุ่น / Model *</label>
-                <select value={model} onChange={(e) => { setModel(e.target.value); setSelectedColor(''); setSelectedGrade(''); }} disabled={isViewMode} className={`${inputCls} appearance-none cursor-pointer`} style={inputStyle}>
-                  <option value="">เลือกรุ่นรถ</option>
-                  {filteredModels.map(c => <option key={c.id} value={c.id}>{c.name} — {c.priceLabel}</option>)}
-                </select>
+                {isViewMode ? (
+                  <p className="text-[13px] text-t1 font-semibold py-2">{model ? (CARS[model]?.name || model) : '-'}</p>
+                ) : (
+                  <select value={model} onChange={(e) => { setModel(e.target.value); setSelectedColor(''); setSelectedGrade(''); }} className={`${inputCls} appearance-none cursor-pointer`} style={inputStyle}>
+                    <option value="">เลือกรุ่นรถ</option>
+                    {filteredModels.map(c => <option key={c.id} value={c.id}>{c.name} — {c.priceLabel}</option>)}
+                  </select>
+                )}
               </div>
 
               {/* Sub-model / Grade */}
               {model && CARS[model]?.subModels?.length > 0 && (
                 <div className="mb-3">
                   <label className={labelCls}>รุ่นย่อย / Sub-model</label>
-                  <select value={selectedGrade} onChange={(e) => setSelectedGrade(e.target.value)} disabled={isViewMode} className={`${inputCls} appearance-none cursor-pointer`} style={inputStyle}>
-                    <option value="">เลือกรุ่นย่อย</option>
-                    {CARS[model].subModels.map(g => (
-                      <option key={g.id} value={g.id}>{g.name} — ฿{formatNumber(g.price)}</option>
-                    ))}
-                  </select>
+                  {isViewMode ? (
+                    <p className="text-[13px] text-t1 font-semibold py-2">{gradeObj?.name || '-'}</p>
+                  ) : (
+                    <select value={selectedGrade} onChange={(e) => setSelectedGrade(e.target.value)} className={`${inputCls} appearance-none cursor-pointer`} style={inputStyle}>
+                      <option value="">เลือกรุ่นย่อย</option>
+                      {CARS[model].subModels.map(g => (
+                        <option key={g.id} value={g.id}>{g.name} — ฿{formatNumber(g.price)}</option>
+                      ))}
+                    </select>
+                  )}
                 </div>
               )}
 
@@ -630,12 +693,25 @@ export default function ACardPage() {
               {model && (
                 <div className="mb-3">
                   <label className={labelCls}>เลือกสี / Choose Color</label>
-                  <div className="flex gap-[10px] flex-wrap">
-                    {COLOR_OPTIONS.map(c => (
-                      <button key={c.name} onClick={() => setSelectedColor(c.name)} className={`w-7 h-7 rounded-full cursor-pointer transition-all border-2 ${selectedColor === c.name ? 'border-primary scale-[1.2]' : 'border-gray-300'}`} style={{ background: c.hex }} title={c.name} />
-                    ))}
-                  </div>
-                  {selectedColor && <p className="text-[11px] text-t2 mt-1">{selectedColor}</p>}
+                  {isViewMode ? (
+                    selectedColor ? (
+                      <div className="flex items-center gap-2 py-2">
+                        <span className="w-5 h-5 rounded-full border-2 border-primary flex-shrink-0" style={{ background: COLOR_OPTIONS.find(c => c.name === selectedColor)?.hex || '#ccc' }} />
+                        <span className="text-[13px] text-t1 font-semibold">{selectedColor}</span>
+                      </div>
+                    ) : (
+                      <p className="text-[13px] text-t2 py-2">-</p>
+                    )
+                  ) : (
+                    <>
+                      <div className="flex gap-[10px] flex-wrap">
+                        {COLOR_OPTIONS.map(c => (
+                          <button key={c.name} onClick={() => setSelectedColor(c.name)} className={`w-7 h-7 rounded-full cursor-pointer transition-all border-2 ${selectedColor === c.name ? 'border-primary scale-[1.2]' : 'border-gray-300'}`} style={{ background: c.hex }} title={c.name} />
+                        ))}
+                      </div>
+                      {selectedColor && <p className="text-[11px] text-t2 mt-1">{selectedColor}</p>}
+                    </>
+                  )}
                 </div>
               )}
             </div>
@@ -711,7 +787,11 @@ export default function ACardPage() {
         {/* ====== Notes ====== */}
         <div className="card-base">
           <div className="card-hd"><span className="card-title">หมายเหตุ / Notes</span></div>
-          <textarea placeholder="บันทึกรายละเอียดเพิ่มเติม..." rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} disabled={isViewMode} className={`w-full py-3 px-3 bg-white border border-border rounded-md text-[13px] text-t1 outline-none focus:border-primary resize-none ${isViewMode ? 'opacity-70' : ''}`} style={inputStyle} />
+          {isViewMode ? (
+            <p className="text-[13px] text-t1 font-semibold py-2 whitespace-pre-wrap">{notes || '-'}</p>
+          ) : (
+            <textarea placeholder="บันทึกรายละเอียดเพิ่มเติม..." rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} className="w-full py-3 px-3 bg-white border border-border rounded-md text-[13px] text-t1 outline-none focus:border-primary resize-none" style={inputStyle} />
+          )}
         </div>
 
         {!isViewMode && (
