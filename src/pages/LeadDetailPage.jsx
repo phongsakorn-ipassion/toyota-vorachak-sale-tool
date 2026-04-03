@@ -51,6 +51,7 @@ export default function LeadDetailPage() {
 
   // Activity editing state
   const [editingActivityId, setEditingActivityId] = useState(null);
+  const [showStageNotes, setShowStageNotes] = useState(false);
   const [editingText, setEditingText] = useState('');
 
   // Re-read lead from store on every render to get latest activities/stage
@@ -394,6 +395,29 @@ export default function LeadDetailPage() {
                   <span className={`badge-${lead.stage}`}>{LEAD_STAGES[lead.stage]?.labelTh} (ถาวร)</span>
                 </div>
               )}
+
+              {/* Collapsible stage change notes (promoted TD) */}
+              {(() => {
+                const stageNotes = (lead.activities || []).filter(a => a.type === 'stage_change' || a.type === 'test_drive_status' || a.type === 'status_change');
+                if (stageNotes.length === 0) return null;
+                return (
+                  <div className="mt-3">
+                    <button onClick={() => setShowStageNotes(!showStageNotes)} className="flex items-center gap-1.5 text-[11px] text-t3 hover:text-t1 cursor-pointer transition-colors">
+                      <Icon name="document" size={12} /><span>บันทึก ({stageNotes.length})</span><Icon name="chevronDown" size={10} className={`transition-transform ${showStageNotes ? 'rotate-180' : ''}`} />
+                    </button>
+                    {showStageNotes && (
+                      <div className="mt-2 bg-gray-50 rounded-lg p-3 border border-gray-100">
+                        {stageNotes.map(a => (
+                          <div key={a.id} className="py-1.5 border-b border-gray-100 last:border-b-0">
+                            <p className="text-[10px] text-t3">{a.title}</p>
+                            {a.description && <p className="text-[11px] text-t1 mt-0.5">{a.description}</p>}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
           ) : (
             /* Test drive lead still at new_lead — show TD status management */
@@ -420,6 +444,29 @@ export default function LeadDetailPage() {
                   </span>
                 </div>
               )}
+
+              {/* Collapsible stage change notes (TD at new_lead) */}
+              {(() => {
+                const stageNotes = (lead.activities || []).filter(a => a.type === 'stage_change' || a.type === 'test_drive_status' || a.type === 'status_change');
+                if (stageNotes.length === 0) return null;
+                return (
+                  <div className="mt-3">
+                    <button onClick={() => setShowStageNotes(!showStageNotes)} className="flex items-center gap-1.5 text-[11px] text-t3 hover:text-t1 cursor-pointer transition-colors">
+                      <Icon name="document" size={12} /><span>บันทึก ({stageNotes.length})</span><Icon name="chevronDown" size={10} className={`transition-transform ${showStageNotes ? 'rotate-180' : ''}`} />
+                    </button>
+                    {showStageNotes && (
+                      <div className="mt-2 bg-gray-50 rounded-lg p-3 border border-gray-100">
+                        {stageNotes.map(a => (
+                          <div key={a.id} className="py-1.5 border-b border-gray-100 last:border-b-0">
+                            <p className="text-[10px] text-t3">{a.title}</p>
+                            {a.description && <p className="text-[11px] text-t1 mt-0.5">{a.description}</p>}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
           )
         ) : (
@@ -467,23 +514,37 @@ export default function LeadDetailPage() {
                 <span className={`badge-${lead.stage}`}>{LEAD_STAGES[lead.stage]?.labelTh} (ถาวร)</span>
               </div>
             )}
+
+            {/* Collapsible stage change notes */}
+            {(() => {
+              const stageNotes = (lead.activities || []).filter(a => a.type === 'stage_change' || a.type === 'test_drive_status' || a.type === 'status_change' || a.type === 'won' || a.type === 'lost');
+              if (stageNotes.length === 0) return null;
+              return (
+                <div className="mt-3">
+                  <button
+                    onClick={() => setShowStageNotes(!showStageNotes)}
+                    className="flex items-center gap-1.5 text-[11px] text-t3 hover:text-t1 cursor-pointer transition-colors"
+                  >
+                    <Icon name="document" size={12} />
+                    <span>บันทึก ({stageNotes.length})</span>
+                    <Icon name="chevronDown" size={10} className={`transition-transform ${showStageNotes ? 'rotate-180' : ''}`} />
+                  </button>
+                  {showStageNotes && (
+                    <div className="mt-2 bg-gray-50 rounded-lg p-3 border border-gray-100">
+                      {stageNotes.map(a => (
+                        <div key={a.id} className="py-1.5 border-b border-gray-100 last:border-b-0">
+                          <p className="text-[10px] text-t3">{a.title}</p>
+                          {a.description && <p className="text-[11px] text-t1 mt-0.5">{a.description}</p>}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
           </div>
         )}
 
-        {/* Status Change Notes */}
-        {lead.activities?.filter(a => a.type === 'stage_change' || a.type === 'test_drive_status' || a.type === 'status_change' || a.type === 'won' || a.type === 'lost').length > 0 && (
-          <div className="px-4 pt-3">
-            <div className="card-base">
-              <div className="card-hd"><span className="card-title">บันทึกการเปลี่ยนสถานะ</span></div>
-              {lead.activities.filter(a => a.type === 'stage_change' || a.type === 'test_drive_status' || a.type === 'status_change' || a.type === 'won' || a.type === 'lost').map(a => (
-                <div key={a.id} className="py-2 border-b border-gray-100 last:border-b-0">
-                  <p className="text-[11px] text-t3">{a.title}</p>
-                  {a.description && <p className="text-[12px] text-t1 mt-1">{a.description}</p>}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
 
         <div className="px-4 pt-4">
           {/* Test drive info card */}
