@@ -1,4 +1,4 @@
-const CACHE_NAME = 'toyota-sale-v2'
+const CACHE_NAME = 'toyota-sale-v3'
 const PRECACHE = [
   '/',
   '/index.html',
@@ -6,7 +6,7 @@ const PRECACHE = [
   '/manifest.json',
 ]
 
-// Install: cache core assets
+// Install: cache core assets, skip waiting to activate immediately
 self.addEventListener('install', (e) => {
   e.waitUntil(
     caches.open(CACHE_NAME)
@@ -15,7 +15,7 @@ self.addEventListener('install', (e) => {
   )
 })
 
-// Activate: clean old caches
+// Activate: clean old caches + notify all clients about new version
 self.addEventListener('activate', (e) => {
   e.waitUntil(
     caches.keys()
@@ -27,6 +27,14 @@ self.addEventListener('activate', (e) => {
         )
       )
       .then(() => self.clients.claim())
+      .then(() => {
+        // Notify all open tabs that a new version is available
+        return self.clients.matchAll({ type: 'window' }).then((clients) => {
+          clients.forEach((client) => {
+            client.postMessage({ type: 'NEW_VERSION_AVAILABLE', version: CACHE_NAME })
+          })
+        })
+      })
   )
 })
 
