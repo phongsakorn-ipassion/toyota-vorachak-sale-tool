@@ -274,7 +274,7 @@ export default function BookingPage() {
       if (newLead?.id) {
         effectiveLeadId = newLead.id;
         setLeadId(newLead.id);
-        addNotification({ title: 'ลีดใหม่', body: formData.customerName + ' — สร้างจากการจอง', type: 'lead_update' });
+        addNotification({ title: 'ลีดใหม่', body: `${formData.customerName} — ${car?.name || ''}${gradeName ? ` ${gradeName}` : ''} สร้างจากการจอง`, type: 'lead_update' });
       }
     }
 
@@ -313,7 +313,7 @@ export default function BookingPage() {
       return;
     }
 
-    addNotification({ title: 'จองสำเร็จ!', body: car.name + ' จองเรียบร้อย', type: 'booking' });
+    addNotification({ title: 'จองสำเร็จ!', body: `${car.name}${gradeName ? ` ${gradeName}` : ''} จองเรียบร้อย`, type: 'booking' });
     clearBookingDraft();
     updateForm({ step: 4 });
   };
@@ -662,9 +662,9 @@ export default function BookingPage() {
                         />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-[13px] font-extrabold text-t1">{car.name}</p>
+                        <p className="text-[13px] font-extrabold text-t1">{car.name}{gradeName ? ` · ${gradeName}` : ''}</p>
                         <p className="text-[11px] text-t2">{car.type} | {car.fuel}</p>
-                        <p className="text-[13px] font-extrabold text-primary mt-[2px]">{car.priceLabel}</p>
+                        <p className="text-[13px] font-extrabold text-primary mt-[2px]">฿{fmt(gradePrice)}</p>
                       </div>
                     </div>
                     {formData.selectedColor && (
@@ -1036,7 +1036,7 @@ export default function BookingPage() {
               <p className="text-[13px] text-t2">Booking confirmed & synced to DMS</p>
               <span className="inline-block mt-2 px-[14px] py-[6px] bg-primary-light text-primary text-[13px] font-extrabold rounded-pill">{bookingRef}</span>
               {formData.selectedColor && (
-                <p className="text-[12px] text-t2 mt-2">{car?.name} - สี {formData.selectedColor}</p>
+                <p className="text-[12px] text-t2 mt-2">{car?.name}{gradeName ? ` · ${gradeName}` : ''} - สี {formData.selectedColor}</p>
               )}
             </div>
 
@@ -1085,7 +1085,7 @@ export default function BookingPage() {
                     </div>
                     <div className="flex justify-between text-[12px]">
                       <span className="text-t3">รุ่นรถ</span>
-                      <span className="text-t1 font-bold">{car?.name}</span>
+                      <span className="text-t1 font-bold">{car?.name}{gradeName ? ` · ${gradeName}` : ''}</span>
                     </div>
                     <div className="flex justify-between text-[12px]">
                       <span className="text-t3">สี</span>

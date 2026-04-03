@@ -10,6 +10,7 @@ export default function BookingViewPage() {
   const booking = getBookingById(ref);
 
   const car = booking?.carId ? CARS[booking.carId] : null;
+  const resolvedGradeName = booking?.gradeName || (booking?.carId && CARS[booking.carId]?.subModels?.find(g => g.id === booking?.selectedGrade)?.name) || '';
   const fmt = (n) => formatNumber(n);
 
   const formatThaiDate = (dateStr) => {
@@ -93,7 +94,7 @@ export default function BookingViewPage() {
           <h3 className="text-[13px] font-extrabold text-gray-900 mb-3">ข้อมูลรถ</h3>
           {[
             ['รุ่น', booking.carName || car?.name || '-'],
-            ...(booking.gradeName ? [['รุ่นย่อย', booking.gradeName]] : []),
+            ...(resolvedGradeName ? [['รุ่นย่อย', resolvedGradeName]] : []),
             ['สี', booking.color || '-'],
             ['ราคา', booking.carPrice ? `฿${fmt(booking.carPrice)}` : (car ? `฿${fmt(car.price)}` : '-')],
           ].map(([label, value]) => (

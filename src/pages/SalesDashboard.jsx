@@ -267,7 +267,12 @@ export default function SalesDashboard() {
                     </div>
                     <div className="p-[12px]">
                       <p className="text-[15px] font-extrabold text-t1">{hl.name}</p>
-                      <p className="text-[11px] text-t2 mt-[2px] flex items-center gap-1"><Icon name="walk" size={11} /> {hl.source || 'Walk-in'}</p>
+                      <p className="text-[11px] text-t2 mt-[2px] flex items-center gap-1">
+                        <Icon name="car" size={11} /> {hlCar?.name || ''}
+                        {hl.selectedGrade && hlCar?.subModels &&
+                          <span className="text-t3"> · {hlCar.subModels.find(g => g.id === hl.selectedGrade)?.name || ''}</span>
+                        }
+                      </p>
                       {hlCar && hl.selectedGrade && (
                         <p className="text-[10px] text-t3 mt-[1px]">{hlCar.subModels?.find(g => g.id === hl.selectedGrade)?.name || ''}</p>
                       )}
@@ -331,7 +336,7 @@ export default function SalesDashboard() {
                 <div className="w-[42px] h-[42px] rounded-full flex items-center justify-center text-[15px] font-extrabold text-white flex-shrink-0" style={{ background: lead.color || '#6B7280' }}>{lead.init || lead.name?.charAt(0) || '?'}</div>
                 <div className="flex-1 min-w-0">
                   <p className="text-[13px] font-bold text-t1">{lead.name}</p>
-                  <p className="text-[11px] text-t2 mt-[2px] flex items-center gap-1"><Icon name="car" size={11} /> {car ? car.name : 'N/A'} · {car ? car.priceLabel : ''}</p>
+                  <p className="text-[11px] text-t2 mt-[2px] flex items-center gap-1"><Icon name="car" size={11} /> {car ? car.name : 'N/A'}{lead.selectedGrade && car?.subModels ? ` · ${car.subModels.find(g => g.id === lead.selectedGrade)?.name || ''}` : ''} · {car ? car.priceLabel : ''}</p>
                 </div>
                 <div className="flex flex-col items-end gap-1 flex-shrink-0">
                   <span className={`badge-${lead.level}`}>{lead.level === 'hot' ? 'Hot' : lead.level === 'cool' ? 'Cool' : 'Warm'}</span>
@@ -351,7 +356,7 @@ export default function SalesDashboard() {
                 <div className="w-[42px] h-[42px] rounded-full flex items-center justify-center text-[15px] font-extrabold text-white flex-shrink-0" style={{ background: lead.color || '#6B7280' }}>{lead.init || lead.name?.charAt(0) || '?'}</div>
                 <div className="flex-1 min-w-0">
                   <p className="text-[13px] font-bold text-t1">{lead.name}</p>
-                  <p className="text-[11px] text-t2 mt-[2px] flex items-center gap-1"><Icon name="car" size={11} /> {car ? car.name : 'N/A'}</p>
+                  <p className="text-[11px] text-t2 mt-[2px] flex items-center gap-1"><Icon name="car" size={11} /> {car ? car.name : 'N/A'}{lead.selectedGrade && car?.subModels ? ` · ${car.subModels.find(g => g.id === lead.selectedGrade)?.name || ''}` : ''}</p>
                   <p className="text-[10px] text-t3 mt-[1px] flex items-center gap-1">
                     <Icon name="pin" size={10} /> {getCenterName(lead.serviceCenter) || 'สาขาลาดพร้าว'}
                   </p>
@@ -380,7 +385,7 @@ export default function SalesDashboard() {
                 <div className="text-[14px] font-bold text-primary w-[50px]">{td.testDriveTime}</div>
                 <div className="flex-1">
                   <p className="text-[12px] font-bold text-t1">{td.name}</p>
-                  <p className="text-[10px] text-t3">{CARS[td.car]?.name || td.car}</p>
+                  <p className="text-[10px] text-t3">{CARS[td.car]?.name || td.car}{td.selectedGrade && CARS[td.car]?.subModels ? ` · ${CARS[td.car].subModels.find(g => g.id === td.selectedGrade)?.name || ''}` : ''}</p>
                 </div>
                 <span className={`badge-${td.level}`}>
                   {(TEST_DRIVE_STATUSES[td.level] || {}).label || td.level}

@@ -164,6 +164,7 @@ export default function ACardPage() {
 
   // Selected car data for preview
   const selectedCar = model ? CARS[model] : null;
+  const gradeObj = selectedGrade && CARS[model]?.subModels?.find(g => g.id === selectedGrade);
 
   // Filtered postal codes for dropdown
   const filteredPostalCodes = useMemo(() => {
@@ -302,7 +303,7 @@ export default function ACardPage() {
         draftStore.clearAcardDraft();
         addNotification({
           title: 'นัดทดลองขับใหม่',
-          body: `${name.trim()} — ${CARS[model]?.name || ''} ${driveDate} ${driveTime}`,
+          body: `${name.trim()} — ${CARS[model]?.name || ''}${gradeObj ? ` ${gradeObj.name}` : ''} ${driveDate} ${driveTime}`,
           type: 'test_drive',
         });
         toast.success('บันทึกเรียบร้อย');
@@ -347,7 +348,7 @@ export default function ACardPage() {
       } else {
         addLead(leadData);
         draftStore.clearAcardDraft();
-        addNotification({ title: 'Lead ใหม่!', body: name.trim() + ' เพิ่มลงระบบเรียบร้อย', type: 'success' });
+        addNotification({ title: 'Lead ใหม่!', body: `${name.trim()} — ${CARS[model]?.name || ''}${gradeObj ? ` ${gradeObj.name}` : ''} เพิ่มลงระบบเรียบร้อย`, type: 'success' });
         toast.success('บันทึกเรียบร้อย');
         navigate('/sales-dash');
       }
@@ -659,8 +660,8 @@ export default function ACardPage() {
                   </div>
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
-                      <div className="text-[14px] font-extrabold text-t1">{selectedCar.name}</div>
-                      <div className="text-[13px] font-extrabold text-primary mt-[2px]">{selectedCar.priceLabel}</div>
+                      <div className="text-[14px] font-extrabold text-t1">{selectedCar.name}{gradeObj ? ` · ${gradeObj.name}` : ''}</div>
+                      <div className="text-[13px] font-extrabold text-primary mt-[2px]">฿{formatNumber(gradeObj?.price || selectedCar.price)}</div>
                     </div>
                     <span className="text-primary flex-shrink-0"><Icon name="chevronRight" size={16} /></span>
                   </div>
@@ -686,8 +687,8 @@ export default function ACardPage() {
                   </div>
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
-                      <div className="text-[14px] font-extrabold text-t1">{selectedCar.name}</div>
-                      <div className="text-[13px] font-extrabold text-t2 mt-[2px]">{selectedCar.priceLabel}</div>
+                      <div className="text-[14px] font-extrabold text-t1">{selectedCar.name}{gradeObj ? ` · ${gradeObj.name}` : ''}</div>
+                      <div className="text-[13px] font-extrabold text-t2 mt-[2px]">฿{formatNumber(gradeObj?.price || selectedCar.price)}</div>
                     </div>
                     <span className="text-t3 flex-shrink-0"><Icon name="chevronRight" size={16} /></span>
                   </div>

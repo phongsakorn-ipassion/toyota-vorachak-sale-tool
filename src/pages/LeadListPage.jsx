@@ -198,7 +198,9 @@ export default function LeadListPage() {
                           {carName && (
                             <span className="text-xs text-t3 truncate">
                               <Icon name="car" size={11} className="inline mr-0.5 -mt-px" />
-                              {carName}
+                              {carName}{lead.selectedGrade && CARS[lead.car]?.subModels &&
+                                <span className="text-t3"> · {CARS[lead.car].subModels.find(g => g.id === lead.selectedGrade)?.name || ''}</span>
+                              }
                             </span>
                           )}
                         </div>
@@ -284,7 +286,9 @@ export default function LeadListPage() {
                         {carName && (
                           <>
                             <Icon name="car" size={11} className="inline mr-0.5 -mt-px" />
-                            {carName}
+                            {carName}{lead.selectedGrade && CARS[lead.car]?.subModels &&
+                              <span className="text-t3"> · {CARS[lead.car].subModels.find(g => g.id === lead.selectedGrade)?.name || ''}</span>
+                            }
                           </>
                         )}
                         {!carName && lead.source && lead.source}

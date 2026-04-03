@@ -156,7 +156,7 @@ export default function LeadDetailPage() {
       onConfirm: () => {
         const newLead = convertToCustomer(lead.id);
         if (newLead) {
-          addNotification({ title: 'แปลงเป็นลูกค้าสำเร็จ', body: `${lead.name} ถูกสร้างเป็น Lead ลูกค้าแล้ว`, type: 'success' });
+          addNotification({ title: 'แปลงเป็นลูกค้าสำเร็จ', body: `${lead.name} — ${car?.name || ''}${lead.selectedGrade && car?.subModels ? ` ${car.subModels.find(g => g.id === lead.selectedGrade)?.name || ''}` : ''} ถูกสร้างเป็น Lead ลูกค้าแล้ว`, type: 'success' });
           toast.success('สร้าง Lead ลูกค้าใหม่แล้ว');
           setConfirmOpen(false);
           navigate(`/lead/${newLead.id}`);
