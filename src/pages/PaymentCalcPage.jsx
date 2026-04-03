@@ -91,7 +91,6 @@ export default function PaymentCalcPage() {
         </div>
 
         {/* Actions */}
-        <button onClick={() => alert('ส่ง LINE สำเร็จ')} className="btn-o cursor-pointer mb-[10px]"><Icon name="chat" size={16} /> ส่งทาง LINE / Share via LINE</button>
         <button onClick={handleBookNow} className="btn-p cursor-pointer mb-4"><Icon name="book" size={16} /> จองรถ / Book Now</button>
       </div>
     </div>
