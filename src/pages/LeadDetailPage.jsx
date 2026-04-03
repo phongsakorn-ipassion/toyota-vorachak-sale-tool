@@ -26,6 +26,7 @@ export default function LeadDetailPage() {
   useEffect(() => { readTimestamp.current = Date.now(); }, [id]);
 
   const role = useAuthStore((s) => s.role);
+  const leads = useLeadStore((s) => s.leads); // subscribe to leads array for reactivity
   const getLeadById = useLeadStore((s) => s.getLeadById);
   const advanceStage = useLeadStore((s) => s.advanceStage);
   const changeTestDriveStatus = useLeadStore((s) => s.changeTestDriveStatus);
