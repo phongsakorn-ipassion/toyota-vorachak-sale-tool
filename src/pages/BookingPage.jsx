@@ -438,10 +438,10 @@ export default function BookingPage() {
                 )}
 
                 <div className="card-base">
-                  <div className="card-hd"><span className="card-title">ระดับความสนใจ</span></div>
+                  <div className="card-hd"><span className="card-title">สถานะ</span></div>
                   <div className="py-[9px] text-[12px]">
-                    <span className={`badge-${lead.level}`}>
-                      {{ hot: 'HOT', warm: 'Warm', cool: 'Cool', won: 'Won', lost: 'Lost' }[lead.level] || lead.level}
+                    <span className={`badge-${lead.stage || 'new_lead'}`}>
+                      {{ new_lead: 'ลีดใหม่', proposal: 'เสนอราคา', evaluation: 'ประเมิน/จอง', close_won: 'ปิดการขาย', close_lost: 'สูญเสีย' }[lead.stage] || lead.stage}
                     </span>
                   </div>
                 </div>

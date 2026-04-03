@@ -31,7 +31,7 @@ export default function ProfilePage() {
 
   // Stats
   const totalLeads = leads.length
-  const wonDeals = leads.filter((l) => l.level === 'won').length
+  const wonDeals = leads.filter((l) => l.stage === 'close_won').length
   const conversionRate = totalLeads > 0 ? Math.round((wonDeals / totalLeads) * 100) : 0
   const totalBookings = bookings.length
 

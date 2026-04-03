@@ -2,7 +2,7 @@ import React, { useMemo, useEffect, useRef, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
 import { useDashboardStore } from '../stores/dashboardStore';
-import { useLeadStore } from '../stores/leadStore';
+import { useLeadStore, deriveCategory } from '../stores/leadStore';
 import { useBookingStore } from '../stores/bookingStore';
 import Icon from '../components/icons/Icon';
 import { useVisibilityRefresh } from '../hooks/useVisibilityRefresh';
@@ -57,20 +57,20 @@ export default function ManagerDashboard() {
 
   // Computed KPIs
   const kpis = useMemo(() => {
-    const wonCount = filteredLeads.filter((l) => l.level === 'won').length;
+    const wonCount = filteredLeads.filter((l) => l.stage === 'close_won').length;
     const teamTotal = teamMembers.reduce((s, m) => s + m.units, 0) + wonCount;
     const teamTarget = teamMembers.reduce((s, m) => s + m.target, 0);
     const pct = teamTarget > 0 ? Math.round((teamTotal / teamTarget) * 100) : 0;
     const remainingUnits = Math.max(0, teamTarget - teamTotal);
-    const newLeads = filteredLeads.filter((l) => l.stage === 'new').length;
-    const hotLeads = filteredLeads.filter((l) => l.level === 'hot').length;
+    const newLeads = filteredLeads.filter((l) => l.stage === 'new_lead').length;
+    const hotLeads = filteredLeads.filter((l) => deriveCategory(l) === 'hot').length;
     return { teamTotal, teamTarget, pct, remainingUnits, newLeads, hotLeads };
   }, [filteredLeads, teamMembers]);
 
   // Enhance team data with actual won leads from filtered data
   const enhancedTeam = useMemo(() => {
-    const wonLeads = filteredLeads.filter(l => (l.leadType || 'purchase') === 'purchase' && l.level === 'won');
-    const tdCompleted = filteredLeads.filter(l => l.leadType === 'test_drive' && l.level === 'completed');
+    const wonLeads = filteredLeads.filter(l => (l.leadType || 'purchase') === 'purchase' && l.stage === 'close_won');
+    const tdCompleted = filteredLeads.filter(l => l.leadType === 'test_drive' && l.testDriveStatus === 'completed');
     return teamMembers.map(m => ({
       ...m,
       units: m.units + wonLeads.length + Math.floor(tdCompleted.length * 0.5),
@@ -92,7 +92,7 @@ export default function ManagerDashboard() {
       }
     }
     // Hot leads aging
-    const hotCount = filteredLeads.filter((l) => l.level === 'hot').length;
+    const hotCount = filteredLeads.filter((l) => deriveCategory(l) === 'hot').length;
     if (hotCount > 0) {
       result.push({ type: 'warn', bg: '#FFFBEB', color: '#92400E', border: '#FDE68A', iconName: 'flame', text: `Hot Lead ${hotCount} รายการ รอการติดตามนานกว่า 24 ชั่วโมง` });
     }

@@ -1,11 +1,26 @@
 export const ROLES = { SALES: 'sales', MANAGER: 'mgr' }
 
+// @deprecated — Use LEAD_STAGES + LEAD_CATEGORIES instead. Kept for backward compatibility during migration.
 export const LEAD_LEVELS = {
   hot: { label: 'Hot', labelTh: 'พร้อมซื้อ', color: '#DC2626', bg: '#FEF2F2', border: '#DC2626' },
   warm: { label: 'Warm', labelTh: 'สนใจ', color: '#D97706', bg: '#FFFBEB', border: '#D97706' },
   cool: { label: 'Cool', labelTh: 'สำรวจ', color: '#2563EB', bg: '#EFF6FF', border: '#2563EB' },
   won: { label: 'Won', labelTh: 'ปิดการขาย', color: '#16A34A', bg: '#F0FDF4', border: '#16A34A' },
   lost: { label: 'Lost', labelTh: 'สูญเสีย', color: '#6B7280', bg: '#F3F4F6', border: '#6B7280' },
+}
+
+export const LEAD_STAGES = {
+  new_lead: { label: 'New Lead', labelTh: 'ลีดใหม่', color: '#3B82F6', bg: '#EFF6FF', border: '#BFDBFE', order: 1 },
+  proposal: { label: 'Proposal', labelTh: 'เสนอราคา', color: '#8B5CF6', bg: '#F5F3FF', border: '#DDD6FE', order: 2 },
+  evaluation: { label: 'Evaluation', labelTh: 'ประเมิน/จอง', color: '#D97706', bg: '#FFFBEB', border: '#FDE68A', order: 3 },
+  close_won: { label: 'Won', labelTh: 'ปิดการขาย', color: '#16A34A', bg: '#F0FDF4', border: '#BBF7D0', order: 4 },
+  close_lost: { label: 'Lost', labelTh: 'สูญเสีย', color: '#6B7280', bg: '#F3F4F6', border: '#D1D5DB', order: 4 },
+}
+
+export const LEAD_CATEGORIES = {
+  hot: { label: 'Hot', labelTh: 'พร้อมซื้อ', color: '#DC2626', bg: '#FEF2F2' },
+  warm: { label: 'Warm', labelTh: 'สนใจ', color: '#D97706', bg: '#FFFBEB' },
+  cool: { label: 'Cool', labelTh: 'สำรวจ', color: '#2563EB', bg: '#EFF6FF' },
 }
 
 export const CAR_TYPES = [
@@ -45,8 +60,6 @@ export const LEAD_TYPES = {
 
 export const TEST_DRIVE_STATUSES = {
   scheduled: { label: 'นัดหมาย', labelEn: 'Scheduled', color: '#3B82F6', bg: '#EFF6FF' },
-  confirmed: { label: 'ยืนยัน', labelEn: 'Confirmed', color: '#8B5CF6', bg: '#F5F3FF' },
   completed: { label: 'เสร็จสิ้น', labelEn: 'Completed', color: '#10B981', bg: '#ECFDF5' },
   cancelled: { label: 'ยกเลิก', labelEn: 'Cancelled', color: '#EF4444', bg: '#FEF2F2' },
-  no_show: { label: 'ไม่มา', labelEn: 'No Show', color: '#6B7280', bg: '#F3F4F6' },
 };

@@ -21,7 +21,7 @@ export default function TargetsPage() {
   const [editTargets, setEditTargets] = useState({});
 
   // Compute real stats
-  const wonCount = useMemo(() => leads.filter((l) => l.level === 'won').length, [leads]);
+  const wonCount = useMemo(() => leads.filter((l) => l.stage === 'close_won').length, [leads]);
   const totalUnits = useMemo(() => teamMembers.reduce((s, m) => s + m.units, 0) + wonCount, [teamMembers, wonCount]);
   const totalTarget = useMemo(() => teamMembers.reduce((s, m) => s + m.target, 0), [teamMembers]);
   const remaining = Math.max(0, totalTarget - totalUnits);

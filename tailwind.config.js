@@ -2,7 +2,8 @@
 export default {
   content: ['./index.html', './src/**/*.{js,jsx}'],
   safelist: [
-    'badge-scheduled', 'badge-confirmed', 'badge-completed', 'badge-cancelled', 'badge-no_show',
+    'badge-new_lead', 'badge-proposal', 'badge-evaluation', 'badge-close_won', 'badge-close_lost',
+    'badge-scheduled', 'badge-completed', 'badge-cancelled',
     'badge-hot', 'badge-warm', 'badge-cool', 'badge-won', 'badge-lost',
   ],
   theme: {

@@ -4,35 +4,26 @@ import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import PageHeader from '../components/layout/PageHeader';
 import Icon from '../components/icons/Icon';
-import { useLeadStore } from '../stores/leadStore';
+import { useLeadStore, deriveCategory } from '../stores/leadStore';
 import { CARS } from '../lib/mockData';
-import { TEST_DRIVE_STATUSES } from '../lib/constants';
+import { LEAD_STAGES, LEAD_CATEGORIES, TEST_DRIVE_STATUSES } from '../lib/constants';
 import { useVisibilityRefresh } from '../hooks/useVisibilityRefresh';
 
-const PURCHASE_FILTER_OPTIONS = [
+const PURCHASE_FILTERS = [
   { key: 'all', label: 'ทั้งหมด' },
-  { key: 'hot', label: 'Hot' },
-  { key: 'warm', label: 'Warm' },
-  { key: 'cool', label: 'Cool' },
-  { key: 'won', label: 'Won' },
-  { key: 'lost', label: 'Lost' },
+  { key: 'new_lead', label: 'ลีดใหม่' },
+  { key: 'proposal', label: 'เสนอราคา' },
+  { key: 'evaluation', label: 'ประเมิน' },
+  { key: 'close_won', label: 'Won' },
+  { key: 'close_lost', label: 'Lost' },
 ];
 
-const TEST_DRIVE_FILTER_OPTIONS = [
+const TD_FILTERS = [
   { key: 'all', label: 'ทั้งหมด' },
   { key: 'scheduled', label: 'นัดหมาย' },
-  { key: 'confirmed', label: 'ยืนยัน' },
   { key: 'completed', label: 'เสร็จสิ้น' },
   { key: 'cancelled', label: 'ยกเลิก' },
 ];
-
-const LEVEL_STYLES = {
-  hot: { bg: 'bg-red-50', text: 'text-hot', label: 'Hot' },
-  warm: { bg: 'bg-amber-50', text: 'text-warm', label: 'Warm' },
-  cool: { bg: 'bg-blue-50', text: 'text-cool', label: 'Cool' },
-  won: { bg: 'bg-emerald-50', text: 'text-won', label: 'Won' },
-  lost: { bg: 'bg-gray-100', text: 'text-t3', label: 'Lost' },
-};
 
 const AVATAR_COLORS = ['#DC2626', '#8B5CF6', '#F59E0B', '#10B981', '#3B82F6', '#EC4899'];
 
@@ -50,8 +41,8 @@ export default function LeadListPage() {
   useVisibilityRefresh(useCallback(() => forceUpdate(n => n + 1), []));
 
   const navigate = useNavigate();
-  const filterLevel = useLeadStore((s) => s.filterLevel);
-  const setFilterLevel = useLeadStore((s) => s.setFilterLevel);
+  const filterStage = useLeadStore((s) => s.filterStage);
+  const setFilterStage = useLeadStore((s) => s.setFilterStage);
   const filterType = useLeadStore((s) => s.filterType);
   const setFilterType = useLeadStore((s) => s.setFilterType);
   const searchTerm = useLeadStore((s) => s.searchTerm);
@@ -85,10 +76,10 @@ export default function LeadListPage() {
 
   const handleTypeSwitch = (type) => {
     setFilterType(type);
-    setFilterLevel('all');
+    setFilterStage('all');
   };
 
-  const filterOptions = filterType === 'test_drive' ? TEST_DRIVE_FILTER_OPTIONS : PURCHASE_FILTER_OPTIONS;
+  const filterOptions = filterType === 'test_drive' ? TD_FILTERS : PURCHASE_FILTERS;
 
   return (
     <div className="screen-enter flex flex-col h-full">
@@ -144,8 +135,8 @@ export default function LeadListPage() {
         {filterOptions.map((opt) => (
           <button
             key={opt.key}
-            onClick={() => setFilterLevel(opt.key)}
-            className={`pill-filter whitespace-nowrap ${filterLevel === opt.key ? 'on' : ''}`}
+            onClick={() => setFilterStage(opt.key)}
+            className={`pill-filter whitespace-nowrap ${filterStage === opt.key ? 'on' : ''}`}
           >
             {opt.label}
           </button>
@@ -173,86 +164,78 @@ export default function LeadListPage() {
 
               if (isTestDrive) {
                 // Test drive card layout
-                const tdStatus = TEST_DRIVE_STATUSES[lead.level] || TEST_DRIVE_STATUSES.scheduled;
+                const tdStatus = TEST_DRIVE_STATUSES[lead.testDriveStatus] || TEST_DRIVE_STATUSES.scheduled;
                 return (
-                  <React.Fragment key={lead.id}>
-                    <button
-                      onClick={() => navigate(`/lead/${lead.id}`)}
-                      className="card-base flex items-center gap-3 cursor-pointer hover:shadow-sm transition-shadow text-left"
-                      style={{ marginBottom: 0 }}
+                  <button
+                    key={lead.id}
+                    onClick={() => navigate(`/lead/${lead.id}`)}
+                    className="card-base flex items-center gap-3 cursor-pointer hover:shadow-sm transition-shadow text-left"
+                    style={{ marginBottom: 0 }}
+                  >
+                    {/* Avatar */}
+                    <div
+                      className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0"
+                      style={{ backgroundColor: color }}
                     >
-                      {/* Avatar */}
-                      <div
-                        className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0"
-                        style={{ backgroundColor: color }}
-                      >
-                        {initial}
-                      </div>
+                      {initial}
+                    </div>
 
-                      {/* Info */}
-                      <div className="flex-1 min-w-0">
-                        <span className="text-sm font-bold text-t1 truncate flex items-center gap-1">
-                          {lead.name}
-                        </span>
-                        <div className="flex items-center gap-1.5 mt-0.5">
-                          {carName && (
-                            <span className="text-xs text-t3 truncate">
-                              <Icon name="car" size={11} className="inline mr-0.5 -mt-px" />
-                              {carName}{lead.selectedGrade && CARS[lead.car]?.subModels &&
-                                <span className="text-t3"> · {CARS[lead.car].subModels.find(g => g.id === lead.selectedGrade)?.name || ''}</span>
-                              }
+                    {/* Info */}
+                    <div className="flex-1 min-w-0">
+                      <span className="text-sm font-bold text-t1 truncate flex items-center gap-1">
+                        {lead.name}
+                      </span>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        {carName && (
+                          <span className="text-xs text-t3 truncate">
+                            <Icon name="car" size={11} className="inline mr-0.5 -mt-px" />
+                            {carName}{lead.selectedGrade && CARS[lead.car]?.subModels &&
+                              <span className="text-t3"> · {CARS[lead.car].subModels.find(g => g.id === lead.selectedGrade)?.name || ''}</span>
+                            }
+                          </span>
+                        )}
+                      </div>
+                      {(lead.testDriveDate || lead.testDriveTime) && (
+                        <div className="flex items-center gap-1 mt-0.5">
+                          <Icon name="calendar" size={10} className="text-t3" />
+                          <span className="text-[10px] text-t3">
+                            {lead.testDriveDate && new Date(lead.testDriveDate).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' })}
+                            {lead.testDriveTime && ` ${lead.testDriveTime}`}
+                          </span>
+                          {lead.serviceCenter && (
+                            <span className="text-[10px] text-t3 ml-1 truncate">
+                              <Icon name="location" size={10} className="inline -mt-px" /> {lead.serviceCenter}
                             </span>
                           )}
                         </div>
-                        {(lead.testDriveDate || lead.testDriveTime) && (
-                          <div className="flex items-center gap-1 mt-0.5">
-                            <Icon name="calendar" size={10} className="text-t3" />
-                            <span className="text-[10px] text-t3">
-                              {lead.testDriveDate && new Date(lead.testDriveDate).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' })}
-                              {lead.testDriveTime && ` ${lead.testDriveTime}`}
-                            </span>
-                            {lead.serviceCenter && (
-                              <span className="text-[10px] text-t3 ml-1 truncate">
-                                <Icon name="location" size={10} className="inline -mt-px" /> {lead.serviceCenter}
-                              </span>
-                            )}
-                          </div>
-                        )}
-                      </div>
+                      )}
+                    </div>
 
-                      {/* Status badge + quick actions */}
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        <span className={`badge-${lead.level}`}>
-                          {tdStatus.label}
-                        </span>
-                        <span
-                          onClick={(e) => handleCall(e, lead)}
-                          className="w-7 h-7 rounded-full flex items-center justify-center bg-green-50 text-green-600 active:opacity-60 cursor-pointer"
-                        >
-                          <Icon name="phone" size={12} />
-                        </span>
-                        <span
-                          onClick={(e) => handleLine(e, lead)}
-                          className="w-7 h-7 rounded-full flex items-center justify-center bg-emerald-50 text-emerald-600 active:opacity-60 cursor-pointer"
-                        >
-                          <Icon name="chat" size={12} />
-                        </span>
-                      </div>
-                    </button>
-                    {lead.convertedTo && (
-                      <button
-                        onClick={() => navigate(`/lead/${lead.convertedTo}`)}
-                        className="w-full text-left px-4 py-1.5 -mt-1 bg-blue-50 border border-blue-200 rounded-b-xl text-[10px] text-blue-600 font-bold flex items-center gap-1 cursor-pointer hover:bg-blue-100 transition-colors"
+                    {/* Status badge + quick actions */}
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <span className={`badge-${lead.testDriveStatus || 'scheduled'}`}>
+                        {tdStatus.label}
+                      </span>
+                      <span
+                        onClick={(e) => handleCall(e, lead)}
+                        className="w-7 h-7 rounded-full flex items-center justify-center bg-green-50 text-green-600 active:opacity-60 cursor-pointer"
                       >
-                        <Icon name="users" size={10} /> แปลงเป็นลูกค้าแล้ว
-                      </button>
-                    )}
-                  </React.Fragment>
+                        <Icon name="phone" size={12} />
+                      </span>
+                      <span
+                        onClick={(e) => handleLine(e, lead)}
+                        className="w-7 h-7 rounded-full flex items-center justify-center bg-emerald-50 text-emerald-600 active:opacity-60 cursor-pointer"
+                      >
+                        <Icon name="chat" size={12} />
+                      </span>
+                    </div>
+                  </button>
                 );
               }
 
-              // Purchase lead card (existing layout)
-              const style = LEVEL_STYLES[lead.level] || LEVEL_STYLES.cool;
+              // Purchase lead card
+              const category = deriveCategory(lead);
+              const stageInfo = LEAD_STAGES[lead.stage] || LEAD_STAGES.new_lead;
               return (
                 <button
                   key={lead.id}
@@ -303,9 +286,16 @@ export default function LeadListPage() {
 
                   {/* Badge + Quick action buttons in same row */}
                   <div className="flex items-center gap-1.5 shrink-0">
-                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${style.bg} ${style.text}`}>
-                      {style.label}
-                    </span>
+                    <div className="flex flex-col items-end gap-0.5">
+                      <span className={`badge-${lead.stage}`}>
+                        {stageInfo.labelTh}
+                      </span>
+                      {category && (
+                        <span className={`badge-${category} text-[9px]`}>
+                          {LEAD_CATEGORIES[category]?.label}
+                        </span>
+                      )}
+                    </div>
                     <span
                       onClick={(e) => handleCall(e, lead)}
                       className="w-7 h-7 rounded-full flex items-center justify-center bg-green-50 text-green-600 active:opacity-60 cursor-pointer"

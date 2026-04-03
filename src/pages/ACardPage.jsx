@@ -45,7 +45,7 @@ export default function ACardPage() {
   const [serviceDate, setServiceDate] = useState('');
   const [serviceTime, setServiceTime] = useState('');
   const [source, setSource] = useState('Walk-in');
-  const [interest, setInterest] = useState('hot');
+  // interest level removed — stage is auto-set to 'new_lead', category is derived
   const [carType, setCarType] = useState('all');
   const [model, setModel] = useState('');
   const [selectedColor, setSelectedColor] = useState('');
@@ -98,7 +98,6 @@ export default function ACardPage() {
         setEmail(lead.email || '');
         setLineId(lead.lineId || '');
         setSource(lead.source || 'Walk-in');
-        setInterest(lead.level || 'hot');
         setModel(lead.car || '');
         setSelectedColor(lead.selectedColor || '');
         setSelectedGrade(lead.selectedGrade || '');
@@ -122,7 +121,7 @@ export default function ACardPage() {
     if (!editId && draftStore.acardDraft) {
       const d = draftStore.acardDraft;
       setName(d.name || ''); setPhone(d.phone || ''); setEmail(d.email || '');
-      setLineId(d.lineId || ''); setSource(d.source || 'Walk-in'); setInterest(d.interest || 'hot');
+      setLineId(d.lineId || ''); setSource(d.source || 'Walk-in');
       setModel(d.model || ''); setSelectedColor(d.selectedColor || ''); setSelectedGrade(d.selectedGrade || ''); setNotes(d.notes || '');
       setProvince(d.province || ''); setServiceDate(d.serviceDate || ''); setServiceTime(d.serviceTime || '');
       setSelectedCenter(d.selectedCenter || ''); setCarType(d.carType || 'all');
@@ -134,10 +133,10 @@ export default function ACardPage() {
   useEffect(() => {
     if (editId) return;
     const timer = setTimeout(() => {
-      draftStore.setAcardDraft({ name, phone, email, lineId, source, interest, model, selectedColor, selectedGrade, province, serviceDate, serviceTime, selectedCenter, notes, carType, driveDate, driveTime, formType });
+      draftStore.setAcardDraft({ name, phone, email, lineId, source, model, selectedColor, selectedGrade, province, serviceDate, serviceTime, selectedCenter, notes, carType, driveDate, driveTime, formType });
     }, 500);
     return () => clearTimeout(timer);
-  }, [name, phone, email, lineId, source, interest, model, selectedColor, selectedGrade, province, serviceDate, serviceTime, selectedCenter, notes, carType, driveDate, driveTime, formType]);
+  }, [name, phone, email, lineId, source, model, selectedColor, selectedGrade, province, serviceDate, serviceTime, selectedCenter, notes, carType, driveDate, driveTime, formType]);
 
   // Filter service centers by province/postal
   const filteredCenters = useMemo(() => {
@@ -278,7 +277,8 @@ export default function ACardPage() {
         testDriveTime: driveTime,
         serviceCenter: selectedCenter,
         notes: notes.trim(),
-        level: 'scheduled',
+        stage: 'new_lead',
+        testDriveStatus: 'scheduled',
         source: 'Walk-in',
         init: initChar,
         color,
@@ -322,7 +322,7 @@ export default function ACardPage() {
         serviceTime,
         serviceCenter: selectedCenter,
         source,
-        level: interest,
+        stage: 'new_lead',
         car: model || undefined,
         selectedColor: selectedColor || undefined,
         selectedGrade: selectedGrade || undefined,
@@ -580,23 +580,9 @@ export default function ACardPage() {
           </div>
         )}
 
-        {/* ====== Interest Level (purchase only) ====== */}
-        {!isTestDrive && (
+        {/* Interest Level removed — category is now auto-derived from source & stage */}
+        {false && (
           <div className="card-base">
-            <div className="card-hd"><span className="card-title">ระดับความสนใจ | Interest Level</span></div>
-            <div className="grid grid-cols-3 gap-2">
-              {[
-                { id: 'hot', icon: 'flame', label: 'HOT', sub: 'พร้อมซื้อ', sel: 'border-hot bg-red-50' },
-                { id: 'warm', icon: 'sun', label: 'WARM', sub: 'สนใจ', sel: 'border-warm bg-amber-50' },
-                { id: 'cool', icon: 'snow', label: 'COOL', sub: 'สำรวจ', sel: 'border-cool bg-blue-50' },
-              ].map((l) => (
-                <button key={l.id} onClick={() => setInterest(l.id)} className={`p-3 rounded-md text-center border-[1.5px] transition-all cursor-pointer ${interest === l.id ? l.sel : 'border-border bg-white'}`} style={inputStyle}>
-                  <div className="flex justify-center mb-[3px]"><Icon name={l.icon} size={20} /></div>
-                  <div className="text-[12px] font-extrabold text-t1">{l.label}</div>
-                  <div className="text-[10px] text-t2">{l.sub}</div>
-                </button>
-              ))}
-            </div>
           </div>
         )}
 

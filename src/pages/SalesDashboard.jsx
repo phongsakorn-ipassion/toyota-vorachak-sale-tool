@@ -1,10 +1,10 @@
 import React, { useMemo, useState, useCallback, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
-import { useLeadStore } from '../stores/leadStore';
+import { useLeadStore, deriveCategory } from '../stores/leadStore';
 import { useBookingStore } from '../stores/bookingStore';
 import { CARS, carPlaceholder } from '../lib/mockData';
-import { TEST_DRIVE_STATUSES } from '../lib/constants';
+import { LEAD_STAGES, LEAD_CATEGORIES, TEST_DRIVE_STATUSES } from '../lib/constants';
 import { SERVICE_CENTERS } from '../lib/thaiProvinces';
 import { formatNumber, formatCurrency } from '../lib/formats';
 import Icon from '../components/icons/Icon';
@@ -82,7 +82,7 @@ export default function SalesDashboard() {
 
   // 3.1.1: Commission from actual Won purchase leads only
   const wonLeads = useMemo(() =>
-    leads.filter((l) => (l.leadType || 'purchase') === 'purchase' && l.level === 'won'),
+    leads.filter((l) => (l.leadType || 'purchase') === 'purchase' && l.stage === 'close_won'),
     [leads]
   );
   const unitsSold = wonLeads.length;
@@ -108,7 +108,7 @@ export default function SalesDashboard() {
   const todayDrives = useMemo(() => {
     const today = new Date().toISOString().slice(0, 10);
     return leads
-      .filter((l) => l.leadType === 'test_drive' && l.testDriveDate === today && l.level !== 'cancelled' && l.level !== 'no_show')
+      .filter((l) => l.leadType === 'test_drive' && l.testDriveDate === today && l.testDriveStatus !== 'cancelled')
       .sort((a, b) => (a.testDriveTime || '').localeCompare(b.testDriveTime || ''));
   }, [leads]);
 
@@ -133,7 +133,7 @@ export default function SalesDashboard() {
 
   // Hot leads sorted by service date/time
   const hotLeads = useMemo(() =>
-    leads.filter((l) => l.level === 'hot').sort(sortByServiceDate),
+    leads.filter((l) => deriveCategory(l) === 'hot').sort(sortByServiceDate),
     [leads]
   );
   const featLead = hotLeads[0] || leads[0];
@@ -141,13 +141,13 @@ export default function SalesDashboard() {
 
   // 3.2.1: Filtered lead list for "รายการล่าสุด" section
   const purchaseLeads = useMemo(() =>
-    leads.filter((l) => (l.leadType || 'purchase') === 'purchase' && ['hot', 'warm', 'cool'].includes(l.level))
+    leads.filter((l) => (l.leadType || 'purchase') === 'purchase' && !['close_won', 'close_lost'].includes(l.stage))
       .sort(sortByServiceDate),
     [leads]
   );
 
   const testDriveLeads = useMemo(() =>
-    leads.filter((l) => l.leadType === 'test_drive' && ['scheduled', 'confirmed'].includes(l.level))
+    leads.filter((l) => l.leadType === 'test_drive' && l.testDriveStatus === 'scheduled')
       .sort((a, b) => {
         // Sort by testDriveDate + testDriveTime ascending
         const dateA = a.testDriveDate || '';
@@ -339,7 +339,8 @@ export default function SalesDashboard() {
                   <p className="text-[11px] text-t2 mt-[2px] flex items-center gap-1"><Icon name="car" size={11} /> {car ? car.name : 'N/A'}{lead.selectedGrade && car?.subModels ? ` · ${car.subModels.find(g => g.id === lead.selectedGrade)?.name || ''}` : ''} · {car ? car.priceLabel : ''}</p>
                 </div>
                 <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                  <span className={`badge-${lead.level}`}>{lead.level === 'hot' ? 'Hot' : lead.level === 'cool' ? 'Cool' : 'Warm'}</span>
+                  <span className={`badge-${lead.stage}`}>{LEAD_STAGES[lead.stage]?.labelTh || lead.stage}</span>
+                  {deriveCategory(lead) && <span className={`badge-${deriveCategory(lead)} text-[9px]`}>{LEAD_CATEGORIES[deriveCategory(lead)]?.label}</span>}
                   <span className="text-[10px] text-t3">
                     {lead.serviceTime || ''}{lead.serviceDate ? ` · ${lead.serviceDate.slice(5)}` : ''}
                   </span>
@@ -350,7 +351,7 @@ export default function SalesDashboard() {
 
           {dashLeadType === 'test_drive' && dashLeadList.map((lead) => {
             const car = lead.car ? CARS[lead.car] : null;
-            const statusInfo = TEST_DRIVE_STATUSES[lead.level] || {};
+            const statusInfo = TEST_DRIVE_STATUSES[lead.testDriveStatus] || {};
             return (
               <div key={lead.id} onClick={() => navigate(`/lead/${lead.id}`)} className="flex items-center gap-[11px] py-[11px] border-b border-border last:border-b-0 cursor-pointer">
                 <div className="w-[42px] h-[42px] rounded-full flex items-center justify-center text-[15px] font-extrabold text-white flex-shrink-0" style={{ background: lead.color || '#6B7280' }}>{lead.init || lead.name?.charAt(0) || '?'}</div>
@@ -362,8 +363,8 @@ export default function SalesDashboard() {
                   </p>
                 </div>
                 <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                  <span className={`badge-${lead.level}`}>
-                    {statusInfo.label || lead.level}
+                  <span className={`badge-${lead.testDriveStatus || 'scheduled'}`}>
+                    {statusInfo.label || lead.testDriveStatus}
                   </span>
                   <span className="text-[10px] text-t3">
                     {lead.testDriveTime || ''}{lead.testDriveDate ? ` · ${lead.testDriveDate.slice(5)}` : ''}
@@ -387,8 +388,8 @@ export default function SalesDashboard() {
                   <p className="text-[12px] font-bold text-t1">{td.name}</p>
                   <p className="text-[10px] text-t3">{CARS[td.car]?.name || td.car}{td.selectedGrade && CARS[td.car]?.subModels ? ` · ${CARS[td.car].subModels.find(g => g.id === td.selectedGrade)?.name || ''}` : ''}</p>
                 </div>
-                <span className={`badge-${td.level}`}>
-                  {(TEST_DRIVE_STATUSES[td.level] || {}).label || td.level}
+                <span className={`badge-${td.testDriveStatus || 'scheduled'}`}>
+                  {(TEST_DRIVE_STATUSES[td.testDriveStatus] || {}).label || td.testDriveStatus}
                 </span>
               </div>
             ))}

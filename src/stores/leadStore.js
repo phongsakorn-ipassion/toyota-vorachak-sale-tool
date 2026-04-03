@@ -1,14 +1,32 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { LEADS, LEADS_LIST } from '../lib/mockData'
+import { LEAD_STAGES, TEST_DRIVE_STATUSES } from '../lib/constants'
 import { stampRecord, hasConflict, conflictMessage } from '../lib/concurrentCheck'
-import { syncTable, pushRecord, deleteRecord, leadToRemote, remoteToLead } from '../lib/dataSync'
+import { syncTable, pushRecord, deleteRecord, leadToRemote, remoteToLead, pushLead } from '../lib/dataSync'
+
+// ---------------------------------------------------------------------------
+// Derived category — pure function, exported for use by pages
+// ---------------------------------------------------------------------------
+
+export function deriveCategory(lead) {
+  if (!lead) return null;
+  if (lead.stage === 'close_won' || lead.stage === 'close_lost') return null;
+  const src = (lead.source || '').toLowerCase();
+  if (src.includes('walk-in') || src.includes('walk in')) return 'hot';
+  if (lead.stage !== 'new_lead') return 'warm';
+  return 'cool';
+}
+
+// ---------------------------------------------------------------------------
+// Store
+// ---------------------------------------------------------------------------
 
 export const useLeadStore = create(persist((set, get) => ({
   leads: LEADS_LIST,
   selectedLead: null,
-  filterLevel: 'all', // 'all' | 'hot' | 'warm' | 'cool' | 'won' | 'lost'
-  filterStage: 'all', // 'all' | 'new' | 'test_drive' | 'negotiation' | 'won' | 'lost'
+  filterStage: 'all', // 'all' | 'new_lead' | 'proposal' | 'evaluation' | 'close_won' | 'close_lost'
+  filterCategory: 'all', // 'all' | 'hot' | 'warm' | 'cool'
   filterType: 'purchase', // 'purchase' | 'test_drive'
   searchTerm: '',
 
@@ -25,9 +43,9 @@ export const useLeadStore = create(persist((set, get) => ({
     set({ selectedLead: lead })
   },
 
-  setFilterLevel: (level) => set({ filterLevel: level }),
-
   setFilterStage: (stage) => set({ filterStage: stage }),
+
+  setFilterCategory: (cat) => set({ filterCategory: cat }),
 
   setFilterType: (type) => set({ filterType: type }),
 
@@ -38,13 +56,14 @@ export const useLeadStore = create(persist((set, get) => ({
   // ---------------------------------------------------------------------------
 
   addLead: (lead) => {
+    const isTestDrive = (lead.leadType || 'purchase') === 'test_drive';
     const newLead = stampRecord({
       id: (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : `lead_${Date.now()}`,
       leadType: 'purchase',
       createdAt: new Date().toISOString(),
       activities: [],
-      stage: 'new',
-      level: 'warm',
+      stage: 'new_lead',
+      ...(isTestDrive ? { testDriveStatus: 'scheduled' } : {}),
       ...lead,
     });
     set((state) => ({
@@ -86,34 +105,76 @@ export const useLeadStore = create(persist((set, get) => ({
   },
 
   // ---------------------------------------------------------------------------
-  // Specific field mutations
+  // Stage transitions
   // ---------------------------------------------------------------------------
 
-  changeLevel: (id, newLevel, note, _readAt) => {
-    const result = get().updateLead(id, { level: newLevel }, _readAt)
-    if (result?.conflict) return result
-    // Auto-add activity for won/lost transitions
-    if (newLevel === 'won' || newLevel === 'lost') {
-      const levelLabel = newLevel === 'won' ? 'Won — ปิดการขาย' : 'Lost — สูญเสีย'
-      get().addActivity(id, {
-        type: newLevel,
-        title: `เปลี่ยนสถานะเป็น ${levelLabel}`,
-        description: note || `สถานะถูกเปลี่ยนเป็น ${levelLabel}`,
-        createdBy: 'system',
-      })
-    } else if (note) {
-      get().addActivity(id, {
-        type: 'note',
-        title: 'หมายเหตุการเปลี่ยนสถานะ',
-        description: note,
-        createdBy: 'system',
-      })
+  advanceStage: (id, targetStage, note, _readAt) => {
+    const STAGE_ORDER = ['new_lead', 'proposal', 'evaluation', 'close_won', 'close_lost'];
+    const state = get();
+    const lead = state.leads.find(l => l.id === id);
+    if (!lead) return { error: 'not_found' };
+
+    const currentIdx = STAGE_ORDER.indexOf(lead.stage);
+    const targetIdx = STAGE_ORDER.indexOf(targetStage);
+
+    // Allow close_lost from any non-terminal stage
+    if (targetStage === 'close_lost') {
+      if (lead.stage === 'close_won' || lead.stage === 'close_lost') return { error: 'already_closed' };
+      if (!note?.trim()) return { error: 'note_required' };
+    } else if (targetStage === 'close_won') {
+      if (lead.stage === 'close_won' || lead.stage === 'close_lost') return { error: 'already_closed' };
+    } else {
+      // For non-close stages, must be forward
+      if (targetIdx <= currentIdx) return { error: 'cannot_reverse' };
     }
-    return result
+
+    // Concurrent check
+    if (_readAt && lead._updatedAt && lead._updatedAt > _readAt) {
+      return { conflict: true, message: 'ข้อมูลถูกแก้ไขโดยผู้ใช้อื่น' };
+    }
+
+    const updatedLead = stampRecord({ ...lead, stage: targetStage });
+    const activity = {
+      id: `act_${Date.now()}`,
+      type: 'stage_change',
+      title: `เปลี่ยนสถานะเป็น ${LEAD_STAGES[targetStage]?.labelTh || targetStage}`,
+      description: note || '',
+      createdAt: new Date().toISOString(),
+      createdBy: 'มาลี',
+    };
+    updatedLead.activities = [activity, ...(updatedLead.activities || [])];
+
+    set((state) => ({
+      leads: state.leads.map(l => l.id === id ? updatedLead : l),
+    }));
+    pushLead(updatedLead);
+    return updatedLead;
   },
 
-  changeStage: (id, newStage, _readAt) => {
-    return get().updateLead(id, { stage: newStage }, _readAt)
+  changeTestDriveStatus: (id, newStatus, note, _readAt) => {
+    const state = get();
+    const lead = state.leads.find(l => l.id === id);
+    if (!lead) return { error: 'not_found' };
+    if (_readAt && lead._updatedAt && lead._updatedAt > _readAt) {
+      return { conflict: true, message: 'ข้อมูลถูกแก้ไขโดยผู้ใช้อื่น' };
+    }
+
+    const updatedLead = stampRecord({ ...lead, testDriveStatus: newStatus });
+    const activity = {
+      id: `act_${Date.now()}`,
+      type: 'test_drive_status',
+      title: `ทดลองขับ: ${TEST_DRIVE_STATUSES[newStatus]?.label || newStatus}`,
+      description: note || '',
+      createdAt: new Date().toISOString(),
+      createdBy: 'มาลี',
+    };
+    updatedLead.activities = [activity, ...(updatedLead.activities || [])];
+
+    set((state) => ({
+      leads: state.leads.map(l => l.id === id ? updatedLead : l),
+    }));
+    pushLead(updatedLead);
+    return updatedLead;
   },
 
   assignLead: (id, salesId, _readAt) => {
@@ -186,18 +247,26 @@ export const useLeadStore = create(persist((set, get) => ({
   // ---------------------------------------------------------------------------
 
   getFilteredLeads: () => {
-    const { leads, filterLevel, filterStage, filterType, searchTerm } = get()
+    const { leads, filterStage, filterCategory, filterType, searchTerm } = get()
     let result = leads
 
     // Filter by lead type first (default to 'purchase' for leads without leadType)
     result = result.filter((l) => (l.leadType || 'purchase') === filterType)
 
-    if (filterLevel !== 'all') {
-      result = result.filter((l) => l.level === filterLevel)
-    }
-
-    if (filterStage !== 'all') {
-      result = result.filter((l) => l.stage === filterStage)
+    if (filterType === 'purchase') {
+      // Stage filter for purchase leads
+      if (filterStage !== 'all') {
+        result = result.filter((l) => l.stage === filterStage)
+      }
+      // Category filter (derived)
+      if (filterCategory !== 'all') {
+        result = result.filter((l) => deriveCategory(l) === filterCategory)
+      }
+    } else {
+      // Test drive tab: filter by testDriveStatus
+      if (filterStage !== 'all') {
+        result = result.filter((l) => l.testDriveStatus === filterStage)
+      }
     }
 
     if (searchTerm && searchTerm.trim() !== '') {
@@ -220,70 +289,35 @@ export const useLeadStore = create(persist((set, get) => ({
 
   getPipelineData: () => {
     const { leads } = get()
-    const stages = ['new', 'test_drive', 'negotiation', 'won', 'lost']
-    const pipeline = {}
+    const purchaseLeads = leads.filter(l => (l.leadType || 'purchase') === 'purchase')
+    const testDriveLeads = leads.filter(l => l.leadType === 'test_drive')
+
+    // Purchase pipeline: group by stage
+    const purchasePipeline = {}
+    const stages = ['new_lead', 'proposal', 'evaluation', 'close_won', 'close_lost']
     stages.forEach((stage) => {
-      pipeline[stage] = leads.filter((l) => l.stage === stage)
+      purchasePipeline[stage] = purchaseLeads.filter((l) => l.stage === stage)
     })
-    return pipeline
+
+    // Test drive pipeline: group by testDriveStatus
+    const testDrivePipeline = {}
+    const tdStatuses = ['scheduled', 'completed', 'cancelled']
+    tdStatuses.forEach((status) => {
+      testDrivePipeline[status] = testDriveLeads.filter((l) => l.testDriveStatus === status)
+    })
+
+    return { purchase: purchasePipeline, testDrive: testDrivePipeline }
   },
 
   getLeadStats: () => {
-    const { leads } = get()
-    const stats = { hot: 0, warm: 0, cool: 0, won: 0, lost: 0, total: leads.length }
-    leads.forEach((l) => {
-      if (stats[l.level] !== undefined) {
-        stats[l.level]++
-      }
-    })
-    return stats
-  },
-
-  convertToCustomer: (leadId) => {
-    const state = get();
-    const tdLead = state.leads.find(l => l.id === leadId);
-    if (!tdLead || tdLead.leadType !== 'test_drive') return null;
-
-    // Create new purchase lead from test drive data
-    const newLeadId = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : `lead_${Date.now()}`;
-    const newLead = stampRecord({
-      id: newLeadId,
-      leadType: 'purchase',
-      name: tdLead.name,
-      phone: tdLead.phone,
-      email: tdLead.email,
-      lineId: tdLead.lineId,
-      source: tdLead.source,
-      car: tdLead.car,
-      selectedColor: tdLead.selectedColor,
-      serviceCenter: tdLead.serviceCenter,
-      level: 'hot',
-      stage: 'negotiation',
-      notes: `แปลงจากทดลองขับ ${tdLead.testDriveDate}`,
-      convertedFrom: leadId, // link back to original test drive lead
-      createdAt: new Date().toISOString(),
-      activities: [{
-        id: `act_${Date.now()}`,
-        type: 'status_change',
-        title: 'แปลงเป็นลูกค้า',
-        description: `จากการทดลองขับ ${tdLead.name}`,
-        createdAt: new Date().toISOString(),
-        createdBy: 'มาลี',
-      }],
+    const leads = get().leads;
+    const stats = { new_lead: 0, proposal: 0, evaluation: 0, close_won: 0, close_lost: 0, hot: 0, warm: 0, cool: 0, total: leads.length };
+    leads.forEach(l => {
+      if (l.stage && stats[l.stage] !== undefined) stats[l.stage]++;
+      const cat = deriveCategory(l);
+      if (cat && stats[cat] !== undefined) stats[cat]++;
     });
-
-    // Update original test drive lead to completed + link to new purchase lead
-    const updatedTdLead = stampRecord({ ...tdLead, level: 'completed', convertedTo: newLeadId });
-    set((state) => ({
-      leads: [newLead, ...state.leads.map(l =>
-        l.id === leadId ? updatedTdLead : l
-      )],
-    }));
-
-    // Push BOTH the new purchase lead AND the updated test drive lead
-    pushRecord('leads', newLead, leadToRemote);
-    pushRecord('leads', updatedTdLead, leadToRemote);
-    return newLead;
+    return stats;
   },
 
   syncFromServer: async () => {
@@ -301,9 +335,27 @@ export const useLeadStore = create(persist((set, get) => ({
   name: 'toyota-leads',
   partialize: (state) => ({ leads: state.leads }),
   onRehydrateStorage: () => (state) => {
-    // If no persisted leads or empty array, seed from mock data
-    if (state && (!state.leads || state.leads.length === 0)) {
-      state.leads = LEADS_LIST
+    if (state?.leads) {
+      state.leads = state.leads.map(l => {
+        if (l.stage) return l; // already migrated
+        // Migrate old level-based leads
+        let stage = 'new_lead';
+        if (l.level === 'won') stage = 'close_won';
+        else if (l.level === 'lost') stage = 'close_lost';
+        else if (l.level === 'hot' && l.source?.toLowerCase().includes('walk-in')) stage = 'proposal';
+
+        const migrated = { ...l, stage };
+        // Migrate test drive status
+        if (l.leadType === 'test_drive') {
+          if (!l.testDriveStatus) {
+            if (l.level === 'completed') migrated.testDriveStatus = 'completed';
+            else if (l.level === 'cancelled' || l.level === 'no_show') migrated.testDriveStatus = 'cancelled';
+            else migrated.testDriveStatus = 'scheduled';
+          }
+        }
+        return migrated;
+      });
     }
+    if (!state?.leads?.length) state.leads = LEADS_LIST;
   },
 }))

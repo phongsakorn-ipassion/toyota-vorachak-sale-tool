@@ -207,8 +207,7 @@ export const useBookingStore = create(persist((set, get) => ({
     // Update lead status if linked
     if (booking.leadId) {
       const leadStore = useLeadStore.getState()
-      leadStore.changeLevel(booking.leadId, 'won')
-      leadStore.changeStage(booking.leadId, 'won')
+      leadStore.advanceStage(booking.leadId, 'evaluation')
       leadStore.addActivity(booking.leadId, {
         type: 'booking',
         title: 'จองรถสำเร็จ',

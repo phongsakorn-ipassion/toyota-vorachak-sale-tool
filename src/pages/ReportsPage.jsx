@@ -23,7 +23,7 @@ export default function ReportsPage() {
   const stats = getLeadStats();
 
   // Computed stats
-  const wonLeads = useMemo(() => leads.filter((l) => l.level === 'won'), [leads]);
+  const wonLeads = useMemo(() => leads.filter((l) => l.stage === 'close_won'), [leads]);
   const unitsSold = wonLeads.length;
   const revenue = useMemo(() => {
     return wonLeads.reduce((sum, l) => {
@@ -86,7 +86,7 @@ export default function ReportsPage() {
     const header = 'ชื่อ,ระดับ,รถที่สนใจ,ราคา,สถานะ\n';
     const rows = leads.map((l) => {
       const car = l.car ? CARS[l.car] : null;
-      return `"${l.name}","${l.level}","${car ? car.name : ''}","${car ? car.price : ''}","${l.stage || ''}"`;
+      return `"${l.name}","${l.stage || ''}","${car ? car.name : ''}","${car ? car.price : ''}","${l.stage || ''}"`;
     }).join('\n');
     const blob = new Blob([BOM + header + rows], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);

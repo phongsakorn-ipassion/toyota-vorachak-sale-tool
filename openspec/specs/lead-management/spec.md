@@ -2,8 +2,8 @@
 ## Toyota Sale Tool — Vorachakyont Dealer App
 
 **Document Type:** OpenSpec (spec-driven)
-**Version:** 2.0
-**Last Updated:** 2026-03-28
+**Version:** 3.0
+**Last Updated:** 2026-04-03
 **Status:** Implemented
 **Language:** Thai/English (Bilingual)
 
@@ -12,13 +12,73 @@
 ## Overview
 
 Lead Management is a core feature of the Toyota Sale Tool that enables sales staff to:
-- Browse and search all leads with filtering by level
+- Browse and search all leads with filtering by stage and auto-derived category
 - Create new leads via A-Card form (full CRUD)
 - Edit existing leads
 - View lead detail with activities timeline
-- Change lead level (hot/warm/cool/won/lost)
+- Advance leads through a stage-based pipeline (new_lead > proposal > evaluation > close_won / close_lost)
+- Manage test drive sub-statuses (scheduled > completed / cancelled)
 - Add activities (call, LINE, note, appointment)
 - Pipeline kanban with stage management (manager view)
+
+---
+
+## Stage-Based Pipeline (v3.0)
+
+### Purchase Lead Stages
+
+Leads progress through a linear sales pipeline:
+
+| Stage | Label (TH) | Order | Color | Description |
+|-------|-------------|-------|-------|-------------|
+| `new_lead` | ลีดใหม่ | 1 | #3B82F6 | Initial state for all new purchase leads |
+| `proposal` | เสนอราคา | 2 | #8B5CF6 | Price proposal sent to customer |
+| `evaluation` | ประเมิน/จอง | 3 | #D97706 | Customer evaluating, may have booking |
+| `close_won` | ปิดการขาย | 4 | #16A34A | Sale completed (permanent) |
+| `close_lost` | สูญเสีย | 4 | #6B7280 | Sale lost (permanent, requires note) |
+
+**Stage Advancement Rules:**
+- Stages can only advance forward (no backward moves)
+- `close_lost` can be triggered from any non-terminal stage
+- `close_lost` requires a note explaining the reason
+- `close_won` and `close_lost` are permanent (terminal states)
+- Booking creation triggers advancement to `evaluation`
+
+### Auto-Derived Categories
+
+Categories (hot/warm/cool) are **derived automatically** from lead data, not manually set:
+
+```javascript
+function deriveCategory(lead) {
+  if (lead.stage === 'close_won' || lead.stage === 'close_lost') return null;
+  if (source includes 'walk-in') return 'hot';
+  if (lead.stage !== 'new_lead') return 'warm';
+  return 'cool';
+}
+```
+
+| Category | Label (TH) | Derivation Rule |
+|----------|-------------|-----------------|
+| `hot` | พร้อมซื้อ | Walk-in source |
+| `warm` | สนใจ | Any stage beyond new_lead |
+| `cool` | สำรวจ | New lead, non-walk-in source |
+
+Categories are shown as secondary badges alongside the stage badge.
+
+### Test Drive Sub-Statuses
+
+Test drive leads use `testDriveStatus` (separate from `stage`):
+
+| Status | Label (TH) | Color | Description |
+|--------|-------------|-------|-------------|
+| `scheduled` | นัดหมาย | #3B82F6 | Test drive appointment created |
+| `completed` | เสร็จสิ้น | #10B981 | Test drive completed |
+| `cancelled` | ยกเลิก | #EF4444 | Test drive cancelled |
+
+**Test Drive Status Transitions:**
+- `scheduled` -> `completed` or `cancelled`
+- `completed` -> can promote to `proposal` stage (advances the lead)
+- `cancelled` is permanent
 
 ---
 
@@ -27,252 +87,167 @@ Lead Management is a core feature of the Toyota Sale Tool that enables sales sta
 ### Lead Store (Zustand)
 
 ```javascript
+// Exported pure function
+export function deriveCategory(lead): 'hot' | 'warm' | 'cool' | null
+
 useLeadStore = {
   // State
   leads: Lead[],
   selectedLead: Lead | null,
-  filterLevel: 'all' | 'hot' | 'warm' | 'cool' | 'won' | 'lost',
-  filterStage: 'all' | 'new' | 'test_drive' | 'negotiation' | 'won' | 'lost',
+  filterStage: 'all' | 'new_lead' | 'proposal' | 'evaluation' | 'close_won' | 'close_lost',
+  filterCategory: 'all' | 'hot' | 'warm' | 'cool',
+  filterType: 'purchase' | 'test_drive',
   searchTerm: string,
 
   // CRUD
-  addLead(lead): void,
-  updateLead(id, data): void,
+  addLead(lead): Lead,
+  updateLead(id, data, _readAt?): Result,
   deleteLead(id): void,
-  selectLead(id): void,
 
-  // Field mutations
-  changeLevel(id, level): void,
-  changeStage(id, stage): void,
-  assignLead(id, salesId): void,
+  // Stage transitions
+  advanceStage(id, targetStage, note?, _readAt?): Result,
+  changeTestDriveStatus(id, newStatus, note?, _readAt?): Result,
 
   // Activities
   addActivity(leadId, activity): void,
+  editActivity(leadId, activityId, updates): void,
+  deleteActivity(leadId, activityId): boolean,
 
   // Getters
   getFilteredLeads(): Lead[],
   getLeadById(id): Lead | null,
-  getPipelineData(): { [stage]: Lead[] },
-  getLeadStats(): { hot, warm, cool, won, lost, total },
+  getPipelineData(): { purchase: {}, testDrive: {} },
+  getLeadStats(): { new_lead, proposal, evaluation, close_won, close_lost, hot, warm, cool, total },
 }
 ```
 
 ### Lead Object Structure
 ```javascript
 {
-  id: string,          // 'lead_xxx' or mock ID
-  name: string,        // Customer name (Thai)
-  init: string,        // Avatar initial (1 char)
-  color: string,       // Avatar bg color (hex)
-  level: string,       // 'hot' | 'warm' | 'cool' | 'won' | 'lost'
-  stage: string,       // 'new' | 'test_drive' | 'negotiation' | 'won' | 'lost'
-  source: string,      // 'Walk-in' | 'LINE OA' | 'Facebook' | etc.
-  car: string,         // Car ID reference
+  id: string,
+  name: string,
+  init: string,           // Avatar initial (1 char)
+  color: string,          // Avatar bg color (hex)
+  stage: string,          // 'new_lead' | 'proposal' | 'evaluation' | 'close_won' | 'close_lost'
+  leadType: string,       // 'purchase' | 'test_drive'
+  testDriveStatus: string, // 'scheduled' | 'completed' | 'cancelled' (test drives only)
+  source: string,         // 'Walk-in' | 'LINE OA' | 'Facebook' | etc.
+  car: string,            // Car ID reference
+  selectedGrade: string,  // Sub-model/grade ID
+  selectedColor: string,  // Color name
   phone: string,
   email: string,
-  line: string,        // LINE ID (optional)
-  budget: string,      // Budget range (optional)
-  notes: string,       // Notes text
+  lineId: string,
+  notes: string,
   activities: Activity[],
-  createdAt: string,   // ISO timestamp
-  assignedTo: string,  // Sales staff ID (optional)
-}
-
-Activity = {
-  id: string,
-  type: 'call' | 'line' | 'note' | 'appointment' | 'booking' | 'stage_change',
-  title: string,
-  content: string,
-  time: string,        // ISO timestamp
-  createdBy: string,
+  createdAt: string,      // ISO timestamp
+  _updatedAt: number,     // Timestamp for concurrent check
+  assignedTo: string,     // Sales staff ID (optional)
+  // Test drive specific
+  testDriveDate: string,
+  testDriveTime: string,
+  serviceCenter: string,
 }
 ```
-
-### Demo Data (4 Leads)
-
-| Name | Level | Source | Car | Phone |
-|------|-------|--------|-----|-------|
-| ดวงใจ ทองดี | hot | Walk-in | Yaris Cross | 081-234-5678 |
-| ประวิทย์ จันทร์ | warm | LINE OA | Land Cruiser FJ | 089-876-5432 |
-| อรณี สุขสม | warm | Facebook | bZ4X | 062-345-6789 |
-| จิรวัฒน์ ศรีรัตน์ | won | Referral | Corolla Altis | 095-678-1234 |
 
 ---
 
 ## IMPLEMENTED: Lead List Page (/leads)
 
-### Route & Navigation
-- Route: `/leads`
-- Accessible by: Sales and Manager roles
-- Tab: "Leads" in Sales bottom nav
+### Filter Pills
+- **Purchase tab**: ทั้งหมด / ลีดใหม่ / เสนอราคา / ประเมิน / Won / Lost (filters by `lead.stage`)
+- **Test drive tab**: ทั้งหมด / นัดหมาย / เสร็จสิ้น / ยกเลิก (filters by `lead.testDriveStatus`)
 
-### UI Components
-
-**Header:**
-- Title: "Lead ทั้งหมด"
-- "+" button (green circle) navigates to /acard for new lead creation
-
-**Search Bar:**
-- Text input with search icon
-- Searches across name, phone, email, source
-- Clear button when text is present
-- Calls `leadStore.setSearch(term)`
-
-**Filter Pills:**
-- Horizontal scroll: ทั้งหมด / Hot / Warm / Cool / Won
-- Uses `pill-filter` and `pill-filter.on` CSS classes
-- Calls `leadStore.setFilterLevel(level)`
-
-**Lead List Items:**
-Each item displays:
-- Avatar circle (colored, with initial)
-- Name (bold, truncated)
-- Level badge (colored pill: hot=red, warm=orange, cool=blue, won=green)
-- Car interest with car icon
-- Created date
-- Chevron right indicator
-- Tap navigates to `/lead/:id`
-
-**Empty State:**
-- Users icon in gray circle
-- "ไม่พบลีด" message
-- Suggestion to change filters
+### Card Badges
+- Purchase cards: primary badge `badge-{stage}` + secondary small `badge-{category}`
+- Test drive cards: badge `badge-{testDriveStatus}`
 
 ---
 
 ## IMPLEMENTED: Lead Detail Page (/lead/:id)
 
-### Layout
-- PageHeader with back button and lead name
-- Hero section: large avatar, name, level badge, source
-- Action buttons: Call, LINE, Schedule, Note
-- Car interest card
-- Level change selector
-- Activities timeline
+### Stage Progress Stepper (Purchase Leads)
+Visual stepper showing: ลีดใหม่ -> เสนอราคา -> ประเมิน/จอง -> ปิดการขาย
 
-### Actions
-- **Call**: Creates 'call' activity
-- **LINE**: Creates 'line' activity
-- **Appointment**: Creates 'appointment' activity
-- **Note**: Opens note input, creates 'note' activity
+Action buttons change based on current stage:
+- `new_lead`: "เสนอราคา (Proposal)" button
+- `proposal`: "จองรถ (Evaluation)" button (navigates to booking)
+- `evaluation`: "ปิดการขาย (Won)" + "ปิดไม่สำเร็จ (Lost)" buttons
+- Terminal: read-only badge showing final status
 
-### Level Change
-- Tappable level pills (hot/warm/cool/won/lost)
-- Calls `leadStore.changeLevel(id, newLevel)`
-- Visual feedback on selection
+### Test Drive Status Management
+- `scheduled`: "เสร็จสิ้น" and "ยกเลิก" buttons
+- `completed`: "เลื่อนเป็น Proposal" button (promotes lead)
+- `cancelled`: read-only badge
 
 ---
 
 ## IMPLEMENTED: A-Card Form (/acard)
 
-### Create Mode
-- Route: `/acard`
-- Blank form with all fields
-
-### Edit Mode
-- Route: `/acard?edit=LEAD_ID`
-- Pre-populates form with existing lead data
-
-### Form Fields
-| Field | Type | Required | Placeholder |
-|-------|------|----------|-------------|
-| ชื่อลูกค้า | text | Yes | ชื่อ-นามสกุล |
-| โทรศัพท์ | tel | Yes | 08X-XXX-XXXX |
-| อีเมล | email | No | email@example.com |
-| LINE ID | text | No | @line_id |
-| แหล่งที่มา | pills | No | Walk-in, LINE OA, Facebook, etc. |
-| ระดับความสนใจ | cards | No | Hot / Warm / Cool |
-| รุ่นรถที่สนใจ | select | No | Car catalog dropdown |
-| งบประมาณ | text | No | Free text |
-| หมายเหตุ | textarea | No | Notes |
-
-### Submit
-- Creates lead via `leadStore.addLead(data)`
-- Auto-generates ID, timestamp, initial from name
-- Navigates to lead list or lead detail
+### Changes in v3.0
+- **Removed**: Interest level selector (Hot/Warm/Cool)
+- Purchase leads saved with `stage: 'new_lead'` (category auto-derived)
+- Test drive leads saved with `stage: 'new_lead'`, `testDriveStatus: 'scheduled'`
 
 ---
 
 ## IMPLEMENTED: Pipeline Kanban (/pipeline)
 
-### Manager-Only View
-- Route: `/pipeline`
-- 5 columns: New / Test Drive / Negotiation / Won / Lost
-- Each column header shows stage name, count, and color coding
+### Purchase Pipeline Columns
+5 columns: ลีดใหม่ / เสนอราคา / ประเมิน/จอง / Won / Lost
 
-### Pipeline Cards
-- Avatar + name
-- Car model
-- Sales rep name
-- Price badge
-- Clickable: navigates to lead detail
+### Test Drive Pipeline Columns
+3 columns: นัดหมาย / เสร็จสิ้น / ยกเลิก
 
-### Stage Management
-- Cards can be moved between stages
-- Calls `leadStore.changeStage(id, newStage)`
-- Count badges update automatically
+### Move Rules
+- Purchase: only forward stage moves allowed (via `advanceStage`)
+- Test drive: status changes via `changeTestDriveStatus`
+- Category dot indicator shown on each purchase card
 
 ---
 
-## Lead Sources
-Available sources for A-Card form:
-- Walk-in
-- LINE OA
-- Facebook
-- Instagram
-- Event
-- Referral
+## IMPLEMENTED: Dashboard Integration
+
+### Sales Dashboard
+- Won leads: `l.stage === 'close_won'`
+- Hot leads: `deriveCategory(l) === 'hot'`
+- Active leads: `!['close_won', 'close_lost'].includes(l.stage)`
+- Test drives: `l.testDriveStatus === 'scheduled'`
+
+### Manager Dashboard
+- Won count: `l.stage === 'close_won'`
+- New leads: `l.stage === 'new_lead'`
+- Hot leads: `deriveCategory(l) === 'hot'`
+- TD completed: `l.testDriveStatus === 'completed'`
 
 ---
 
 ## Integration Points
 
-- **Booking**: When a booking is confirmed, the linked lead's level changes to 'won' and stage changes to 'won', with a booking activity logged automatically
-- **Notifications**: Lead-related notifications (e.g., hot lead alert) link to lead detail via deep navigation
-- **Dashboard**: Sales Dashboard shows lead stats (KPIs), Manager Dashboard shows pipeline overview
+- **Booking**: When a booking is created, the linked lead advances to `evaluation` stage
+- **Notifications**: Lead-related notifications link to lead detail via deep navigation
+- **Dashboard**: Sales/Manager dashboards use stage-based and category-based filtering
+- **Reports**: Won leads filtered by `stage === 'close_won'`
 
 ---
 
 ## Related Specifications
 
 - [Car Catalog Spec](../car-catalog/spec.md) — Lead.car references car catalog
-- [Booking-Payment Spec](../booking-payment/spec.md) — Booking flow updates lead status
+- [Booking-Payment Spec](../booking-payment/spec.md) — Booking flow updates lead stage
 - [Navigation Spec](../navigation/spec.md) — Tab bar routing to Lead List
 - [Design System Spec](../design-system/spec.md) — Color tokens, badge styles, avatar patterns
 
 ---
 
-## IMPLEMENTED: Sprint 2-4 Enhancements
+## Migration from v2.0
 
-### Lost Lead Status
-- Lead levels now include 'lost' in addition to hot/warm/cool/won
-- Won and Lost are permanent statuses with confirm dialog + required note
-- Filter pills include Lost for filtering
-
-### Lead List Action Shortcuts
-- Swipe or tap action buttons on list cards for quick call/LINE/note
-- Direct actions without navigating to detail page
-
-### Confirm Dialogs for Status Change
-- Changing to Won or Lost requires confirmation dialog
-- Optional note field in confirm dialog
-- Activity auto-logged on status change with note
-
-### Timeline CRUD
-- Edit existing activities (editActivity in store)
-- Delete activities (deleteActivity in store)
-- Activities stamped with _updatedAt for concurrent check
-
-### Service Center Selection
-- Service center map with Leaflet integration
-- Province/postal code search
-- Geolocation for nearest service center
-
-### Concurrent Check System
-- Leads stamped with `_updatedAt` on create/update
-- `updateLead` checks `_readAt` vs `_updatedAt` to detect conflicts
-- Returns `{ conflict: true, message }` on concurrent modification
-- ConflictNotification UI component for user feedback
+The store includes automatic migration on rehydration:
+- `l.level === 'won'` -> `stage: 'close_won'`
+- `l.level === 'lost'` -> `stage: 'close_lost'`
+- Walk-in hot leads -> `stage: 'proposal'`
+- Other levels -> `stage: 'new_lead'`
+- Test drive `l.level` -> `testDriveStatus` field
 
 ---
 

@@ -5,10 +5,10 @@ import toast from 'react-hot-toast';
 import Icon from '../components/icons/Icon';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import { CARS, COLOR_OPTIONS } from '../lib/mockData';
-import { TEST_DRIVE_STATUSES } from '../lib/constants';
+import { LEAD_STAGES, LEAD_CATEGORIES, TEST_DRIVE_STATUSES } from '../lib/constants';
 import { SERVICE_CENTERS } from '../lib/thaiProvinces';
 import { formatNumber } from '../lib/formats';
-import { useLeadStore } from '../stores/leadStore';
+import { useLeadStore, deriveCategory } from '../stores/leadStore';
 import { useBookingStore } from '../stores/bookingStore';
 import { useUiStore } from '../stores/uiStore';
 import { useAuthStore } from '../stores/authStore';
@@ -27,12 +27,12 @@ export default function LeadDetailPage() {
 
   const role = useAuthStore((s) => s.role);
   const getLeadById = useLeadStore((s) => s.getLeadById);
-  const changeLevel = useLeadStore((s) => s.changeLevel);
+  const advanceStage = useLeadStore((s) => s.advanceStage);
+  const changeTestDriveStatus = useLeadStore((s) => s.changeTestDriveStatus);
   const updateLead = useLeadStore((s) => s.updateLead);
   const addActivity = useLeadStore((s) => s.addActivity);
   const editActivity = useLeadStore((s) => s.editActivity);
   const deleteActivity = useLeadStore((s) => s.deleteActivity);
-  const convertToCustomer = useLeadStore((s) => s.convertToCustomer);
   const setCarId = useBookingStore((s) => s.setCarId);
   const setLeadId = useBookingStore((s) => s.setLeadId);
   const getBookings = useBookingStore((s) => s.getBookings);
@@ -41,6 +41,7 @@ export default function LeadDetailPage() {
   const [noteText, setNoteText] = useState('');
   const [showBookingInfo, setShowBookingInfo] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [showCloseDialog, setShowCloseDialog] = useState(false);
 
   // Confirm dialog state
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -50,10 +51,7 @@ export default function LeadDetailPage() {
   const [editingActivityId, setEditingActivityId] = useState(null);
   const [editingText, setEditingText] = useState('');
 
-  // Won/Lost note expand state
-  const [showStatusNote, setShowStatusNote] = useState(false);
-
-  // Re-read lead from store on every render to get latest activities/level
+  // Re-read lead from store on every render to get latest activities/stage
   const lead = getLeadById(id);
 
   // Update read timestamp whenever lead data changes
@@ -63,30 +61,8 @@ export default function LeadDetailPage() {
 
   const isTestDrive = lead.leadType === 'test_drive';
   const car = CARS[lead.car];
-  const isTerminal = isTestDrive
-    ? (lead.level === 'cancelled' || lead.level === 'no_show')
-    : (lead.level === 'won' || lead.level === 'lost');
-
-  // Badge label/class
-  const getBadgeInfo = () => {
-    if (isTestDrive) {
-      const st = TEST_DRIVE_STATUSES[lead.level] || TEST_DRIVE_STATUSES.scheduled;
-      return { label: st.label, color: st.color, bg: st.bg };
-    }
-    const badgeLabel = { won: 'Won', lost: 'Lost', hot: 'HOT', warm: 'Warm', cool: 'Cool' }[lead.level] || lead.level;
-    return { label: badgeLabel };
-  };
-  const badgeInfo = getBadgeInfo();
-  const badgeClass = `badge-${lead.level}`;
-
-  // Find status change note for won/lost
-  const statusChangeActivity = (!isTestDrive && isTerminal)
-    ? (lead.activities || []).find(a =>
-        a.type === 'won' || a.type === 'lost' ||
-        (a.type === 'status' && (a.description || a.content || '').length > 0)
-      )
-    : null;
-  const statusNote = statusChangeActivity?.description || statusChangeActivity?.content || '';
+  const isTerminal = lead.stage === 'close_won' || lead.stage === 'close_lost';
+  const category = deriveCategory(lead);
 
   // Find existing booking for this lead
   const existingBooking = (getBookings() || []).find(b => b.leadId === lead.id);
@@ -109,6 +85,55 @@ export default function LeadDetailPage() {
     setShowBookingInfo(!showBookingInfo);
   };
 
+  const handleGoToBooking = () => {
+    if (lead.car) setCarId(lead.car);
+    setLeadId(lead.id);
+    navigate('/booking');
+  };
+
+  // --- Stage advancement (purchase leads) ---
+  const handleAdvanceStage = (targetStage) => {
+    if (targetStage === 'close_lost') {
+      setShowCloseDialog(true);
+      return;
+    }
+    const result = advanceStage(lead.id, targetStage, '', readTimestamp.current);
+    if (result?.conflict) {
+      toast((t) => (
+        <div className="flex items-center gap-3">
+          <span className="text-sm">{result.message}</span>
+          <button onClick={() => { readTimestamp.current = Date.now(); forceUpdate(n => n + 1); toast.dismiss(t.id); }} className="text-xs px-2 py-1 bg-primary text-white rounded whitespace-nowrap">โหลดใหม่</button>
+        </div>
+      ), { duration: 5000, icon: '\u26A0\uFE0F' });
+    } else if (result?.error) {
+      toast.error(result.error);
+    } else {
+      toast.success(`เปลี่ยนสถานะเป็น ${LEAD_STAGES[targetStage]?.labelTh}`);
+      addNotification({ title: 'เปลี่ยนสถานะ', body: `${lead.name} → ${LEAD_STAGES[targetStage]?.labelTh}`, type: 'lead_update' });
+      readTimestamp.current = Date.now();
+    }
+  };
+
+  // --- Close Lost with required note ---
+  const handleCloseLost = (note) => {
+    const result = advanceStage(lead.id, 'close_lost', note, readTimestamp.current);
+    if (result?.conflict) {
+      toast((t) => (
+        <div className="flex items-center gap-3">
+          <span className="text-sm">{result.message}</span>
+          <button onClick={() => { readTimestamp.current = Date.now(); forceUpdate(n => n + 1); toast.dismiss(t.id); }} className="text-xs px-2 py-1 bg-primary text-white rounded whitespace-nowrap">โหลดใหม่</button>
+        </div>
+      ), { duration: 5000, icon: '\u26A0\uFE0F' });
+    } else if (result?.error) {
+      toast.error(result.error);
+    } else {
+      toast.success('เปลี่ยนสถานะเป็น Lost');
+      addNotification({ title: 'เปลี่ยนสถานะ', body: `${lead.name} → สูญเสีย`, type: 'lead_update' });
+      readTimestamp.current = Date.now();
+    }
+    setShowCloseDialog(false);
+  };
+
   // --- Test drive status changes ---
   const handleTestDriveStatusChange = (newStatus) => {
     const statusLabel = TEST_DRIVE_STATUSES[newStatus]?.label || newStatus;
@@ -120,7 +145,7 @@ export default function LeadDetailPage() {
       confirmLabel: `ยืนยัน ${statusLabel}`,
       confirmColor: TEST_DRIVE_STATUSES[newStatus]?.color || '#2563EB',
       onConfirm: (note) => {
-        const result = updateLead(lead.id, { level: newStatus }, readTimestamp.current);
+        const result = changeTestDriveStatus(lead.id, newStatus, note || '', readTimestamp.current);
         if (result?.conflict) {
           toast((t) => (
             <div className="flex items-center gap-3">
@@ -131,11 +156,6 @@ export default function LeadDetailPage() {
           setConfirmOpen(false);
           return;
         }
-        addActivity(lead.id, {
-          type: 'status_change',
-          title: `เปลี่ยนสถานะเป็น ${statusLabel}`,
-          description: note || `สถานะทดลองขับเปลี่ยนเป็น ${statusLabel}`,
-        });
         addNotification({ title: 'เปลี่ยนสถานะทดลองขับ', body: `${lead.name} — ${statusLabel}`, type: 'info' });
         toast.success('เปลี่ยนสถานะแล้ว');
         readTimestamp.current = Date.now();
@@ -145,115 +165,17 @@ export default function LeadDetailPage() {
     setConfirmOpen(true);
   };
 
-  const handleConvertToCustomer = () => {
-    setConfirmConfig({
-      title: 'แปลงเป็นลูกค้า',
-      message: `สร้าง Lead ลูกค้าใหม่จากข้อมูลทดลองขับของ ${lead.name}`,
-      showNotes: false,
-      requireNotes: false,
-      confirmLabel: 'ยืนยันแปลง',
-      confirmColor: '#16A34A',
-      onConfirm: () => {
-        const newLead = convertToCustomer(lead.id);
-        if (newLead) {
-          addNotification({ title: 'แปลงเป็นลูกค้าสำเร็จ', body: `${lead.name} — ${car?.name || ''}${lead.selectedGrade && car?.subModels ? ` ${car.subModels.find(g => g.id === lead.selectedGrade)?.name || ''}` : ''} ถูกสร้างเป็น Lead ลูกค้าแล้ว`, type: 'success' });
-          toast.success('สร้าง Lead ลูกค้าใหม่แล้ว');
-          setConfirmOpen(false);
-          navigate(`/lead/${newLead.id}`);
-        } else {
-          toast.error('ไม่สามารถแปลงได้');
-          setConfirmOpen(false);
-        }
-      },
-    });
-    setConfirmOpen(true);
-  };
-
-  // --- Level change with confirmation (purchase leads) ---
-  const handleLevelClick = (newLevel) => {
-    if (isTerminal) return;
-
-    if (newLevel === 'won') {
-      setConfirmConfig({
-        title: 'ยืนยันเปลี่ยนสถานะ',
-        message: 'เมื่อเปลี่ยนเป็น Won จะไม่สามารถเปลี่ยนกลับได้',
-        showNotes: true,
-        requireNotes: false,
-        confirmLabel: 'ยืนยัน Won',
-        confirmColor: '#16A34A',
-        onConfirm: (note) => {
-          const result = changeLevel(lead.id, 'won', note || undefined, readTimestamp.current);
-          if (result?.conflict) {
-            toast((t) => (
-              <div className="flex items-center gap-3">
-                <span className="text-sm">{result.message}</span>
-                <button onClick={() => { readTimestamp.current = Date.now(); forceUpdate(n => n + 1); toast.dismiss(t.id); }} className="text-xs px-2 py-1 bg-primary text-white rounded whitespace-nowrap">โหลดใหม่</button>
-              </div>
-            ), { duration: 5000, icon: '\u26A0\uFE0F' });
-            setConfirmOpen(false);
-            return;
-          }
-          addNotification({ title: 'เปลี่ยนสถานะ', body: lead.name + ' เป็น WON', type: 'info' });
-          toast.success('เปลี่ยนสถานะแล้ว');
-          readTimestamp.current = Date.now();
-          setConfirmOpen(false);
-        },
-      });
-      setConfirmOpen(true);
-    } else if (newLevel === 'lost') {
-      setConfirmConfig({
-        title: 'ยืนยันเปลี่ยนสถานะ',
-        message: 'เมื่อเปลี่ยนเป็น Lost จะไม่สามารถเปลี่ยนกลับได้',
-        showNotes: true,
-        requireNotes: true,
-        confirmLabel: 'ยืนยัน Lost',
-        confirmColor: '#6B7280',
-        onConfirm: (note) => {
-          const result = changeLevel(lead.id, 'lost', note, readTimestamp.current);
-          if (result?.conflict) {
-            toast((t) => (
-              <div className="flex items-center gap-3">
-                <span className="text-sm">{result.message}</span>
-                <button onClick={() => { readTimestamp.current = Date.now(); forceUpdate(n => n + 1); toast.dismiss(t.id); }} className="text-xs px-2 py-1 bg-primary text-white rounded whitespace-nowrap">โหลดใหม่</button>
-              </div>
-            ), { duration: 5000, icon: '\u26A0\uFE0F' });
-            setConfirmOpen(false);
-            return;
-          }
-          addNotification({ title: 'เปลี่ยนสถานะ', body: lead.name + ' เป็น LOST', type: 'info' });
-          toast.success('เปลี่ยนสถานะแล้ว');
-          readTimestamp.current = Date.now();
-          setConfirmOpen(false);
-        },
-      });
-      setConfirmOpen(true);
+  // Promote test drive to Proposal
+  const handlePromoteToProposal = () => {
+    const result = advanceStage(lead.id, 'proposal', 'เลื่อนจากทดลองขับ', readTimestamp.current);
+    if (result?.conflict) {
+      toast.error(result.message);
+    } else if (result?.error) {
+      toast.error(result.error);
     } else {
-      setConfirmConfig({
-        title: 'ยืนยันเปลี่ยนสถานะ',
-        message: `เปลี่ยนสถานะเป็น ${newLevel.toUpperCase()}`,
-        showNotes: true,
-        requireNotes: false,
-        confirmLabel: 'ยืนยัน',
-        confirmColor: '#2563EB',
-        onConfirm: (note) => {
-          const result = changeLevel(lead.id, newLevel, note || undefined, readTimestamp.current);
-          if (result?.conflict) {
-            toast((t) => (
-              <div className="flex items-center gap-3">
-                <span className="text-sm">{result.message}</span>
-                <button onClick={() => { readTimestamp.current = Date.now(); forceUpdate(n => n + 1); toast.dismiss(t.id); }} className="text-xs px-2 py-1 bg-primary text-white rounded whitespace-nowrap">โหลดใหม่</button>
-              </div>
-            ), { duration: 5000, icon: '\u26A0\uFE0F' });
-            setConfirmOpen(false);
-            return;
-          }
-          addNotification({ title: 'เปลี่ยนสถานะ', body: lead.name + ' เป็น ' + newLevel.toUpperCase(), type: 'info' });
-          toast.success('เปลี่ยนสถานะแล้ว');
-          readTimestamp.current = Date.now();
-          setConfirmOpen(false);
-        },
-      });
-      setConfirmOpen(true);
+      toast.success('เลื่อนเป็น Proposal แล้ว');
+      addNotification({ title: 'เลื่อนสถานะ', body: `${lead.name} → เสนอราคา`, type: 'lead_update' });
+      readTimestamp.current = Date.now();
     }
   };
 
@@ -297,7 +219,7 @@ export default function LeadDetailPage() {
   };
 
   // Sort activities by time, newest first
-  const activities = (lead.activities || []).slice().sort((a, b) => new Date(b.time) - new Date(a.time));
+  const activities = (lead.activities || []).slice().sort((a, b) => new Date(b.time || b.createdAt) - new Date(a.time || a.createdAt));
 
   const activityIcon = (type) => {
     switch (type) {
@@ -305,8 +227,9 @@ export default function LeadDetailPage() {
       case 'line': return 'chat';
       case 'note': return 'edit';
       case 'booking': return 'book';
-      case 'won': return 'trophy';
+      case 'won': case 'stage_change': return 'trophy';
       case 'lost': return 'flag';
+      case 'test_drive_status': return 'steering';
       case 'status_change': return 'check';
       default: return 'check';
     }
@@ -327,14 +250,6 @@ export default function LeadDetailPage() {
     return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear() + 543}`;
   };
 
-  const levelButtons = [
-    { id: 'hot', label: 'HOT', color: '#DC2626', bg: '#FEF2F2' },
-    { id: 'warm', label: 'WARM', color: '#D97706', bg: '#FFFBEB' },
-    { id: 'cool', label: 'COOL', color: '#2563EB', bg: '#EFF6FF' },
-    { id: 'won', label: 'WON', color: '#16A34A', bg: '#F0FDF4' },
-    { id: 'lost', label: 'LOST', color: '#6B7280', bg: '#F3F4F6' },
-  ];
-
   return (
     <div className="screen-enter flex flex-col h-full">
       <div className="bg-white px-4 py-[13px] flex items-center gap-[11px] border-b border-border flex-shrink-0">
@@ -353,25 +268,19 @@ export default function LeadDetailPage() {
               <Icon name={isTestDrive ? 'steering' : 'walk'} size={12} /> {isTestDrive ? 'ทดลองขับ' : lead.source}
             </p>
           </div>
-          {isTestDrive ? (
-            <span className="px-3 py-1 rounded-full text-[10px] font-bold" style={{ backgroundColor: badgeInfo.bg, color: badgeInfo.color }}>
-              {badgeInfo.label}
-            </span>
-          ) : (
-            <span className={badgeClass}>{badgeInfo.label}</span>
-          )}
-        </div>
-
-        {/* Converted from test drive banner */}
-        {lead.convertedFrom && (
-          <div className="mx-4 mt-3 card-base bg-blue-50 border-blue-200">
-            <div className="flex items-center gap-2 text-[12px]">
-              <Icon name="steering" size={14} className="text-blue-500" />
-              <span className="text-blue-700 font-bold">แปลงจากทดลองขับ</span>
-              <button onClick={() => navigate(`/lead/${lead.convertedFrom}`)} className="text-blue-500 underline cursor-pointer ml-auto">ดูข้อมูลทดลองขับ</button>
-            </div>
+          <div className="flex flex-col items-end gap-1">
+            {isTestDrive ? (
+              <span className="px-3 py-1 rounded-full text-[10px] font-bold" style={{ backgroundColor: TEST_DRIVE_STATUSES[lead.testDriveStatus]?.bg, color: TEST_DRIVE_STATUSES[lead.testDriveStatus]?.color }}>
+                {TEST_DRIVE_STATUSES[lead.testDriveStatus]?.label || lead.testDriveStatus}
+              </span>
+            ) : (
+              <>
+                <span className={`badge-${lead.stage}`}>{LEAD_STAGES[lead.stage]?.labelTh || lead.stage}</span>
+                {category && <span className={`badge-${category} text-[9px]`}>{LEAD_CATEGORIES[category]?.label}</span>}
+              </>
+            )}
           </div>
-        )}
+        </div>
 
         {/* Customer Info Card */}
         <div className="bg-white px-4 py-3 border-b border-border">
@@ -424,79 +333,83 @@ export default function LeadDetailPage() {
         {isTestDrive ? (
           /* Test drive status management */
           <div className="bg-white px-4 py-3 border-b border-border">
-            {lead.level === 'scheduled' && (
+            {lead.testDriveStatus === 'scheduled' && (
               <div className="flex gap-2">
-                <button onClick={() => handleTestDriveStatusChange('confirmed')} className="flex-1 py-2 rounded-lg text-[12px] font-bold text-center cursor-pointer bg-purple-50 text-purple-600 border border-purple-200 active:opacity-70">
-                  ยืนยัน
-                </button>
-                <button onClick={() => handleTestDriveStatusChange('cancelled')} className="flex-1 py-2 rounded-lg text-[12px] font-bold text-center cursor-pointer bg-red-50 text-red-500 border border-red-200 active:opacity-70">
-                  ยกเลิก
-                </button>
-              </div>
-            )}
-            {lead.level === 'confirmed' && (
-              <div className="flex gap-2">
-                <button onClick={() => handleTestDriveStatusChange('completed')} className="flex-1 py-2 rounded-lg text-[12px] font-bold text-center cursor-pointer bg-emerald-50 text-emerald-600 border border-emerald-200 active:opacity-70">
+                <button onClick={() => handleTestDriveStatusChange('completed')} className="flex-1 py-2.5 rounded-lg text-[12px] font-bold text-center cursor-pointer bg-emerald-50 text-emerald-600 border border-emerald-200 active:opacity-70">
                   เสร็จสิ้น
                 </button>
-                <button onClick={() => handleTestDriveStatusChange('no_show')} className="flex-1 py-2 rounded-lg text-[12px] font-bold text-center cursor-pointer bg-gray-50 text-gray-500 border border-gray-200 active:opacity-70">
-                  ไม่มา
-                </button>
-                <button onClick={() => handleTestDriveStatusChange('cancelled')} className="flex-1 py-2 rounded-lg text-[12px] font-bold text-center cursor-pointer bg-red-50 text-red-500 border border-red-200 active:opacity-70">
+                <button onClick={() => handleTestDriveStatusChange('cancelled')} className="flex-1 py-2.5 rounded-lg text-[12px] font-bold text-center cursor-pointer bg-red-50 text-red-500 border border-red-200 active:opacity-70">
                   ยกเลิก
                 </button>
               </div>
             )}
-            {lead.level === 'completed' && !lead.convertedTo && (
-              <button onClick={handleConvertToCustomer} className="w-full py-2.5 rounded-lg text-[12px] font-bold text-center cursor-pointer bg-primary text-white active:opacity-70">
-                <span className="flex items-center justify-center gap-1"><Icon name="users" size={14} /> แปลงเป็นลูกค้า</span>
+            {lead.testDriveStatus === 'completed' && (
+              <button onClick={handlePromoteToProposal} className="w-full py-2.5 rounded-lg text-[12px] font-bold text-center cursor-pointer bg-purple-500 text-white active:opacity-70">
+                <span className="flex items-center justify-center gap-1"><Icon name="users" size={14} /> เลื่อนเป็น Proposal</span>
               </button>
             )}
-            {lead.level === 'completed' && lead.convertedTo && (
-              <button onClick={() => navigate(`/lead/${lead.convertedTo}`)} className="w-full py-2.5 rounded-lg text-[12px] font-bold text-center cursor-pointer bg-blue-50 text-blue-600 border border-blue-200 active:opacity-70">
-                <span className="flex items-center justify-center gap-1"><Icon name="users" size={14} /> แปลงเป็นลูกค้าแล้ว — ดูรายละเอียด</span>
-              </button>
-            )}
-            {(lead.level === 'cancelled' || lead.level === 'no_show') && (
+            {lead.testDriveStatus === 'cancelled' && (
               <div className="text-center py-1">
-                <span className="px-3 py-1 rounded-full text-[11px] font-bold" style={{ backgroundColor: (TEST_DRIVE_STATUSES[lead.level] || {}).bg, color: (TEST_DRIVE_STATUSES[lead.level] || {}).color }}>
-                  {(TEST_DRIVE_STATUSES[lead.level] || {}).label} (ถาวร)
+                <span className="px-3 py-1 rounded-full text-[11px] font-bold" style={{ backgroundColor: TEST_DRIVE_STATUSES.cancelled?.bg, color: TEST_DRIVE_STATUSES.cancelled?.color }}>
+                  ยกเลิก (ถาวร)
                 </span>
               </div>
             )}
           </div>
         ) : (
-          /* Purchase lead level change pills */
-          <div className="bg-white px-4 py-2 border-b border-border flex gap-2 overflow-x-auto">
-            {isTerminal ? (
-              <div className="flex items-center gap-2">
-                <span className={badgeClass}>{badgeInfo.label} (ถาวร)</span>
-              </div>
-            ) : (
-              levelButtons.map((lb) => (
-                <button
-                  key={lb.id}
-                  onClick={() => handleLevelClick(lb.id)}
-                  className="px-3 py-[3px] rounded-full text-[10px] font-bold border transition-all cursor-pointer flex-shrink-0"
-                  style={{
-                    borderColor: lead.level === lb.id ? lb.color : '#E5E7EB',
-                    background: lead.level === lb.id ? lb.bg : '#fff',
-                    color: lead.level === lb.id ? lb.color : '#6B7280',
-                  }}
-                >
-                  {lb.label}
+          /* Purchase lead — Stage Progress Stepper */
+          <div className="bg-white px-4 py-3 border-b border-border">
+            <div className="flex items-center justify-between mb-3">
+              {['new_lead', 'proposal', 'evaluation', 'close_won'].map((s, i, arr) => (
+                <React.Fragment key={s}>
+                  <div className={`flex flex-col items-center ${lead.stage === s || (s === 'close_won' && lead.stage === 'close_lost') ? 'text-primary' : (LEAD_STAGES[lead.stage]?.order || 0) >= (LEAD_STAGES[s]?.order || 0) ? 'text-primary' : 'text-t3'}`}>
+                    <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold ${(LEAD_STAGES[lead.stage]?.order || 0) >= (LEAD_STAGES[s]?.order || 0) ? 'bg-primary text-white' : 'bg-gray-100 text-t3'}`}>
+                      {(LEAD_STAGES[lead.stage]?.order || 0) > (LEAD_STAGES[s]?.order || 0) ? '\u2713' : i + 1}
+                    </div>
+                    <span className="text-[9px] font-bold mt-1">{LEAD_STAGES[s]?.labelTh}</span>
+                  </div>
+                  {i < arr.length - 1 && <div className={`flex-1 h-[2px] mx-1 mb-4 ${(LEAD_STAGES[lead.stage]?.order || 0) > (LEAD_STAGES[s]?.order || 0) ? 'bg-primary' : 'bg-gray-200'}`} />}
+                </React.Fragment>
+              ))}
+            </div>
+
+            {/* Action buttons based on current stage */}
+            {lead.stage === 'new_lead' && (
+              <button onClick={() => handleAdvanceStage('proposal')} className="w-full py-2.5 bg-purple-500 text-white rounded-lg text-[12px] font-bold cursor-pointer">
+                เสนอราคา (Proposal)
+              </button>
+            )}
+            {lead.stage === 'proposal' && (
+              <div className="flex gap-2">
+                <button onClick={handleGoToBooking} className="flex-1 py-2.5 bg-primary text-white rounded-lg text-[12px] font-bold cursor-pointer">
+                  จองรถ (Evaluation)
                 </button>
-              ))
+              </div>
+            )}
+            {lead.stage === 'evaluation' && (
+              <div className="flex gap-2">
+                <button onClick={() => handleAdvanceStage('close_won')} className="flex-1 py-2.5 bg-green-500 text-white rounded-lg text-[12px] font-bold cursor-pointer">
+                  ปิดการขาย (Won)
+                </button>
+                <button onClick={() => setShowCloseDialog(true)} className="flex-1 py-2.5 bg-gray-500 text-white rounded-lg text-[12px] font-bold cursor-pointer">
+                  ปิดไม่สำเร็จ (Lost)
+                </button>
+              </div>
+            )}
+            {(lead.stage === 'close_won' || lead.stage === 'close_lost') && (
+              <div className="text-center">
+                <span className={`badge-${lead.stage}`}>{LEAD_STAGES[lead.stage]?.labelTh} (ถาวร)</span>
+              </div>
             )}
           </div>
         )}
 
         {/* Status Change Notes */}
-        {lead.activities?.filter(a => a.type === 'status_change' || a.type === 'won' || a.type === 'lost').length > 0 && (
+        {lead.activities?.filter(a => a.type === 'stage_change' || a.type === 'test_drive_status' || a.type === 'status_change' || a.type === 'won' || a.type === 'lost').length > 0 && (
           <div className="px-4 pt-3">
             <div className="card-base">
               <div className="card-hd"><span className="card-title">บันทึกการเปลี่ยนสถานะ</span></div>
-              {lead.activities.filter(a => a.type === 'status_change' || a.type === 'won' || a.type === 'lost').map(a => (
+              {lead.activities.filter(a => a.type === 'stage_change' || a.type === 'test_drive_status' || a.type === 'status_change' || a.type === 'won' || a.type === 'lost').map(a => (
                 <div key={a.id} className="py-2 border-b border-gray-100 last:border-b-0">
                   <p className="text-[11px] text-t3">{a.title}</p>
                   {a.description && <p className="text-[12px] text-t1 mt-1">{a.description}</p>}
@@ -687,11 +600,7 @@ export default function LeadDetailPage() {
                 <div className="text-center py-4">
                   <p className="text-[12px] text-t3 mb-3">ยังไม่มีข้อมูลการจอง</p>
                   <button
-                    onClick={() => {
-                      if (lead.car) setCarId(lead.car);
-                      setLeadId(lead.id);
-                      navigate('/booking');
-                    }}
+                    onClick={handleGoToBooking}
                     className="px-4 py-2 bg-primary text-white rounded-md text-[12px] font-bold cursor-pointer"
                   >
                     สร้างการจอง
@@ -763,7 +672,7 @@ export default function LeadDetailPage() {
                       <p className="text-[12px] font-bold text-t1">{act.title || act.type}</p>
                       {act.description && <p className="text-[11px] text-t2 mt-[1px]">{act.description}</p>}
                       {act.content && <p className="text-[11px] text-t2 mt-[1px]">{act.content}</p>}
-                      <p className="text-[10px] text-t3 mt-[2px]">{formatTime(act.time)}</p>
+                      <p className="text-[10px] text-t3 mt-[2px]">{formatTime(act.time || act.createdAt)}</p>
                     </>
                   )}
                 </div>
@@ -821,7 +730,21 @@ export default function LeadDetailPage() {
         </div>
       </div>
 
-      {/* Confirm Dialog */}
+      {/* Close Lost Dialog */}
+      <ConfirmDialog
+        isOpen={showCloseDialog}
+        onClose={() => setShowCloseDialog(false)}
+        onConfirm={(note) => handleCloseLost(note)}
+        title="ยืนยันปิดไม่สำเร็จ"
+        message="เมื่อเปลี่ยนเป็น Lost จะไม่สามารถเปลี่ยนกลับได้"
+        confirmLabel="ยืนยัน Lost"
+        cancelLabel="ยกเลิก"
+        showNotes={true}
+        requireNotes={true}
+        confirmColor="#6B7280"
+      />
+
+      {/* General Confirm Dialog */}
       <ConfirmDialog
         isOpen={confirmOpen}
         onClose={() => setConfirmOpen(false)}
