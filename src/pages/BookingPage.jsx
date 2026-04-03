@@ -29,6 +29,7 @@ export default function BookingPage() {
   const carId = useBookingStore((s) => s.carId);
   const leadId = useBookingStore((s) => s.leadId);
   const savedBooking = useBookingStore((s) => s.savedBooking);
+  const bookings = useBookingStore((s) => s.bookings);
   const saveBooking = useBookingStore((s) => s.saveBooking);
   const setCustomerInfo = useBookingStore((s) => s.setCustomerInfo);
   const reset = useBookingStore((s) => s.reset);
@@ -980,7 +981,7 @@ export default function BookingPage() {
             </div>
 
             {/* Primary action: sign document first */}
-            {!savedBooking?.signature ? (
+            {!(savedBooking?.signature || bookings.find(b => b.ref === bookingRef)?.signature) ? (
               <>
                 <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-3 text-center">
                   <p className="text-[12px] text-amber-700 font-bold">กรุณาลงนามเอกสารจองเพื่อดำเนินการต่อ</p>
