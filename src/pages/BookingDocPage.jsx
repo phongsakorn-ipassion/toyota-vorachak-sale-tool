@@ -323,7 +323,7 @@ export default function BookingDocPage() {
           <button onClick={handleShare} style={{ ...btnOutline, color: '#1B7A3F', borderColor: '#1B7A3F' }}>
             แชร์
           </button>
-          <button onClick={() => alreadySigned && booking?.leadId ? navigate(`/lead/${booking.leadId}`) : navigate(-1)} style={{ ...btnOutline, color: '#6B7280', borderColor: '#D1D5DB' }}>
+          <button onClick={() => alreadySigned && booking?.leadId ? navigate(`/lead/${booking.leadId}`, { replace: true }) : navigate(-1)} style={{ ...btnOutline, color: '#6B7280', borderColor: '#D1D5DB' }}>
             ย้อนกลับ
           </button>
         </div>

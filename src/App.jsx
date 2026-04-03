@@ -46,13 +46,13 @@ export default function App() {
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/booking-view/:ref" element={<BookingViewPage />} />
-        <Route path="/booking-doc/:ref" element={<BookingDocPage />} />
         <Route path="/" element={<SmartRedirect />} />
 
         <Route element={<AppShell />}>
           {/* Sales + Manager shared */}
           <Route element={<ProtectedRoute allowedRoles={['sales', 'mgr']} />}>
             <Route path="/sales-dash" element={<SalesDashboard />} />
+            <Route path="/booking-doc/:ref" element={<BookingDocPage />} />
             <Route path="/calc" element={<PaymentCalcPage />} />
             <Route path="/catalog" element={<CatalogPage />} />
             <Route path="/car/:id" element={<CarDetailPage />} />
