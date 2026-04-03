@@ -233,6 +233,9 @@ export const useBookingStore = create(persist((set, get) => ({
         b.id === ref || b.ref === ref ? { ...b, signature: signatureDataUrl, signedAt: new Date().toISOString(), _updatedAt: Date.now() } : b
       ),
     }));
+    // Push to Supabase
+    const updated = get().bookings.find((b) => b.id === ref || b.ref === ref);
+    if (updated) pushRecord('bookings', updated, bookingToRemote);
   },
 
   cancelBooking: (id) => {

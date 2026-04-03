@@ -219,6 +219,8 @@ export function bookingToRemote(booking) {
     car_price: booking.carPrice || 0,
     down_payment_pct: booking.downPaymentPct || 15,
     customer_info: JSON.stringify(booking.customerInfo || {}),
+    signature: booking.signature || null,
+    signed_at: booking.signedAt || null,
     updated_at: new Date(booking._updatedAt || Date.now()).toISOString(),
     created_at: booking.createdAt || new Date().toISOString(),
   };
@@ -260,6 +262,8 @@ export function remoteToBooking(remote) {
     gradeName: remote.grade_name || null,
     deliveryDate: remote.delivery_date || null,
     status: remote.status || 'pending',
+    signature: remote.signature || null,
+    signedAt: remote.signed_at || null,
     createdAt: remote.created_at || new Date().toISOString(),
     _updatedAt: new Date(remote.updated_at || 0).getTime(),
   };
