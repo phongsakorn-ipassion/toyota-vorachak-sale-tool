@@ -979,7 +979,10 @@ export default function BookingPage() {
               ))}
             </div>
 
-            <div className="flex gap-[10px] mt-4">
+            <button onClick={() => navigate(`/booking-doc/${bookingRef}`)} className="btn-o w-full cursor-pointer mb-2">
+              <Icon name="document" size={16} /> ดูเอกสารจอง
+            </button>
+            <div className="flex gap-[10px]">
               <button onClick={() => setShowShareModal(true)} className="btn-o flex-1 cursor-pointer">
                 <Icon name="share" size={16} /> แชร์ Booking
               </button>

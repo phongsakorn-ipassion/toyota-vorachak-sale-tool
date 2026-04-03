@@ -662,8 +662,16 @@ export default function LeadDetailPage() {
                       ดูรายละเอียด
                     </button>
                     <button
-                      onClick={() => setShowShareModal(true)}
+                      onClick={() => navigate(`/booking-doc/${bookingRef}`)}
                       className="flex-1 px-4 py-2 bg-white text-primary border border-primary-medium rounded-md text-[12px] font-bold cursor-pointer text-center flex items-center justify-center gap-1"
+                    >
+                      <Icon name="document" size={14} /> ดูเอกสารจอง
+                    </button>
+                  </div>
+                  <div className="mt-2">
+                    <button
+                      onClick={() => setShowShareModal(true)}
+                      className="w-full px-4 py-2 bg-white text-primary border border-primary-medium rounded-md text-[12px] font-bold cursor-pointer text-center flex items-center justify-center gap-1"
                     >
                       <Icon name="share" size={14} /> แชร์ Booking
                     </button>

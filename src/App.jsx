@@ -19,6 +19,7 @@ import ReportsPage from './pages/ReportsPage';
 import NotificationsPage from './pages/NotificationsPage';
 import ProfilePage from './pages/ProfilePage';
 import BookingViewPage from './pages/BookingViewPage';
+import BookingDocPage from './pages/BookingDocPage';
 import { useAuthStore } from './stores/authStore';
 
 function SmartRedirect() {
@@ -45,6 +46,7 @@ export default function App() {
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/booking-view/:ref" element={<BookingViewPage />} />
+        <Route path="/booking-doc/:ref" element={<BookingDocPage />} />
         <Route path="/" element={<SmartRedirect />} />
 
         <Route element={<AppShell />}>

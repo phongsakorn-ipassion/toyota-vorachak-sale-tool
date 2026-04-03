@@ -227,6 +227,14 @@ export const useBookingStore = create(persist((set, get) => ({
     return get().bookings.find((b) => b.id === id || b.ref === id) || null
   },
 
+  updateBookingSignature: (ref, signatureDataUrl) => {
+    set((state) => ({
+      bookings: state.bookings.map((b) =>
+        b.id === ref || b.ref === ref ? { ...b, signature: signatureDataUrl, signedAt: new Date().toISOString(), _updatedAt: Date.now() } : b
+      ),
+    }));
+  },
+
   cancelBooking: (id) => {
     set((state) => ({
       bookings: state.bookings.map((b) =>
